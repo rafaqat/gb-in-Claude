@@ -23,7 +23,9 @@ style, not affiliated with the composers.
 
 Celesta and harp magic, a brass fanfare, a march, then a jump up to E♭ for the finale.
 
-<!-- video: twinkle-williams.mp4 -->
+<!-- drop twinkle-williams.mp4 on the empty line below -->
+
+
 
 [▶ Listen (MP3)](media/twinkle-williams.mp3) · [Song JSON](examples/twinkle-williams.song.json)
 
@@ -31,7 +33,9 @@ Celesta and harp magic, a brass fanfare, a march, then a jump up to E♭ for the
 
 A ticking ostinato, brass "braams", and a storm in D minor that breaks into D major.
 
-<!-- video: twinkle-zimmer.mp4 -->
+<!-- drop twinkle-zimmer.mp4 on the empty line below -->
+
+
 
 [▶ Listen (MP3)](media/twinkle-zimmer.mp3) · [Song JSON](examples/twinkle-zimmer.song.json)
 
@@ -39,7 +43,9 @@ A ticking ostinato, brass "braams", and a storm in D minor that breaks into D ma
 
 A toccata flourish, then a three-voice fugue on the tune for pipe organ, ending on a D-major chord.
 
-<!-- video: twinkle-bach.mp4 -->
+<!-- drop twinkle-bach.mp4 on the empty line below -->
+
+
 
 [▶ Listen (MP3)](media/twinkle-bach.mp3) · [Song JSON](examples/twinkle-bach.song.json)
 
