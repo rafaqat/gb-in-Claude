@@ -13,6 +13,39 @@ export a WAV, and "listen" to the result (loudness, tone, drums, tempo, key, a s
 
 > Not affiliated with Apple. GarageBand is a trademark of Apple Inc.
 
+## Listen
+
+Three versions of *Twinkle, Twinkle, Little Star*. Claude Code wrote each one as Song JSON, GarageBand's own
+instruments play it through gb-mcp, and `gb_analyze` checked every export. They are pastiches in each composer's
+style, not affiliated with the composers.
+
+### In the style of John Williams
+
+Celesta and harp magic, a brass fanfare, a march, then a jump up to E♭ for the finale.
+
+<!-- video: twinkle-williams.mp4 -->
+
+[▶ Listen (MP3)](media/twinkle-williams.mp3) · [Song JSON](examples/twinkle-williams.song.json)
+
+### In the style of Hans Zimmer
+
+A ticking ostinato, brass "braams", and a storm in D minor that breaks into D major.
+
+<!-- video: twinkle-zimmer.mp4 -->
+
+[▶ Listen (MP3)](media/twinkle-zimmer.mp3) · [Song JSON](examples/twinkle-zimmer.song.json)
+
+### In the style of J. S. Bach
+
+A toccata flourish, then a three-voice fugue on the tune for pipe organ, ending on a D-major chord.
+
+<!-- video: twinkle-bach.mp4 -->
+
+[▶ Listen (MP3)](media/twinkle-bach.mp3) · [Song JSON](examples/twinkle-bach.song.json)
+
+The Williams celesta is GarageBand's Toy Celesta, loaded with `gb_tracks set_instrument`; the Song JSON alone
+gives the General MIDI celesta.
+
 ## Requirements
 
 | | |

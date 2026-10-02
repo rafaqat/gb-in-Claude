@@ -1,0 +1,374 @@
+{
+  "title": "Twinkle Twinkle Little Star (John Williams style)",
+  "tempo": 120,
+  "key": "C major",
+  "style": "acoustic",
+  "humanize": "natural",
+  "seed": 11,
+  "sections": [
+    {
+      "name": "sparkle",
+      "bars": 4
+    },
+    {
+      "name": "tiptoe",
+      "bars": 8
+    },
+    {
+      "name": "fanfare",
+      "bars": 2
+    },
+    {
+      "name": "march",
+      "bars": 12
+    },
+    {
+      "name": "soar",
+      "bars": 8
+    },
+    {
+      "name": "finale",
+      "bars": 6
+    },
+    {
+      "name": "wink",
+      "bars": 2
+    }
+  ],
+  "tracks": [
+    {
+      "name": "Percussion",
+      "role": "drums",
+      "program": 48,
+      "level": -4,
+      "parts": {
+        "tiptoe": {
+          "grid": {
+            "ride": "................|................|................|................|....x.......x...|....x.......x...|....x.......x...|....x.......x...",
+            "open-hat": "................|................|................|................|................|................|................|x..............."
+          },
+          "levels": {
+            "ride": -12,
+            "open-hat": -4
+          }
+        },
+        "fanfare": {
+          "grid": {
+            "kick": "X...........|......x.....",
+            "crash": "x...........|......x.....",
+            "clap": "...xxx......|...xxx...xxx"
+          },
+          "levels": {
+            "kick": -4,
+            "crash": -2,
+            "clap": -6
+          }
+        },
+        "march": {
+          "grid": {
+            "snare": "X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxX...x.xx|X...x.xxooxxxxXX",
+            "kick": "x...............",
+            "crash": "x...............|................|................|................|x...............|................|................|................|x...............|................|................|................",
+            "open-hat": "................|................|................|................|................|................|................|................|................|................|................|x..............."
+          },
+          "levels": {
+            "snare": -10,
+            "kick": -8,
+            "crash": -4,
+            "open-hat": -2
+          }
+        },
+        "soar": {
+          "grid": {
+            "kick": "X...............|................|................|................|x...............|................|................|................",
+            "crash": "x...............|................|................|................|x...............|................|................|................",
+            "open-hat": "................|................|................|................|................|................|................|x..............."
+          },
+          "levels": {
+            "kick": -6,
+            "crash": -3,
+            "open-hat": -3
+          }
+        },
+        "finale": {
+          "grid": {
+            "kick": "X...............|................|x...............|................|x.......x.......|X...............",
+            "crash": "x...............|................|................|................|................|x...............",
+            "snare": "................|................|................|................|ooooxxxxxxxxXXXX|................",
+            "open-hat": "................|................|................|................|x...............|................"
+          },
+          "levels": {
+            "kick": -4,
+            "crash": -1,
+            "snare": -8,
+            "open-hat": -2
+          }
+        }
+      }
+    },
+    {
+      "name": "Celesta",
+      "role": "lead-high",
+      "program": 8,
+      "level": -5,
+      "parts": {
+        "sparkle": {
+          "notes": "g5 c6 e6 g6 c7 g6 e6 c6 g5 c6 e6 g6 | a5 d6 f#6 a6 d7 a6 f#6 d6 a5 d6 f#6 a6 | g5 c6 e6 g6 c7 g6 e6 c6 g5 c6 e6 g6 | a5 d6 f#6 a6 d7 a6 f#6 d6 a5 ~@3"
+        },
+        "tiptoe": {
+          "notes": "c6 c6 g6 g6 | a6 a6 g6@2 | f6 f6 e6 e6 | d6 d6 c6@2 | g6 g6 f6 f6 | e6 e6 d6@2 | g6 g6 f6 f6 | e6 e6 d6@2"
+        },
+        "wink": {
+          "notes": "ab6 ab6 g6 g6 | f6 f6 eb6@2"
+        }
+      }
+    },
+    {
+      "name": "Glockenspiel",
+      "role": "lead-high",
+      "program": 9,
+      "level": -9,
+      "parts": {
+        "sparkle": {
+          "notes": "~@3 g6 | ~@3 f#6 | ~@3 g6 | ~@2 a6 d7"
+        },
+        "tiptoe": {
+          "notes": "~ | ~@2 g6@2 | ~ | ~@2 c7@2 | ~ | ~@2 d7@2 | ~ | ~@2 d7@2"
+        },
+        "march": {
+          "notes": "~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | c6@6 c6@2 g6@6 g6@2 | a6@6 a6@2 g6@8 | f6@6 f6@2 e6@6 e6@2 | d6@6 d6@2 c6@8"
+        },
+        "soar": {
+          "notes": "~ | ~@2 bb6@2 | ~ | ~@2 eb7@2 | ~ | ~@2 f6@2 | ~ | ~@2 f6@2"
+        },
+        "finale": {
+          "notes": "eb6 eb6 bb6 bb6 | c7 c7 bb6@2 | ab6@2 ab6@2 | g6@2 g6@2 | f6@2 f6@2 | eb6@3 ~"
+        },
+        "wink": {
+          "notes": "~ | ~@3 eb7"
+        }
+      }
+    },
+    {
+      "name": "Flute",
+      "role": "lead",
+      "program": 73,
+      "level": -4,
+      "parts": {
+        "tiptoe": {
+          "notes": "c5 ~ c5 ~ g5 ~ g5 ~ | a5 ~ a5 ~ g5@3 ~ | f5 ~ f5 ~ e5 ~ e5 ~ | d5 ~ d5 ~ c5@3 ~ | g5 ~ g5 ~ f5 ~ f5 ~ | e5 ~ e5 ~ d5@3 ~ | g5 ~ g5 ~ f5 ~ f5 ~ | e5 ~ e5 ~ d5@3 ~"
+        },
+        "march": {
+          "notes": "~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | c6@6 c6@2 g6@6 g6@2 | a6@6 a6@2 g6@8 | f6@6 f6@2 e6@6 e6@2 | d6@6 d6@2 c6@8"
+        },
+        "soar": {
+          "notes": "~ | ~ | ~ | ~ | bb6 bb6 ab6 ab6 | g6 g6 f6@2 | bb6 bb6 ab6 ab6 | g6 g6 f6@2"
+        },
+        "finale": {
+          "notes": "eb6 eb6 bb6 bb6 | c7 c7 bb6@2 | ab6@2 ab6@2 | g6@2 g6@2 | f6@2 f6@2 | eb6@3 ~"
+        }
+      }
+    },
+    {
+      "name": "Bassoon",
+      "role": "bass",
+      "program": 70,
+      "level": -2,
+      "parts": {
+        "tiptoe": {
+          "notes": "c3 ~ g2 ~ c3 ~ g2 ~ | f2 ~ a2 ~ c3 ~ g2 ~ | f2 ~ a2 ~ e2 ~ g2 ~ | g2 ~ b2 ~ c3 ~ ~ ~ | c3 ~ e3 ~ f2 ~ a2 ~ | c3 ~ e3 ~ g2 ~ b2 ~ | c3 ~ e3 ~ f2 ~ a2 ~ | c3 ~ e3 ~ g2 a2 b2 ~"
+        }
+      }
+    },
+    {
+      "name": "Harp",
+      "role": "arp",
+      "program": 46,
+      "level": -8,
+      "parts": {
+        "sparkle": {
+          "notes": "c3 g3 c4 e4 g4 c5 e5 g5 | c3 a3 d4 f#4 a4 d5 f#5 a5 | c3 g3 c4 e4 g4 c5 e5 g5 | c3 a3 d4 f#4 a4 d5 f#5 a5"
+        },
+        "tiptoe": {
+          "notes": "~ | ~ | ~ | ~ | ~ | ~ | ~ | ~@8 g3 b3 d4 g4 b4 d5 g5 b5"
+        },
+        "march": {
+          "notes": "~ | ~ | ~ | ~ | ~ | ~ | ~ | ~@8 c4 e4 g4 c5 e5 g5 c6 e6 | ~ | ~ | ~ | ~@8 bb3 eb4 g4 bb4 eb5 g5 bb5 eb6"
+        },
+        "soar": {
+          "chords": "Eb | Ab Eb | Ab Eb/G | Bb Eb | Eb Ab | Eb Bb | Gm Ab | Eb/Bb Bb",
+          "style": "updown",
+          "octave": 4
+        },
+        "finale": {
+          "notes": "eb3 bb3 eb4 g4 bb4 eb5 g5 bb5 | ab3 eb4 ab4 c5 eb3 bb3 eb4 g4 | ab3 eb4 ab4 c5 ab3 eb4 ab4 b4 | g3 bb3 eb4 g4 c4 eb4 g4 c5 | ab3 c4 eb4 ab4 db4 f4 ab4 db5 | eb3 g3 bb3 eb4 g4 bb4 eb5 g5 bb5 eb6 ~@2"
+        }
+      }
+    },
+    {
+      "name": "Strings",
+      "role": "pad",
+      "program": 48,
+      "level": -6,
+      "parts": {
+        "sparkle": {
+          "chords": "C | D/C | C | D/C",
+          "style": "sustain",
+          "octave": 4
+        },
+        "tiptoe": {
+          "chords": "C | F C | F C | G C | C F | C G | C F | C G",
+          "style": "stabs",
+          "octave": 4
+        },
+        "fanfare": {
+          "chords": "C | F G",
+          "style": "sustain",
+          "octave": 4
+        },
+        "soar": {
+          "chords": "Eb | Ab Eb | Ab Eb/G | Bb Eb | Eb Ab | Eb Bb | Gm Ab | Eb/Bb Bb",
+          "style": "sustain",
+          "octave": 3
+        },
+        "finale": {
+          "notes": "[g3,bb3,eb4,g4]@4 | [ab3,c4,eb4,ab4]@2 [g3,bb3,eb4,g4]@2 | [ab3,c4,eb4,ab4]@2 [ab3,b3,eb4,ab4]@2 | [g3,bb3,eb4,g4]@2 [g3,c4,eb4,g4]@2 | [ab3,c4,eb4,ab4]@2 [ab3,db4,f4,ab4]@2 | [g3,bb3,eb4,g4]@3 ~"
+        }
+      }
+    },
+    {
+      "name": "Ostinato",
+      "role": "arp",
+      "program": 48,
+      "level": -9,
+      "parts": {
+        "march": {
+          "chords": "C | F C | F C | G C | C F | C G | Ab Bb | C G | C | F C | F C | G G C Bb",
+          "style": "broken",
+          "octave": 4
+        }
+      }
+    },
+    {
+      "name": "Low Strings",
+      "role": "bass",
+      "program": 42,
+      "level": -5,
+      "parts": {
+        "sparkle": {
+          "chords": "C | D/C | C | D/C",
+          "style": "sustain"
+        },
+        "fanfare": {
+          "chords": "C | F G",
+          "style": "sustain"
+        },
+        "march": {
+          "chords": "C | F C | F C | G C | C F | C G | Ab Bb | C G | C | F C | F C | G G C Bb",
+          "style": "sustain"
+        },
+        "soar": {
+          "chords": "Eb | Ab Eb | Ab Eb/G | Bb Eb | Eb Ab | Eb Bb | Gm Ab | Eb/Bb Bb",
+          "style": "sustain"
+        },
+        "finale": {
+          "notes": "eb2@4 | ab1@2 eb2@2 | ab1@2 ab1@2 | g1@2 c2@2 | ab1@2 db2@2 | eb2@3 ~"
+        }
+      }
+    },
+    {
+      "name": "Violins",
+      "role": "lead",
+      "program": 40,
+      "level": -2,
+      "parts": {
+        "march": {
+          "notes": "~ | ~ | ~ | ~ | ~ | ~ | ~ | ~ | c6@6 c6@2 g6@6 g6@2 | a6@6 a6@2 g6@8 | f6@6 f6@2 e6@6 e6@2 | d6@6 d6@2 c6@8"
+        },
+        "soar": {
+          "notes": "eb5 eb5 bb5 bb5 | c6 c6 bb5@2 | ab5 ab5 g5 g5 | f5 f5 eb5@2 | bb5 bb5 ab5 ab5 | g5 g5 f5@2 | bb5 bb5 ab5 ab5 | g5 g5 f5@2"
+        },
+        "finale": {
+          "notes": "eb5 eb5 bb5 bb5 | c6 c6 bb5@2 | ab5@2 ab5@2 | g5@2 g5@2 | f5@2 f5@2 | eb5@3 ~"
+        }
+      }
+    },
+    {
+      "name": "Horns",
+      "role": "lead",
+      "program": 60,
+      "level": 0,
+      "parts": {
+        "fanfare": {
+          "notes": "e4@3 e4 e4 e4 g4@6 | c5@3 c5 c5 c5 b4@6"
+        },
+        "march": {
+          "notes": "c4@6 c4@2 g4@6 g4@2 | a4@6 a4@2 g4@8 | f4@6 f4@2 e4@6 e4@2 | d4@6 d4@2 c4@8 | g4@6 g4@2 f4@6 f4@2 | e4@6 e4@2 d4@8 | g4@6 g4@2 f4@6 f4@2 | e4@6 e4@2 d4@8 | c4@6 c4@2 g4@6 g4@2 | a4@6 a4@2 g4@8 | f4@6 f4@2 e4@6 e4@2 | d4@6 d4@2 c4@8"
+        },
+        "soar": {
+          "notes": "g4@4 | ab4@2 g4@2 | c5@2 bb4@2 | d5@2 bb4@2 | eb5@2 c5@2 | bb4@2 d5@2 | d5@2 c5@2 | eb5@2 d5@2"
+        },
+        "finale": {
+          "notes": "g4@4 | ab4@2 g4@2 | c5@2 b4@2 | bb4@2 g4@2 | c5@2 db5@2 | [eb4,g4,bb4]@3 ~"
+        }
+      }
+    },
+    {
+      "name": "Trumpets",
+      "role": "lead",
+      "program": 56,
+      "level": 3,
+      "parts": {
+        "fanfare": {
+          "notes": "c5@3 c5 c5 c5 g5@6 | a5@3 a5 a5 a5 g5@6"
+        },
+        "march": {
+          "notes": "c5@6 c5@2 g5@6 g5@2 | a5@6 a5@2 g5@8 | f5@6 f5@2 e5@6 e5@2 | d5@6 d5@2 c5@8 | g5@6 g5@2 f5@6 f5@2 | e5@6 e5@2 d5@8 | g5@6 g5@2 f5@6 f5@2 | e5@6 e5@2 d5@8 | c5@6 c5@2 g5@6 g5@2 | a5@6 a5@2 g5@8 | f5@6 f5@2 e5@6 e5@2 | d5@6 d5@2 c5@8"
+        },
+        "finale": {
+          "notes": "eb5 eb5 bb5 bb5 | ab5 ab5 g5@2 | ab5@2 ab5@2 | g5@2 g5@2 | f5@2 f5@2 | [eb5,g5,bb5]@3 ~"
+        }
+      }
+    },
+    {
+      "name": "Trombones",
+      "role": "pad",
+      "program": 57,
+      "level": -2,
+      "parts": {
+        "fanfare": {
+          "notes": "[c3,e3,g3]@3 ~@3 [e3,g3,c4]@6 | [f3,a3,c4]@3 ~@3 [g3,b3,d4]@6"
+        },
+        "march": {
+          "notes": "~@2 [e3,g3,c4] ~ ~@2 [e3,g3,c4] ~ | ~@2 [f3,a3,c4] ~ ~@2 [e3,g3,c4] ~ | ~@2 [f3,a3,c4] ~ ~@2 [e3,g3,c4] ~ | ~@2 [d3,g3,b3] ~ ~@2 [e3,g3,c4] ~ | ~@2 [e3,g3,c4] ~ ~@2 [f3,a3,c4] ~ | ~@2 [e3,g3,c4] ~ ~@2 [d3,g3,b3] ~ | ~@2 [eb3,ab3,c4] ~ ~@2 [d3,f3,bb3] ~ | ~@2 [e3,g3,c4] ~ ~@2 [d3,g3,b3] ~ | ~@2 [e3,g3,c4] ~ ~@2 [e3,g3,c4] ~ | ~@2 [f3,a3,c4] ~ ~@2 [e3,g3,c4] ~ | ~@2 [f3,a3,c4] ~ ~@2 [e3,g3,c4] ~ | ~@2 [d3,g3,b3] ~ ~@2 [d3,f3,bb3] ~"
+        },
+        "soar": {
+          "notes": "~ | ~ | ~ | ~ | [eb3,g3,bb3]@2 [eb3,ab3,c4]@2 | [eb3,g3,bb3]@2 [d3,f3,bb3]@2 | [d3,g3,bb3]@2 [eb3,ab3,c4]@2 | [eb3,g3,bb3]@2 [d3,f3,bb3]@2"
+        },
+        "finale": {
+          "notes": "[eb3,g3,bb3]@4 | [eb3,ab3,c4]@2 [eb3,g3,bb3]@2 | [eb3,ab3,c4]@2 [eb3,ab3,b3]@2 | [eb3,g3,bb3]@2 [eb3,g3,c4]@2 | [eb3,ab3,c4]@2 [f3,ab3,db4]@2 | [eb3,g3,bb3]@3 ~"
+        }
+      }
+    },
+    {
+      "name": "Tuba",
+      "role": "bass",
+      "program": 58,
+      "level": -1,
+      "parts": {
+        "fanfare": {
+          "notes": "c2@3 ~@3 c2@6 | f1@3 ~@3 g1@6"
+        },
+        "march": {
+          "notes": "c2 ~@3 g1 ~@3 | f1 ~@3 c2 ~@3 | f1 ~@3 c2 ~@3 | g1 ~@3 c2 ~@3 | c2 ~@3 f1 ~@3 | c2 ~@3 g1 ~@3 | ab1 ~@3 bb1 ~@3 | c2 ~@3 g1 ~@3 | c2 ~@3 g1 ~@3 | f1 ~@3 c2 ~@3 | f1 ~@3 c2 ~@3 | g1 ~@3 c2 ~ bb1 ~"
+        },
+        "soar": {
+          "notes": "eb2@4 | ab1@2 eb2@2 | ab1@2 g1@2 | bb1@2 eb2@2 | eb2@2 ab1@2 | eb2@2 bb1@2 | g1@2 ab1@2 | bb1@4"
+        },
+        "finale": {
+          "notes": "eb2@4 | ab1@2 eb2@2 | ab1@2 ab1@2 | g1@2 c2@2 | ab1@2 db2@2 | eb2@3 ~"
+        }
+      }
+    }
+  ]
+}

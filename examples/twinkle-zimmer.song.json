@@ -1,0 +1,299 @@
+{
+ "title": "Twinkle Twinkle Little Star (Hans Zimmer style)",
+ "tempo": 90,
+ "key": "D minor",
+ "style": "acoustic",
+ "humanize": "natural",
+ "seed": 8,
+ "sections": [
+  {
+   "name": "night",
+   "bars": 4
+  },
+  {
+   "name": "pulse",
+   "bars": 4
+  },
+  {
+   "name": "storm",
+   "bars": 8
+  },
+  {
+   "name": "hush",
+   "bars": 4
+  },
+  {
+   "name": "galaxy",
+   "bars": 8
+  },
+  {
+   "name": "coda",
+   "bars": 4
+  }
+ ],
+ "tracks": [
+  {
+   "name": "Percussion",
+   "role": "drums",
+   "program": 48,
+   "level": -2,
+   "parts": {
+    "pulse": {
+     "grid": {
+      "kick": "x...............|................|................|................|x...............|................|................|................",
+      "tom-low": "x...x...x...x..."
+     },
+     "levels": {
+      "kick": -4,
+      "tom-low": -12
+     }
+    },
+    "storm": {
+     "grid": {
+      "tom-low": "x..x..x.x..x..x.",
+      "tom-mid": "....x.......x...",
+      "kick": "x.......x.......",
+      "crash": "x...............|................|................|................|x...............|................|................|................",
+      "snare": "................|................|................|................|................|................|................|........xxxxxxxx"
+     },
+     "levels": {
+      "tom-mid": -4,
+      "snare": -6,
+      "crash": -4
+     }
+    },
+    "galaxy": {
+     "grid": {
+      "kick": "x...x...x...x...",
+      "tom-low": "x..x..x.x..x..x.",
+      "crash": "x...............|................|................|................|x...............|................|................|................",
+      "tom-high": "................|................|................|................|................|................|................|....x.x.x.xxxxxx"
+     },
+     "levels": {
+      "tom-high": -4,
+      "crash": -2
+     }
+    },
+    "coda": {
+     "grid": {
+      "tom-low": "................|................|................|x..............."
+     },
+     "levels": {
+      "tom-low": -8
+     }
+    }
+   }
+  },
+  {
+   "name": "Low Strings",
+   "role": "bass",
+   "program": 42,
+   "parts": {
+    "night": {
+     "chords": "Dm | Bb | Gm | A Dm | F | Dm A | Bb | Gm A",
+     "style": "sustain"
+    },
+    "pulse": {
+     "chords": "Dm | Dm | Bb | Bb | Gm | Gm | A | A",
+     "style": "rolling"
+    },
+    "storm": {
+     "chords": "Dm | Bb | Gm | A Dm | F | Dm A | Bb | Gm A | Dm | Bb | Gm | A Dm",
+     "style": "rolling"
+    },
+    "galaxy": {
+     "chords": "D | G D | G D | A D | D G | D A | Bm G | D A | D | G D | G Bm | A D",
+     "style": "rolling"
+    },
+    "coda": {
+     "chords": "G D | A D | D | D",
+     "style": "sustain"
+    }
+   }
+  },
+  {
+   "name": "Sub",
+   "role": "bass",
+   "program": 39,
+   "level": -4,
+   "parts": {
+    "storm": {
+     "chords": "Dm | Bb | Gm | A Dm | F | Dm A | Bb | Gm A | Dm | Bb | Gm | A Dm",
+     "style": "sustain",
+     "octave": 1
+    },
+    "galaxy": {
+     "chords": "D | G D | G D | A D | D G | D A | Bm G | D A | D | G D | G Bm | A D",
+     "style": "sustain",
+     "octave": 1
+    }
+   }
+  },
+  {
+   "name": "Tuba",
+   "role": "bass",
+   "program": 58,
+   "level": -4,
+   "parts": {
+    "pulse": {
+     "notes": "d2@4 | ~ | ~ | ~ | g1@4 | ~ | ~ | ~"
+    },
+    "storm": {
+     "chords": "Dm | Bb | Gm | A Dm | F | Dm A | Bb | Gm A | Dm | Bb | Gm | A Dm",
+     "style": "sustain"
+    },
+    "galaxy": {
+     "chords": "D | G D | G D | A D | D G | D A | Bm G | D A | D | G D | G Bm | A D",
+     "style": "sustain"
+    }
+   }
+  },
+  {
+   "name": "Ostinato",
+   "role": "arp",
+   "program": 48,
+   "level": -3,
+   "parts": {
+    "pulse": {
+     "chords": "Dm | Dm | Bb | Bb | Gm | Gm | A | A",
+     "style": "gated",
+     "octave": 3
+    },
+    "storm": {
+     "chords": "Dm | Bb | Gm | A Dm | F | Dm A | Bb | Gm A | Dm | Bb | Gm | A Dm",
+     "style": "gated",
+     "octave": 3
+    },
+    "galaxy": {
+     "chords": "D | G D | G D | A D | D G | D A | Bm G | D A | D | G D | G Bm | A D",
+     "style": "gated",
+     "octave": 3
+    }
+   }
+  },
+  {
+   "name": "Strings",
+   "role": "pad",
+   "program": 48,
+   "level": -4,
+   "parts": {
+    "night": {
+     "chords": "Dm | Bb | Gm | A Dm | F | Dm A | Bb | Gm A",
+     "style": "sustain"
+    },
+    "storm": {
+     "chords": "Dm | Bb | Gm | A Dm | F | Dm A | Bb | Gm A | Dm | Bb | Gm | A Dm",
+     "style": "sustain"
+    },
+    "galaxy": {
+     "chords": "D | G D | G D | A D | D G | D A | Bm G | D A | D | G D | G Bm | A D",
+     "style": "sustain"
+    },
+    "coda": {
+     "chords": "G D | A D | D | D",
+     "style": "sustain"
+    }
+   }
+  },
+  {
+   "name": "Choir",
+   "role": "pad",
+   "program": 52,
+   "level": -5,
+   "parts": {
+    "storm": {
+     "chords": "Dm | Bb | Gm | A Dm | F | Dm A | Bb | Gm A | Dm | Bb | Gm | A Dm",
+     "style": "sustain"
+    },
+    "galaxy": {
+     "chords": "D | G D | G D | A D | D G | D A | Bm G | D A | D | G D | G Bm | A D",
+     "style": "sustain"
+    },
+    "coda": {
+     "chords": "G D | A D | D | D",
+     "style": "sustain"
+    }
+   }
+  },
+  {
+   "name": "Horns",
+   "role": "lead",
+   "program": 60,
+   "parts": {
+    "storm": {
+     "notes": "d4 d4 a4 a4 | bb4 bb4 a4@2 | g4 g4 f4 f4 | e4 e4 d4@2 | a4 a4 g4 g4 | f4 f4 e4@2 | a4 a4 g4 g4 | f4 f4 e4@2 | d4 d4 a4 a4 | bb4 bb4 a4@2 | g4 g4 f4 f4 | e4 e4 d4@2"
+    },
+    "galaxy": {
+     "notes": "d4 d4 a4 a4 | b4 b4 a4@2 | g4 g4 f#4 f#4 | e4 e4 d4@2 | a4 a4 g4 g4 | f#4 f#4 e4@2 | a4 a4 g4 g4 | f#4 f#4 e4@2 | d4 d4 a4 a4 | b4 b4 a4@2 | g4 g4 f#4 f#4 | e4 e4 d4@2"
+    }
+   }
+  },
+  {
+   "name": "Trombones",
+   "role": "lead",
+   "program": 57,
+   "parts": {
+    "pulse": {
+     "notes": "[a2,d3,f3]@4 | ~ | ~ | ~ | [g2,bb2,d3]@4 | ~ | ~ | ~"
+    },
+    "storm": {
+     "notes": "d3 d3 a3 a3 | bb3 bb3 a3@2 | g3 g3 f3 f3 | e3 e3 d3@2 | a3 a3 g3 g3 | f3 f3 e3@2 | a3 a3 g3 g3 | f3 f3 e3@2 | d3 d3 a3 a3 | bb3 bb3 a3@2 | g3 g3 f3 f3 | e3 e3 d3@2"
+    }
+   }
+  },
+  {
+   "name": "Trumpets",
+   "role": "lead",
+   "program": 56,
+   "level": -1,
+   "parts": {
+    "galaxy": {
+     "notes": "d4 d4 a4 a4 | b4 b4 a4@2 | g4 g4 f#4 f#4 | e4 e4 d4@2 | a4 a4 g4 g4 | f#4 f#4 e4@2 | a4 a4 g4 g4 | f#4 f#4 e4@2 | d4 d4 a4 a4 | b4 b4 a4@2 | g4 g4 f#4 f#4 | e4 e4 d4@2"
+    }
+   }
+  },
+  {
+   "name": "Violins",
+   "role": "lead",
+   "program": 48,
+   "parts": {
+    "storm": {
+     "notes": "d6@4 | d6@4 | d6@4 | e6@2 f6@2 | f6@4 | f6@2 e6@2 | f6@4 | g6@2 a6@2 | a6@4 | bb6@4 | bb6@4 | a6@2 d7@2"
+    },
+    "galaxy": {
+     "notes": "d5 d5 a5 a5 | b5 b5 a5@2 | g5 g5 f#5 f#5 | e5 e5 d5@2 | a5 a5 g5 g5 | f#5 f#5 e5@2 | a5 a5 g5 g5 | f#5 f#5 e5@2 | d5 d5 a5 a5 | b5 b5 a5@2 | g5 g5 f#5 f#5 | e5 e5 d5@2"
+    }
+   }
+  },
+  {
+   "name": "Piano",
+   "role": "lead",
+   "program": 0,
+   "parts": {
+    "night": {
+     "notes": "d5 d5 a5 a5 | bb5 bb5 a5@2 | g5 g5 f5 f5 | e5 e5 d5@2 | a5 a5 g5 g5 | f5 f5 e5@2 | a5 a5 g5 g5 | f5 f5 e5@2"
+    },
+    "hush": {
+     "notes": "d5 d5 a5 a5 | b5 b5 a5@2 | g5 g5 f#5 f#5 | e5 e5 d5@2"
+    },
+    "coda": {
+     "notes": "g5 g5 f#5 f#5 | e5 e5 d5@2 | ~ | ~"
+    }
+   }
+  },
+  {
+   "name": "Stars",
+   "role": "lead-high",
+   "program": 9,
+   "level": -10,
+   "parts": {
+    "night": {
+     "notes": "~ | ~ | ~ | a6@4 | ~ | ~ | ~ | d7@4"
+    },
+    "coda": {
+     "notes": "~ | ~ | ~ | a6@4"
+    }
+   }
+  }
+ ]
+}

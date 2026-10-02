@@ -1,0 +1,114 @@
+{
+  "title": "Twinkle Twinkle Little Star (J.S. Bach style)",
+  "tempo": 88,
+  "key": "D minor",
+  "style": "acoustic",
+  "humanize": "tight",
+  "seed": 5,
+  "sections": [
+    { "name": "toccata", "bars": 4 },
+    { "name": "exposition", "bars": 6 },
+    { "name": "episode", "bars": 2 },
+    { "name": "middle", "bars": 2 },
+    { "name": "episode2", "bars": 2 },
+    { "name": "stretto", "bars": 2 },
+    { "name": "pedalpoint", "bars": 2 },
+    { "name": "final", "bars": 2 },
+    { "name": "coda", "bars": 4 }
+  ],
+  "tracks": [
+    {
+      "name": "Soprano",
+      "role": "lead",
+      "program": 21,
+      "level": 0,
+      "parts": {
+        "toccata": {
+          "notes": "a5 g5 a5@6 ~@8 | g5 g5 f5 f5 e5 e5 d5 c#5 d5@8 | ~@2 [bb4,c#5,e5]@14 | [d5,f5,a5]@8 a5 f5 d5 a4 f4 d4 a3 ~"
+        },
+        "exposition": {
+          "notes": "~ | ~ | a4@2 a4@2 e5@2 e5@2 f5@2 f5@2 e5@4 | d5@2 d5@2 c5@2 c5@2 b4@2 b4@2 a4@4 | f5 e5 d5 e5 f5 g5 a5 bb5 d6 c6 bb5 a5 f5 a5 c6 a5 | bb5 a5 bb5 d6 a5 g5 a5 c6 c#6 a5 g5 e5 f5 a5 d5@2"
+        },
+        "episode": {
+          "notes": "d5@2 d5@2 a5@2 a5@2 g4@2 g4@2 d5@2 d5@2 | c5@2 c5@2 g5@2 g5@2 f4@2 f4@2 c5@2 c5@2"
+        },
+        "middle": {
+          "notes": "f5@2 f5@2 c6@2 c6@2 d6@2 d6@2 c6@4 | bb5@2 bb5@2 a5@2 a5@2 g5@2 g5@2 f5@4"
+        },
+        "episode2": {
+          "notes": "f5@2 f5@2 c6@2 c6@2 bb4@2 bb4@2 f5@2 f5@2 | e5@2 e5@2 bb5@2 bb5@2 a4@2 a4@2 e5@2 e5@2"
+        },
+        "stretto": {
+          "notes": "d5@2 d5@2 a5@2 a5@2 bb5@2 bb5@2 a5@4 | g5@2 g5@2 f5@2 f5@2 e5@2 e5@2 d5@4"
+        },
+        "pedalpoint": {
+          "notes": "a5 e5 c#5 e5 a5 f5 d5 f5 bb5 g5 d5 g5 bb5 g5 d5 g5 | c#6 a5 e5 a5 c#6 a5 e5 a5 e6 c#6 a5 g5 e5 c#5 a4 c#5"
+        },
+        "final": {
+          "notes": "d5@2 d5@2 a5@2 a5@2 bb5@2 bb5@2 a5@4 | g5@2 g5@2 f5@2 f5@2 e5@2 e5@2 d5@4"
+        },
+        "coda": { "notes": "g5@8 g5@8 | f5@8 f5@8 | e5@8 e5@8 | d5@16" }
+      }
+    },
+    {
+      "name": "Alto",
+      "role": "lead",
+      "program": 21,
+      "level": -2,
+      "parts": {
+        "toccata": {
+          "notes": "a4 g4 a4@6 ~@8 | g4 g4 f4 f4 e4 e4 d4 c#4 d4@8 | ~ [e4,g4]@15 | [d4,f4,a4]@12 ~@4"
+        },
+        "exposition": {
+          "notes": "d4@2 d4@2 a4@2 a4@2 bb4@2 bb4@2 a4@4 | g4@2 g4@2 f4@2 f4@2 e4@2 e4@2 d4@4 | c4 b3 a3 b3 c4 d4 e4 f4 a4 g4 f4 e4 c4 e4 g4 e4 | f4 e4 f4 a4 e4 d4 e4 g4 g#4 e4 d4 b3 c4 e4 a3@2 | a4@4 f4@12 | d4@4 d4@4 c#4@4 d4@4"
+        },
+        "episode": {
+          "notes": "a3 d4 f4 d4 a3 d4 f4 d4 bb3 d4 g4 d4 bb3 d4 g4 d4 | g3 c4 e4 c4 g3 c4 e4 c4 a3 c4 f4 c4 a3 c4 f4 c4"
+        },
+        "middle": {
+          "notes": "a4 g4 f4 g4 a4 bb4 c5 a4 bb4 a4 bb4 f4 a4 c5 f5 c5 | d5 c5 bb4 d5 c5 bb4 a4 c5 bb4 g4 e4 g4 a4 c5 f4@2"
+        },
+        "episode2": {
+          "notes": "a3 c4 f4 c4 a3 c4 f4 c4 bb3 d4 f4 d4 bb3 d4 f4 d4 | g3 bb3 e4 bb3 g3 bb3 d4 bb3 a3 c#4 e4 g4 a3 c#4 e4 g4"
+        },
+        "stretto": {
+          "notes": "~@8 d4@2 d4@2 a4@2 a4@2 | bb4@2 bb4@2 a4@4 g4@2 g4@2 f4@2 f4@2"
+        },
+        "pedalpoint": { "notes": "e4@2 e4@2 d4@4 g4@8 | e4@8 g4@8" },
+        "final": {
+          "notes": "f4 e4 d4 e4 f4 g4 a4 bb4 d5 c5 bb4 a4 f4 a4 c5 a4 | bb4 a4 bb4 d5 a4 g4 a4 c5 c#5 a4 g4 e4 f4 a4 d4@2"
+        },
+        "coda": { "notes": "d5@8 eb5@8 | d5@8 bb4@8 | d5@8 c#5@8 | a4@16" }
+      }
+    },
+    {
+      "name": "Tenor",
+      "role": "pad",
+      "program": 21,
+      "level": -3,
+      "parts": {
+        "toccata": { "notes": "~ | ~ | c#4@16 | d4@12 ~@4" },
+        "coda": { "notes": "bb4@8 bb4@8 | a4@8 g4@8 | a4@8 g4@8 | f#4@16" }
+      }
+    },
+    {
+      "name": "Pedal",
+      "role": "bass",
+      "program": 82,
+      "level": -2,
+      "parts": {
+        "toccata": { "notes": "~ | ~ | d2@16 | d2@12 ~@4" },
+        "exposition": {
+          "notes": "~ | ~ | ~ | ~ | d2@2 d2@2 a2@2 a2@2 bb2@2 bb2@2 a2@4 | g2@2 g2@2 f2@2 f2@2 e2@2 e2@2 d2@4"
+        },
+        "episode": { "notes": "d3@8 g2@8 | c3@8 f2@8" },
+        "middle": { "notes": "f2@8 bb2@4 f2@4 | g2@4 a2@4 c3@4 f2@4" },
+        "episode2": { "notes": "f2@8 bb1@8 | e2@8 a1@8" },
+        "stretto": { "notes": "d2@4 f2@4 g2@4 f2@4 | g2@4 d2@4 a1@4 d2@4" },
+        "pedalpoint": { "notes": "a1@16 | a1@16" },
+        "final": { "notes": "d2@4 f2@4 g2@4 f2@4 | g2@4 d2@4 a1@4 d2@4" },
+        "coda": { "notes": "g2@8 eb2@8 | f2@8 g2@8 | a1@8 a1@8 | d2@16" }
+      }
+    }
+  ]
+}
