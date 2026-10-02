@@ -1,0 +1,70 @@
+{
+  "note": "Shared selector test vectors: run by Swift (GBHelperCoreTests) AND TypeScript (src/ax/selector.test.ts). Paths are child-index paths relative to the search root ('' = the root itself).",
+  "tree": {
+    "role": "AXWindow", "subrole": "AXStandardWindow", "title": "Untitled - Tracks",
+    "children": [
+      { "role": "AXGroup", "desc": "Control Bar", "children": [
+        { "role": "AXGroup", "desc": "Control Bar", "children": [
+          { "role": "AXPopUpButton", "desc": "Display Mode", "title": "Beats & Project", "value": "Beats & Project" },
+          { "role": "AXGroup", "desc": "Playhead Position", "children": [
+            { "role": "AXSlider", "desc": "bar", "value": 1 },
+            { "role": "AXSlider", "desc": "beat", "value": 1 }
+          ]},
+          { "role": "AXSlider", "desc": "Tempo", "value": 120 }
+        ]},
+        { "role": "AXCheckBox", "title": "Play", "desc": "Play", "value": 0 },
+        { "role": "AXButton", "title": "Go to Beginning", "desc": "Stop" },
+        { "role": "AXCheckBox", "title": "Library", "desc": "Library", "value": 0 }
+      ]},
+      { "role": "AXGroup", "desc": "Tracks", "children": [
+        { "role": "AXGroup", "desc": "Tracks header", "children": [
+          { "role": "AXLayoutItem", "desc": "Track 1 “Soft Saw Lead”", "children": [
+            { "role": "AXCheckBox", "desc": "Mute", "value": 0 },
+            { "role": "AXSlider", "value": 64 },
+            { "role": "AXSlider", "desc": "Volume", "value": 173 }
+          ]},
+          { "role": "AXLayoutItem", "desc": "Track 2 “Taureg Moon Bass”, mute", "children": [
+            { "role": "AXCheckBox", "desc": "Mute", "value": 1 },
+            { "role": "AXSlider", "value": 64 },
+            { "role": "AXSlider", "desc": "Volume", "value": 173 }
+          ]}
+        ]},
+        { "role": "AXGroup", "desc": "Tracks contents", "children": [
+          { "role": "AXLayoutItem", "desc": "Lead" }
+        ]}
+      ]},
+      { "role": "AXOutline", "desc": "list view", "children": [
+        { "role": "AXRow", "children": [ { "role": "AXStaticText", "value": "Downloads" } ] }
+      ]},
+      { "role": "AXTextField", "id": "saveAsNameTextField", "value": "Untitled" }
+    ]
+  },
+  "cases": [
+    { "name": "tempo by role + description", "selector": { "role": "AXSlider", "description": "Tempo" }, "expect": ["0.0.2"] },
+    { "name": "both volume sliders", "selector": { "role": "AXSlider", "description": "Volume" }, "expect": ["1.0.0.2", "1.0.1.2"] },
+    { "name": "volume of track 2 via exact ancestor", "selector": { "role": "AXSlider", "description": "Volume", "ancestors": [ { "role": "AXLayoutItem", "description": "Track 2 “Taureg Moon Bass”, mute" } ] }, "expect": ["1.0.1.2"] },
+    { "name": "pan = slider with NO description, scoped to track 1", "selector": { "role": "AXSlider", "description": "", "ancestors": [ { "role": "AXLayoutItem", "description": "Track 1 “Soft Saw Lead”" } ] }, "expect": ["1.0.0.1"] },
+    { "name": "no substring matching", "selector": { "role": "AXSlider", "description": "Temp" }, "expect": [] },
+    { "name": "no prefix matching on ancestors either", "selector": { "role": "AXSlider", "description": "Volume", "ancestors": [ { "description": "Track 2 “Taureg Moon Bass”" } ] }, "expect": [] },
+    { "name": "match by value", "selector": { "role": "AXCheckBox", "description": "Mute", "value": 1 }, "expect": ["1.0.1.0"] },
+    { "name": "index picks the n-th match in document order", "selector": { "role": "AXSlider", "description": "Volume", "index": 1 }, "expect": ["1.0.1.2"] },
+    { "name": "index out of range finds nothing", "selector": { "role": "AXSlider", "description": "Volume", "index": 5 }, "expect": [] },
+    { "name": "title and description are different attributes", "selector": { "role": "AXButton", "title": "Stop" }, "expect": [] },
+    { "name": "button found by its description", "selector": { "role": "AXButton", "description": "Stop" }, "expect": ["0.2"] },
+    { "name": "ancestors must appear outer→inner", "selector": { "role": "AXLayoutItem", "ancestors": [ { "description": "Tracks header" }, { "description": "Tracks" } ] }, "expect": [] },
+    { "name": "ancestors in the right order", "selector": { "role": "AXLayoutItem", "ancestors": [ { "description": "Tracks" }, { "description": "Tracks header" } ] }, "expect": ["1.0.0", "1.0.1"] },
+    { "name": "the root itself can match", "selector": { "role": "AXWindow" }, "expect": [""] },
+    { "name": "identifier match", "selector": { "identifier": "saveAsNameTextField" }, "expect": ["3"] },
+    { "name": "file-browser outline descended when not pruned", "selector": { "role": "AXStaticText", "value": "Downloads" }, "expect": ["2.0.0"] },
+    { "name": "file-browser outline pruned", "selector": { "role": "AXStaticText", "value": "Downloads" }, "prune_roles": ["AXOutline"], "expect": [] },
+    { "name": "pruned node itself can still match", "selector": { "role": "AXOutline", "description": "list view" }, "prune_roles": ["AXOutline"], "expect": ["2"] },
+    { "name": "search from a sub-root: paths are relative to it", "root": "0", "selector": { "role": "AXSlider", "description": "Tempo" }, "expect": ["0.2"] },
+    { "name": "the search root counts as an ancestor", "root": "1.0", "selector": { "role": "AXSlider", "description": "Volume", "ancestors": [ { "description": "Tracks header" } ] }, "expect": ["0.2", "1.2"] }
+  ],
+  "invalid_selectors": [
+    { "name": "empty selector would match everything", "selector": {} },
+    { "name": "only an index", "selector": { "index": 0 } },
+    { "name": "negative index", "selector": { "role": "AXSlider", "index": -1 } },
+    { "name": "unknown field (typo must not widen the match)", "selector": { "role": "AXSlider", "desc": "Tempo" } }
+  ]
+}

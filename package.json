@@ -1,0 +1,53 @@
+{
+  "name": "gb-mcp",
+  "version": "0.1.0",
+  "description": "GarageBand MCP server for Claude Code: compose Song JSON, render MIDI, drive GarageBand (tracks, instruments, transport, mix), export and analyze audio \u2014 every action verified, no API key.",
+  "license": "MIT",
+  "author": "rafaqat",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rafaqat/gb-in-Claude.git"
+  },
+  "homepage": "https://github.com/rafaqat/gb-in-Claude#readme",
+  "bugs": {
+    "url": "https://github.com/rafaqat/gb-in-Claude/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "garageband",
+    "claude-code",
+    "music",
+    "midi",
+    "accessibility"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "os": [
+    "darwin"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "start": "tsx src/index.ts",
+    "test:analysis": "cd analysis && python3 -m unittest discover -s tests",
+    "test:all": "npm test && npm run test:analysis && npm run test:native",
+    "build:native": "bash native/gm-render/build.sh && bash native/build-helper.sh",
+    "build:helper": "bash native/build-helper.sh",
+    "test:native": "cd native/gb-helper && swift test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+.venv/
+native/bin/
+native/**/.build/
+__pycache__/
+*.pyc
+.DS_Store
+coverage/
+*.wav

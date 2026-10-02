@@ -1,0 +1,64 @@
+
+    AU Validation Tool
+    Version: 1.10.0 
+    Copyright 2003-2019, Apple Inc. All Rights Reserved.
+    Specify -h (-help) for command options
+
+aufx bpas appl  -  Apple: AUBandpass
+aufx dcmp appl  -  Apple: AUDynamicsProcessor
+aufx dely appl  -  Apple: AUDelay
+aufx dist appl  -  Apple: AUDistortion
+aufx filt appl  -  Apple: AUFilter
+aufx greq appl  -  Apple: AUGraphicEQ
+aufx hpas appl  -  Apple: AUHipass
+aufx hshf appl  -  Apple: AUHighShelfFilter
+aufx lmtr appl  -  Apple: AUPeakLimiter
+aufx lpas appl  -  Apple: AULowpass
+aufx lshf appl  -  Apple: AULowShelfFilter
+aufx mcmp appl  -  Apple: AUMultibandCompressor
+aufx mrev appl  -  Apple: AUMatrixReverb
+aufx nbeq appl  -  Apple: AUNBandEQ
+aufx nsnd appl  -  Apple: AUNetSend
+aufx nutp appl  -  Apple: AUNewPitch
+aufx pmeq appl  -  Apple: AUParametricEQ
+aufx raac appl  -  Apple: AURoundTripAAC
+aufx rogr appl  -  Apple: AURogerBeep
+aufx rvb2 appl  -  Apple: AUReverb2
+aufx sdly appl  -  Apple: AUSampleDelay
+aufx tmpt appl  -  Apple: AUPitch
+aufx vois appl  -  Apple: AUSoundIsolation
+aupn ambi appl  -  Apple: AUSoundFieldPanner
+aupn hrtf appl  -  Apple: HRTFPanner
+aupn sphr appl  -  Apple: AUSphericalHeadPanner
+aupn vbas appl  -  Apple: AUVectorPanner
+aumu dls  appl  -  Apple: DLSMusicDevice
+aumu msyn appl  -  Apple: AUMIDISynth
+aumu samp appl  -  Apple: AUSampler
+aumx 3dem appl  -  Apple: AUSpatialMixer
+aumx 3dmx appl  -  Apple: AUMixer3D
+aumx mcmx appl  -  Apple: AUMultiChannelMixer
+aumx mspl appl  -  Apple: AUMultiSplitter
+aumx mxmx appl  -  Apple: AUMatrixMixer
+aumx smxr appl  -  Apple: AUMixer
+aufc amix appl  -  Apple: AUAudioMix
+aufc conv appl  -  Apple: AUConverter
+aufc defr appl  -  Apple: AUDeferredRenderer
+aufc ipto appl  -  Apple: AUNotQuiteSoSimpleTime
+aufc merg appl  -  Apple: AUMerger
+aufc nutp appl  -  Apple: AUNewTimePitch
+aufc splt appl  -  Apple: AUSplitter
+aufc tmpt appl  -  Apple: AUTimePitch
+aufc vari appl  -  Apple: AUVarispeed
+auou ahal appl  -  Apple: AudioDeviceOutput
+auou atap appl  -  Apple: AUAudioTapIO
+auou def  appl  -  Apple: DefaultOutputUnit
+auou genr appl  -  Apple: GenericOutput
+auou rioc appl  -  Apple: AUAudioIO
+auou sys  appl  -  Apple: SystemOutputUnit
+auou vpio appl  -  Apple: AUVoiceProcessor
+augn afpl appl  -  Apple: AUAudioFilePlayer
+augn nrcv appl  -  Apple: AUNetReceive
+augn sspl appl  -  Apple: AUScheduledSoundPlayer
+augn ttsp appl  -  Apple: AUSpeechSynthesis
+auol tmpt appl  -  Apple: AUTimePitch
+auol vari appl  -  Apple: AUVarispeed

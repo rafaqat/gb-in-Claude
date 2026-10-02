@@ -1,0 +1,143 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 rafaqat
+import { z } from "zod";
+import { ok, err, type Result } from "../result.js";
+import { DRUM_VOICE_NAMES } from "../composition/drums.js";
+import { STYLE_NAMES } from "./styles.js";
+
+export const HUMANIZE_FEELS = ["off", "tight", "natural", "loose"] as const;
+
+export const ROLES = ["drums", "bass", "pad", "arp", "lead", "lead-high", "fx"] as const;
+export const Role = z.enum(ROLES);
+export type Role = z.infer<typeof Role>;
+
+/** Where a role's chord-driven parts sit by default (scientific octave, C4 = 60). */
+const DEFAULT_OCTAVE: Record<Role, number> = {
+  drums: 2, bass: 2, pad: 3, arp: 4, lead: 5, "lead-high": 6, fx: 4,
+};
+
+/** Which chord-rendering styles each role understands. Roles absent here cannot use `chords`. */
+export const CHORD_STYLES: Partial<Record<Role, readonly string[]>> = {
+  bass: ["sustain", "offbeat", "rolling", "octave"],
+  pad: ["sustain", "stabs"],
+  arp: ["up", "down", "updown", "broken", "gated"],
+};
+
+const ChordsPart = z.object({
+  chords: z.string().min(1),
+  style: z.string().min(1),
+  octave: z.number().int().min(0).max(8).optional(),
+}).strict();
+
+/** Level in dB applied as velocity scaling on the GM curve (dB = 40·log10(v'/v)). */
+export const LevelDb = z.number().min(-24).max(6);
+
+const GridPart = z.object({
+  grid: z.record(z.enum(DRUM_VOICE_NAMES), z.string().min(1)),
+  /** Per-voice level in dB, e.g. { kick: -6 } to tame a thumpy kick without touching the hats. */
+  levels: z.record(z.enum(DRUM_VOICE_NAMES), LevelDb).optional(),
+}).strict().refine((p) => !p.levels || Object.keys(p.levels).every((v) => v in p.grid),
+  { message: "levels may only name voices that are in the grid" });
+
+const NotesPart = z.object({
+  notes: z.string().min(1),
+}).strict();
+
+const Part = z.union([ChordsPart, GridPart, NotesPart]);
+type Part = z.infer<typeof Part>;
+
+function roleRuleViolation(role: Role, part: Part): string | undefined {
+  if ("grid" in part) return role === "drums" ? undefined : `grid parts are only for drums (role is ${role})`;
+  if (role === "drums") return "drums tracks take grid parts";
+  if ("chords" in part) {
+    const styles = CHORD_STYLES[role];
+    if (!styles) return `role ${role} cannot use chords; use notes`;
+    if (!styles.includes(part.style)) return `style "${part.style}" is not valid for ${role}; one of: ${styles.join(", ")}`;
+  }
+  return undefined;
+}
+
+const Track = z
+  .object({
+    name: z.string().min(1).max(64).regex(/^[\x20-\x7e]+$/, "printable ASCII only"),
+    role: Role,
+    /** GM program override; otherwise the style's program for the role. */
+    program: z.number().int().min(0).max(127).optional(),
+    /** Track level in dB (velocity scaling on the GM curve): -6 ≈ half as loud, +6 ≈ twice. Default 0. */
+    level: LevelDb.optional(),
+    parts: z.record(z.string(), Part),
+  })
+  .strict() // a misspelled key is an error, never a silent default
+  .superRefine((t, ctx) => {
+    for (const [section, part] of Object.entries(t.parts)) {
+      const violation = roleRuleViolation(t.role, part);
+      if (violation) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["parts", section], message: violation });
+    }
+  })
+  .transform((t) => ({
+    ...t,
+    parts: Object.fromEntries(
+      Object.entries(t.parts).map(([section, p]) => [
+        section,
+        "chords" in p ? { ...p, octave: p.octave ?? DEFAULT_OCTAVE[t.role] } : p,
+      ]),
+    ),
+  }));
+
+const Section = z.object({ name: z.string().min(1).max(32), bars: z.number().int().min(1).max(256) }).strict();
+
+/** 15 melodic channels (1–16 minus drum channel 10). */
+export const MAX_MELODIC_TRACKS = 15;
+
+export const SongSchema = z
+  .object({
+    title: z.string().min(1).max(80),
+    tempo: z.number().min(20).max(300),
+    // Styles assume quarter-note beats; other meters are a deliberate later extension.
+    timeSignature: z.tuple([z.number().int(), z.number().int()]).default([4, 4]),
+    seed: z.number().int().default(1),
+    /** Declared key, e.g. "F minor" / "Ab major" — gb_analyze checks the audio against it. */
+    key: z.string().regex(/^[A-G][#b]? (major|minor)$/, 'like "F minor" or "Ab major"').optional(),
+    style: z.enum(STYLE_NAMES).optional(),
+    humanize: z.enum(HUMANIZE_FEELS).default("natural"),
+    sections: z.array(Section).min(1),
+    tracks: z.array(Track).min(1),
+  })
+  .strict()
+  .superRefine((song, ctx) => {
+    const issue = (path: (string | number)[], message: string) =>
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path, message });
+    const [beats, unit] = song.timeSignature;
+    if (unit !== 4 || beats < 2 || beats > 7) {
+      issue(["timeSignature"], `only 2/4 to 7/4 are supported (got ${beats}/${unit}); styles assume quarter-note beats`);
+    }
+    const sectionNames = new Set<string>();
+    song.sections.forEach((s, i) => {
+      if (sectionNames.has(s.name)) issue(["sections", i, "name"], `duplicate section "${s.name}"`);
+      sectionNames.add(s.name);
+    });
+    const trackNames = new Set<string>();
+    song.tracks.forEach((t, i) => {
+      if (trackNames.has(t.name)) issue(["tracks", i, "name"], `duplicate track "${t.name}"`);
+      trackNames.add(t.name);
+      for (const section of Object.keys(t.parts)) {
+        if (!sectionNames.has(section)) {
+          issue(["tracks", i, "parts", section], `unknown section "${section}"; sections: ${[...sectionNames].join(", ")}`);
+        }
+      }
+    });
+    const melodic = song.tracks.filter((t) => t.role !== "drums").length;
+    if (melodic > MAX_MELODIC_TRACKS) issue(["tracks"], `${melodic} melodic tracks; at most ${MAX_MELODIC_TRACKS} (MIDI channels)`);
+  });
+
+export type Song = z.output<typeof SongSchema>;
+export type SongError = { code: "SONG_INVALID"; path: string; message: string };
+
+export function parseSong(input: unknown): Result<Song, SongError> {
+  const parsed = SongSchema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0]!;
+    return err({ code: "SONG_INVALID", path: issue.path.join("."), message: issue.message });
+  }
+  return ok(parsed.data);
+}
