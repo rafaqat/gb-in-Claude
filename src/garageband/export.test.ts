@@ -16,13 +16,18 @@ let inbox: string;
 let fake: FakeHelper;
 let exportWrites: (name: string) => void;
 
-/** Give the fixture save panel the behaviour the live panel has: radios are exclusive, Where lists recent places. */
-function installPanelBehaviours(places = RECENT_PLACES) {
+/**
+ * Give the fixture save panel the behaviour the live panel has: radios are exclusive, Where lists recent places.
+ * `places` can depend on the panel's number (1 = the first panel opened in the test).
+ */
+function installPanelBehaviours(placesFor: string[] | ((panel: number) => string[]) = RECENT_PLACES) {
   const done = new WeakSet<TreeNode>();
+  let panels = 0;
   fake.beforeAction = () => {
     const panel = fake.app.windows.find((w) => w.id === "save-panel");
     if (!panel || done.has(panel)) return;
     done.add(panel);
+    const places = typeof placesFor === "function" ? placesFor(++panels) : placesFor;
     const radios = findAll(panel, { role: "AXRadioButton" }).matches.map((m) => m.node);
     for (const r of radios) fake.on(r, { onPress: (n) => radios.forEach((o) => (o.value = o === n ? 1 : 0)) });
     const where = findAll(panel, { role: "AXPopUpButton", identifier: "where popup" }).matches[0]!.node;
@@ -222,7 +227,7 @@ describe("gb_export song dry_run", () => {
   });
 });
 
-describe("gb_export song: the Export press can report an AX error although it worked", () => {
+describe("gb_export song: the Export press can report an AX error although it worked (found live: )", () => {
   const okPressErrs = (exportHappens: boolean) => ({
     call: async (op: string, params?: Record<string, unknown>, opts?: { deadlineMs?: number }) => {
       if (op === "ax.press" && (params?.selector as { identifier?: string })?.identifier === "OKButton") {
@@ -289,7 +294,7 @@ describe("gb_export song: a slow Where menu (1 of 13 exports needed > 2 s)", () 
   });
 });
 
-describe("gb_export song: the panel closes by itself mid-flow", () => {
+describe("gb_export song: the panel closes by itself mid-flow (found live: 19:16)", () => {
   const panelClosesOnNameSet = (writesFile: boolean) => {
     const done = new WeakSet<TreeNode>();
     fake.beforeAction = () => {
@@ -319,3 +324,13 @@ describe("gb_export song: the panel closes by itself mid-flow", () => {
     expect(r).toMatchObject({ status: "uncertain", write_attempted: true, safe_to_retry: false });
   });
 });
+
+describe("gb_export song: the first panel after an open can lack the inbox (found live: , twice: a new panel listed it)", () => {
+  it("cancels that panel, waits, opens one new panel and exports", async () => {
+    installPanelBehaviours((n) => (n === 1 ? ["GarageBand", "Music"] : RECENT_PLACES));
+    const r = await createGbExport(deps())({ command: "song", filename: "late-places.wav" });
+    expect(r).toMatchObject({ status: "verified", data: { path: join(inbox, "late-places.wav") }, warnings: [expect.stringMatching(/retried once/)] });
+    expect(fake.calls.filter((c) => c.op === "ax.menu")).toHaveLength(2);
+  });
+});
+

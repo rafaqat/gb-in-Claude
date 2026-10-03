@@ -42,6 +42,8 @@ export type GbExportDeps = {
   placeSettleMs?: number;
   /** How long to wait for the Export button to become enabled (the remote save panel loads asynchronously). */
   enableTimeoutMs?: number;
+  /** Pause before one new panel when the first did not list the inbox (live: right after a project opened). */
+  placesRetryMs?: number;
   /** GarageBand's default export folder (~/Music/GarageBand): a file that still lands there is moved into the inbox. */
   defaultExportDir?: string;
 };
@@ -56,6 +58,9 @@ export function createGbExport(deps: GbExportDeps) {
   const stableReads = deps.stableReads ?? 2;
   const placeSettleMs = deps.placeSettleMs ?? 1_500;
   const enableTimeoutMs = deps.enableTimeoutMs ?? 20_000;
+  const placesRetryMs = deps.placesRetryMs ?? 3_000;
+  /** The "inbox not among the places" failures, after their panel was cancelled cleanly: the one case worth a new panel. */
+  const placesMissing = new WeakSet<Envelope>();
 
   /**
    * Poll the Export button until it reports enabled (live: it stays disabled while the panel loads). Its own fixed
@@ -137,6 +142,17 @@ export function createGbExport(deps: GbExportDeps) {
         plan: ["Share ▸ Export Song to Disk…", `choose ${format}, name, and ${inboxName} (read back)`, "press Export when enabled", "wait for a finished WAV"],
       });
     }
+    const first = await viaPanel(op, name.data, target, format);
+    if (!placesMissing.has(first)) return first;
+    // the first panel right after a project opened lacked the inbox; a new panel listed it.
+    await sleep(placesRetryMs);
+    const second = await viaPanel(op, name.data, target, format);
+    if (second.status !== "verified") return second;
+    return { ...second, warnings: [...(second.warnings ?? []), "the first save panel did not list the inbox; a new panel did (retried once)"] };
+  }
+
+  /** Share ▸ Export Song to Disk… → format, name, the inbox → Export → a finished WAV. The panel is cancelled on failure. */
+  async function viaPanel(op: string, filename: string, target: string, format: string): Promise<Envelope> {
     const opened = await core.menu(op, ["Share", "Export Song to Disk…"], {
       postCondition: { root: PANEL, selector: { role: "AXButton", identifier: "OKButton" }, condition: "present", timeoutMs: 10_000 },
     });
@@ -145,9 +161,9 @@ export function createGbExport(deps: GbExportDeps) {
       return opened;
     }
     // A same-named file already in GarageBand's default folder is not ours: never move it (decided before anything runs).
-    const stray = deps.defaultExportDir && !existsSync(join(deps.defaultExportDir, name.data)) ? join(deps.defaultExportDir, name.data) : undefined;
+    const stray = deps.defaultExportDir && !existsSync(join(deps.defaultExportDir, filename)) ? join(deps.defaultExportDir, filename) : undefined;
     // From here on the panel is ours: a failure cancels it before returning — unless it is already gone. Then gb-mcp
-    // did not close it and GarageBand may be exporting (the panel closed by itself and the file
+    // did not close it and GarageBand may be exporting (found live: 19:16: the panel closed by itself and the file
     // was written while gb-mcp reported "nothing exported"), so the evidence decides, never the failed step.
     const abort = async (e: Envelope): Promise<Envelope> => {
       const w = await core.wait({ root: APP, selector: { role: "AXWindow", identifier: "save-panel" }, condition: "present", timeoutMs: 300 });
@@ -170,7 +186,7 @@ export function createGbExport(deps: GbExportDeps) {
 
     const radio = await core.press(op, inPanel({ role: "AXRadioButton", title: format }, "radio"));
     if (radio.status !== "verified") return abort(radio);
-    const stem = name.data.replace(/\.wav$/, "");
+    const stem = filename.replace(/\.wav$/, "");
     const named = await core.set(op, inPanel({ role: "AXTextField", identifier: "saveAsNameTextField" }, "text"), stem);
     if (named.status !== "verified") return abort(named);
 
@@ -181,9 +197,11 @@ export function createGbExport(deps: GbExportDeps) {
         postCondition: { root: PANEL, selector: { role: "AXMenuItem", title: inboxName }, condition: "present", timeoutMs: 5_000 },
       });
       if (listed.status !== "verified") {
-        return abort(failed(op, "TARGET_NOT_FOUND", `“${inboxName}” is not among the save panel's places`, {
+        const missing = failed(op, "TARGET_NOT_FOUND", `“${inboxName}” is not among the save panel's places`, {
           hint: `the export inbox must be a recent place: export to ${deps.inboxDir} once by hand (Where ▸ …), or point GB_MCP_EXPORT_INBOX at a folder that is`,
-        }));
+        });
+        placesMissing.add(missing);
+        return abort(missing);
       }
       const picked = await core.press(op, inPanel({ role: "AXMenuItem", title: inboxName }, "button"));
       if (picked.status === "failed") return abort(picked);
@@ -233,7 +251,7 @@ export function createGbExport(deps: GbExportDeps) {
     if (!done) {
       return uncertain(op, "readback_timeout", {
         write_attempted: true, safe_to_retry: false,
-        hint: `Export was pressed but ${name.data} did not appear finished in ${inboxName}/ in time; check the folder before exporting again (a retry with the same name will refuse)`,
+        hint: `Export was pressed but ${filename} did not appear finished in ${inboxName}/ in time; check the folder before exporting again (a retry with the same name will refuse)`,
         data: { path: target },
       });
     }

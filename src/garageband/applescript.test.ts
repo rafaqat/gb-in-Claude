@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { describe, it, expect } from "vitest";
-import { parseDocumentList, LIST_DOCUMENTS, BACKUP_DOCUMENT } from "./applescript.js";
+import { parseDocumentList, LIST_DOCUMENTS, BACKUP_DOCUMENT, osascriptArgv } from "./applescript.js";
+import { execFileSync } from "node:child_process";
 
 describe("parseDocumentList", () => {
   it("parses tab-separated name / modified lines", () => {
@@ -25,5 +26,12 @@ describe("AppleScript sources", () => {
     }
     expect(BACKUP_DOCUMENT.join("\n")).toContain("item 1 of argv");
     expect(BACKUP_DOCUMENT.join("\n")).toContain("item 2 of argv");
+  });
+});
+
+describe("osascriptArgv: document names are data, never options", () => {
+  it.each(["-e", "-x.band", "--"])("passes %j through to the script unchanged", (name) => {
+    const argv = osascriptArgv(["on run argv", "return item 1 of argv & \"|\" & item 2 of argv", "end run"], [name, "/tmp/p"]);
+    expect(execFileSync("osascript", argv).toString().trim()).toBe(`${name}|/tmp/p`);
   });
 });

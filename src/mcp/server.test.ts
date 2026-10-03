@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
+import { GB_SONG_COMMANDS } from "./gb-song.js";
 import { describe, it, expect, beforeAll } from "vitest";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -34,6 +35,11 @@ describe("gb-mcp server", () => {
     expect(JSON.stringify(tool!.inputSchema)).toContain("render_midi");
   });
 
+  it("names every gb_song command in its description (agents pick commands from it)", async () => {
+    const tool = (await client.listTools()).tools.find((t) => t.name === "gb_song")!;
+    for (const command of GB_SONG_COMMANDS) expect(tool.description, command).toContain(`${command}:`);
+  });
+
   it("returns the envelope as structuredContent and compact JSON text", async () => {
     const r = await client.callTool({ name: "gb_song", arguments: { command: "validate", song } });
     expect(r.isError).toBeFalsy();
@@ -55,23 +61,37 @@ describe("gb-mcp server", () => {
     for (const cmd of ["render_draft", "against_song", "palette", "doctor"]) expect(text).toContain(cmd);
   });
 
-  it("lists the composition, analysis, sound-catalog and system tools", async () => {
-    const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(["gb_analyze", "gb_song", "gb_sound", "gb_system"]);
+  it("gb_system describe lists gb_band and its commands", async () => {
+    const r = await client.callTool({ name: "gb_system", arguments: { command: "describe" } });
+    expect(r.structuredContent).toMatchObject({ data: { tools: { gb_band: { commands: ["inspect", "build"] } } } });
   });
 
-  it("serves agent knowledge resources: song format, styles, GM patch map, analysis guide, production rubric", async () => {
+  it("publishes gb_band's exact parameters (gb://schema/tools): build needs donor, filename and audio items", async () => {
+    const r = await client.readResource({ uri: "gb://schema/tools" });
+    const build = JSON.parse((r.contents[0] as { text: string }).text).gb_band.commands.build;
+    expect(build.required).toEqual(expect.arrayContaining(["donor", "filename", "audio"]));
+    expect(build.properties.audio.items.required).toEqual(expect.arrayContaining(["wav", "bar", "track"]));
+  });
+
+  it("lists the composition, project-file, analysis, sound-catalog and system tools", async () => {
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name).sort()).toEqual(["gb_analyze", "gb_band", "gb_song", "gb_sound", "gb_system"]);
+  });
+
+  it("serves agent knowledge resources: song format, styles, GM patch map, analysis guide, production rubric, band files", async () => {
     const { resources } = await client.listResources();
     expect(resources.map((r) => r.uri).sort()).toEqual([
-      "gb://knowledge/analysis", "gb://knowledge/gm-patch-map", "gb://knowledge/production",
+      "gb://knowledge/analysis", "gb://knowledge/band-files", "gb://knowledge/gm-patch-map", "gb://knowledge/production",
       "gb://knowledge/song-format", "gb://knowledge/styles", "gb://schema/song", "gb://schema/tools",
     ]);
     const styles = await client.readResource({ uri: "gb://knowledge/styles" });
     expect((styles.contents[0] as { text: string }).text).toContain("orbit-ambient");
+    const band = await client.readResource({ uri: "gb://knowledge/band-files" });
+    expect((band.contents[0] as { text: string }).text).toMatch(/## Make a donor/);
   });
 });
 
-describe("gb-mcp server with GarageBand operations", () => {
+describe("gb-mcp server with GarageBand operations (M4)", () => {
   let gb: Client;
   beforeAll(async () => {
     const ws = mkdtempSync(join(tmpdir(), "gbmcp-srv4-"));
@@ -80,7 +100,7 @@ describe("gb-mcp server with GarageBand operations", () => {
       workspaceDir: ws, system: { helper: new FakeHelper(), doctor },
       garageband: {
         scripts: { listDocuments: async () => ok([]), backupDocument: async () => ok(undefined) },
-        openFile: async () => undefined, inboxDir: join(ws, "probe-export"), screenLocked: async () => false,
+        openFile: async () => ok(undefined), inboxDir: join(ws, "probe-export"), screenLocked: async () => false,
       },
       patchCatalog: async () => ok([]),
     });
@@ -101,6 +121,7 @@ describe("gb-mcp server with GarageBand operations", () => {
     expect(tools.gb_mix.commands.set_volume.properties).toHaveProperty("db");
     expect(tools.gb_transport.commands.set_count_in.properties.bars).toBeDefined();
     expect(tools.gb_project.commands.open_midi.properties).toHaveProperty("dry_run");
+    expect(tools.gb_project.commands.open_band.required).toEqual(["path"]);
   });
 
   it("serves gb_tracks list end to end", async () => {
@@ -129,7 +150,7 @@ describe("gb-mcp server with GarageBand operations", () => {
     const doctor = async () => ({ ready: true, checks: [], summary: { passed: 0, failed_required: [], failed_recommended: [] } }) as never;
     const server = createServer({
       workspaceDir: ws, system: { helper: new FakeHelper(), doctor },
-      garageband: { scripts: { listDocuments: async () => ok([]), backupDocument: async () => ok(undefined) }, openFile: async () => undefined, inboxDir: join(ws, "probe-export"), screenLocked: async () => false },
+      garageband: { scripts: { listDocuments: async () => ok([]), backupDocument: async () => ok(undefined) }, openFile: async () => ok(undefined), inboxDir: join(ws, "probe-export"), screenLocked: async () => false },
       patchCatalog: async () => { throw new Error(`boom ${String.fromCodePoint(0x202e)}at /Users/x`); },
     });
     const [a, b] = InMemoryTransport.createLinkedPair();

@@ -19,15 +19,18 @@ import { GB_MIX_COMMANDS, GbMixInput } from "../garageband/mix.js";
 import { registerSchemaResources } from "../knowledge/schemas.js";
 import { GM_PATCH_MAP, GM_DRUM_KIT_MAP, patchFor } from "../knowledge/gm-patch-map.js";
 import { SONG_FORMAT_GUIDE } from "../knowledge/song-format.js";
+import { BAND_FILES_GUIDE } from "../knowledge/band-files.js";
 import { STYLES } from "../song/styles.js";
 import { guarded } from "./tool-result.js";
+import type { Result } from "../result.js";
+import { createGbBand, GB_BAND_COMMANDS, GbBandInput, BandAudioItem, BandMidiItem } from "./gb-band.js";
 
-export const SERVER_VERSION = "0.1.0";
+export const SERVER_VERSION = "0.2.0";
 
 const json = (uri: string, value: unknown) => ({ contents: [{ uri, mimeType: "application/json", text: JSON.stringify(value) }] });
 
 export type GarageBandOptions = {
-  scripts: ProjectScripts; openFile: (path: string) => Promise<unknown>; inboxDir: string; defaultExportDir?: string;
+  scripts: ProjectScripts; openFile: (path: string) => Promise<Result<void, string>>; inboxDir: string; defaultExportDir?: string;
   /** Defaults to reading the console session's lock flag (tests pass a constant). */
   screenLocked?: () => Promise<boolean>;
 };
@@ -51,7 +54,8 @@ export function createServer(opts: ServerOptions): McpServer {
         "Compose for GarageBand without touching it. validate: parse + musical checks + which GarageBand patch each " +
         "track gets. preview: ASCII 16th-note grid of one section. render_midi: humanize and write a Type-1 MIDI file " +
         "into the workspace (never overwrites; dry_run writes nothing). render_draft: quick WAV via the macOS GM synth " +
-        "(structure checks only, not tone). Read gb://knowledge/song-format first.",
+        "(structure checks only, not tone). band_plan: the song's audio clips as gb_band build's audio list (absolute " +
+        "bar and beat; writes nothing). Read gb://knowledge/song-format first.",
       inputSchema: z.object({
         command: z.enum(GB_SONG_COMMANDS),
         song: z.any().describe("Song JSON — see gb://knowledge/song-format"),
@@ -63,6 +67,31 @@ export function createServer(opts: ServerOptions): McpServer {
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
     guarded("gb_song", gbSong, true),
+  );
+
+  server.registerTool(
+    "gb_band",
+    {
+      title: "Write a GarageBand project (.band) directly: audio + MIDI",
+      description:
+        "Beyond MIDI: GarageBand projects written as files. inspect: read-only — tempo, song length, audio regions (track, " +
+        "bar, beat, file, seconds) and MIDI regions (name, notes, bars) of a .band. build: copy a donor project that " +
+        "GarageBand saved (it gives the tracks, patches and tempo) into bands/<filename>, place WAV files on its audio " +
+        "tracks by bar and beat, and write Song JSON notes into its MIDI regions. Never overwrites; dry_run writes nothing. " +
+        "Then gb_project open_band (verified by GarageBand's own re-save) and gb_export song. 4/4 donors only. " +
+        "Read gb://knowledge/band-files.",
+      inputSchema: z.object({
+        command: z.enum(GB_BAND_COMMANDS),
+        path: z.string().optional().describe("inspect: a .band inside the workspace, e.g. donors/donor-av.band"),
+        donor: z.string().optional().describe("build: a .band that GarageBand saved — gb_band inspect shows its slots"),
+        filename: z.string().optional().describe("build: e.g. my-song-v1.band (no paths); written to bands/"),
+        audio: z.array(BandAudioItem).optional().describe("build: WAVs to place — at most as many as the donor has audio regions"),
+        midi: z.array(BandMidiItem).optional().describe("build: new notes for the donor's MIDI regions, by region name"),
+        dry_run: z.boolean().optional().describe("build: validate and plan without writing"),
+      }).strict(),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    guarded("gb_band", createGbBand({ workspaceDir: opts.workspaceDir }), true),
   );
 
   if (opts.analyzer) {
@@ -99,10 +128,11 @@ export function createServer(opts: ServerOptions): McpServer {
   if (opts.system) {
     const registry: ToolRegistry = {
       gb_song: { description: "compose: Song JSON → validate / preview / MIDI / GM draft", commands: GB_SONG_COMMANDS },
+      gb_band: { description: "GarageBand project files: inspect a .band, build one with audio + MIDI from a donor", commands: GB_BAND_COMMANDS },
       gb_sound: { description: "read-only catalog: patches, plugins, loops, samples, palette", commands: GB_SOUND_COMMANDS },
       ...(opts.analyzer ? { gb_analyze: { description: "listen: measure, flag and compare exports", commands: GB_ANALYZE_COMMANDS } } : {}),
       ...(opts.garageband ? {
-        gb_project: { description: "open a rendered song in GarageBand (safe backups) / read the project", commands: GB_PROJECT_COMMANDS },
+        gb_project: { description: "open a rendered song or a built .band in GarageBand (safe backups) / read the project", commands: GB_PROJECT_COMMANDS },
         gb_export: { description: "export the open song as WAVE into the workspace", commands: GB_EXPORT_COMMANDS },
         gb_tracks: { description: "tracks: list, select (real click), mute/solo, load an installed Library patch", commands: GB_TRACKS_COMMANDS },
         gb_transport: { description: "transport: state, play/stop/rewind, tempo, metronome, count-in", commands: GB_TRANSPORT_COMMANDS },
@@ -119,6 +149,10 @@ export function createServer(opts: ServerOptions): McpServer {
     { description: "Song JSON reference, part notation, and common mistakes", mimeType: "text/markdown" },
     async (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: SONG_FORMAT_GUIDE }] }));
 
+  server.registerResource("band-files", "gb://knowledge/band-files",
+    { description: "gb_band: make a donor, build a .band with audio + MIDI, verify it with gb_project open_band", mimeType: "text/markdown" },
+    async (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: BAND_FILES_GUIDE }] }));
+
   server.registerResource("styles", "gb://knowledge/styles",
     { description: "Style presets: GM program and GarageBand patch per role", mimeType: "application/json" },
     async (uri) => json(uri.href, Object.fromEntries(Object.entries(STYLES).map(([name, s]) => [name, {
@@ -131,7 +165,7 @@ export function createServer(opts: ServerOptions): McpServer {
     async (uri) => json(uri.href, { melodic: GM_PATCH_MAP, drumKits: GM_DRUM_KIT_MAP }));
 
   const schemas: Record<string, ZodTypeAny> = {
-    gb_song: GbSongInput, gb_sound: GbSoundInput,
+    gb_song: GbSongInput, gb_band: GbBandInput, gb_sound: GbSoundInput,
     ...(opts.analyzer ? { gb_analyze: GbAnalyzeInput } : {}),
     ...(opts.system ? { gb_system: GbSystemInput } : {}),
     ...(live ? { gb_project: GbProjectInput, gb_export: GbExportInput, gb_tracks: GbTracksInput, gb_transport: GbTransportInput, gb_mix: GbMixInput } : {}),

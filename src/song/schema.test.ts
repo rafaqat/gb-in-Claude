@@ -129,3 +129,31 @@ describe("parseSong: misspelled keys are errors, never silent defaults", () => {
     if (!out.ok) expect(out.error.message).toMatch(/unrecognized|Unrecognized/);
   });
 });
+
+describe("parseSong: audio clips (M7, section-relative)", () => {
+  const sections = [{ name: "intro", bars: 4 }, { name: "chorus", bars: 8 }];
+  const vox = (audio: object[]) => ({ ...minimal, sections,
+    tracks: [{ name: "Vox", role: "lead", donorTrack: 2, parts: {}, audio }] });
+
+  it("accepts a clip placed in a section and defaults bar and beat to 1", () => {
+    const out = parseSong(vox([{ wav: "stems/vox.wav", section: "chorus" }]));
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.value.tracks[0]!.audio).toEqual([{ wav: "stems/vox.wav", section: "chorus", bar: 1, beat: 1 }]);
+    expect(out.value.tracks[0]!.donorTrack).toBe(2);
+  });
+
+  const clip = { wav: "stems/vox.wav", section: "chorus" };
+  const track = (over: object) => ({ ...minimal, sections, tracks: [{ name: "Vox", role: "lead", parts: {}, ...over }] });
+  it.each([
+    ["audio without donorTrack", track({ audio: [clip] }), "tracks.0.donorTrack"],
+    ["donorTrack without audio", track({ donorTrack: 2 }), "tracks.0.audio"],
+    ["a clip in an unknown section", track({ donorTrack: 2, audio: [{ ...clip, section: "bridge" }] }), "tracks.0.audio.0.section"],
+    ["a bar past the section's end", track({ donorTrack: 2, audio: [{ ...clip, bar: 9 }] }), "tracks.0.audio.0.bar"],
+    ["a beat past the bar (4/4)", track({ donorTrack: 2, audio: [{ ...clip, beat: 5 }] }), "tracks.0.audio.0.beat"],
+  ])("rejects %s", (_label, song, path) => {
+    const out = parseSong(song);
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.error.path).toBe(path);
+  });
+});

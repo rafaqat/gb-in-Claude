@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { describe, it, expect, beforeAll } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, realpathSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, symlinkSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { resolveWorkspaceFile } from "./paths.js";
+import { resolveWorkspaceBand, resolveWorkspaceFile, workspaceOutputDir } from "./paths.js";
 
 const AUDIO = [".wav", ".aif", ".aiff", ".flac"];
 let ws: string;
@@ -56,5 +56,46 @@ describe("resolveWorkspaceFile", () => {
   it("reports a disallowed extension as NOT_SUPPORTED", () => {
     const out = resolveWorkspaceFile(ws, "song.mp3", AUDIO);
     expect(!out.ok && out.error.code).toBe("NOT_SUPPORTED");
+  });
+});
+
+describe("resolveWorkspaceBand", () => {
+  beforeAll(() => {
+    mkdirSync(join(ws, "bands", "song.band", "Alternatives", "000"), { recursive: true });
+    writeFileSync(join(ws, "bands", "song.band", "Alternatives", "000", "ProjectData"), "#G");
+  });
+  it("accepts a GarageBand package (.band folder with Alternatives/000/ProjectData) inside the workspace", () => {
+    expect(resolveWorkspaceBand(ws, "bands/song.band")).toEqual({ ok: true, value: join(ws, "bands", "song.band") });
+  });
+
+  it.each([
+    ["a folder without ProjectData", () => { mkdirSync(join(ws, "bands", "empty.band"), { recursive: true }); return "bands/empty.band"; }, "NOT_SUPPORTED"],
+    ["a plain file named .band", () => { writeFileSync(join(ws, "fake.band"), "x"); return "fake.band"; }, "NOT_SUPPORTED"],
+    ["../ traversal", () => "../outside.band", "PATH_OUTSIDE_WORKSPACE"],
+    ["percent-encoding", () => "bands/%2e%2e/song.band", "PATH_INVALID"],
+  ])("refuses %s", (_label, input, code) => {
+    const out = resolveWorkspaceBand(ws, input());
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.error.code).toBe(code);
+  });
+});
+
+describe("workspaceOutputDir never makes a folder through a link", () => {
+  it("refuses a dangling link that points outside the workspace, and creates nothing there", () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "gbmcp-out-")));
+    const outside = join(realpathSync(mkdtempSync(join(tmpdir(), "gbmcp-elsewhere-"))), "not-yet");
+    symlinkSync(outside, join(root, "bands"));
+    const r = workspaceOutputDir(root, join("bands", "readback"), true);
+    expect(r.ok).toBe(false);
+    expect(existsSync(outside)).toBe(false);
+  });
+
+  it("refuses a link to an existing folder outside the workspace, and makes nothing inside that folder", () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "gbmcp-out-")));
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), "gbmcp-elsewhere-")));
+    symlinkSync(outside, join(root, "bands"));
+    const r = workspaceOutputDir(root, join("bands", "readback"), true);
+    expect(r.ok).toBe(false);
+    expect(existsSync(join(outside, "readback"))).toBe(false);
   });
 });

@@ -31,8 +31,14 @@ export function parseDocumentList(stdout: string): ProjectDoc[] {
   });
 }
 
+/** osascript's argv: each script line after -e, then the arguments the script's `run argv` receives. */
+export function osascriptArgv(lines: readonly string[], args: readonly string[]): string[] {
+  // "--" ends the options: a document named "-e…" would otherwise turn the next argument into script
+  return [...lines.flatMap((l) => ["-e", l]), "--", ...args];
+}
+
 function osascript(lines: string[], args: string[], timeoutMs: number): Promise<Result<string, string>> {
-  const argv = lines.flatMap((l) => ["-e", l]).concat(args);
+  const argv = osascriptArgv(lines, args);
   return new Promise((resolve) => {
     execFile("osascript", argv, { timeout: timeoutMs, killSignal: "SIGKILL" }, (error, stdout, stderr) => {
       if (error) resolve(err((stderr || error.message).trim().slice(0, 300)));

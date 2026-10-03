@@ -14,6 +14,9 @@ export const MAIN: RootSpec = { kind: "main_window" };
 export const TRACKS_HEADER: Selector = { role: "AXGroup", description: "Tracks header" };
 const HEADERS: Selector = { role: "AXLayoutItem", ancestors: [TRACKS_HEADER] };
 const REGIONS: Selector = { role: "AXLayoutItem", ancestors: [{ role: "AXGroup", description: "Tracks contents" }] };
+/** each track has its own lane ("Track N “name”") holding its regions — several, or none. */
+const LANES: Selector = { role: "AXLayoutArea", ancestors: [{ role: "AXGroup", description: "Tracks contents" }] };
+const LANE = /^Track (\d+) /;
 const NOT_REGIONS = /^(cycle region|Note at )/;
 /** a region reads “<name>, muted” while its track is silent (muted, or another track soloed). */
 const SILENT = /, muted$/;
@@ -73,18 +76,34 @@ export type Track = {
 /** Read the track headers and regions (read-only). */
 export async function readTracks(op: string, helper: HelperPort): Promise<Result<Track[], Failed>> {
   const find = (selector: Selector) => callOp(helper, "ax.find", { root: MAIN, selector, max_results: 200 }, FindResult, { deadlineMs: 4_000 });
-  const [headers, regions] = await Promise.all([find(HEADERS), find(REGIONS)]);
+  const [headers, regions, lanes] = await Promise.all([find(HEADERS), find(REGIONS), find(LANES)]);
   if (!headers.ok) return err(failed(op, "HELPER_UNAVAILABLE", headers.error.message, { hint: "run gb_system doctor" }));
-  const regionDescs = regions.ok ? regions.value.matches.map((n) => n.desc ?? "").filter((d) => d && !NOT_REGIONS.test(d)) : [];
+  const regionNodes = regions.ok ? regions.value.matches.filter((n) => n.desc && !NOT_REGIONS.test(n.desc)) : [];
   const parsed = headers.value.matches
     .map((n: TreeNode) => ({ node: n, h: parseTrackHeader(n.desc ?? "") }))
     .filter((x): x is { node: TreeNode; h: NonNullable<ReturnType<typeof parseTrackHeader>> } => x.h !== undefined);
-  const oneToOne = regionDescs.length === parsed.length;
-  return ok(parsed.map(({ node, h }, i) => ({
-    number: h.number, patch: cleanText(h.name), region: oneToOne ? cleanText(regionName(regionDescs[i]!)) : null,
-    muted: h.muted, soloed: h.soloed, audible: oneToOne ? !SILENT.test(regionDescs[i]!) : null,
-    selected: node.selected === true, description: h.description,
-  })));
+  // the first region in each track's lane (matched by tree path); without lanes, fall back to 1:1 order
+  const laneList = lanes.ok ? lanes.value.matches.flatMap((l) => {
+    const m = LANE.exec(l.desc ?? "");
+    return m && l.path ? [{ track: Number(m[1]), path: l.path }] : [];
+  }) : [];
+  const firstRegion = new Map<number, string>();
+  if (laneList.length > 0) {
+    for (const r of regionNodes) {
+      const lane = laneList.find((l) => (r.path ?? "").startsWith(`${l.path}.`));
+      if (lane && !firstRegion.has(lane.track)) firstRegion.set(lane.track, r.desc!);
+    }
+  } else if (regionNodes.length === parsed.length) {
+    parsed.forEach(({ h }, i) => firstRegion.set(h.number, regionNodes[i]!.desc!));
+  }
+  return ok(parsed.map(({ node, h }) => {
+    const desc = firstRegion.get(h.number);
+    return {
+      number: h.number, patch: cleanText(h.name), region: desc === undefined ? null : cleanText(regionName(desc)),
+      muted: h.muted, soloed: h.soloed, audible: desc === undefined ? null : !SILENT.test(desc),
+      selected: node.selected === true, description: h.description,
+    };
+  }));
 }
 
 /** What an agent sees of a track (the raw AX description stays internal). */

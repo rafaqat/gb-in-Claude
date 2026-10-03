@@ -57,6 +57,14 @@ function roleRuleViolation(role: Role, part: Part): string | undefined {
   return undefined;
 }
 
+/** One WAV placed in a section (bar and beat are 1-based and relative to the section start). Built by gb_band. */
+const AudioClip = z.object({
+  wav: z.string().min(1).max(512),
+  section: z.string().min(1).max(32),
+  bar: z.number().int().min(1).max(256).default(1),
+  beat: z.number().min(1).max(7.999).default(1),
+}).strict();
+
 const Track = z
   .object({
     name: z.string().min(1).max(64).regex(/^[\x20-\x7e]+$/, "printable ASCII only"),
@@ -66,6 +74,9 @@ const Track = z
     /** Track level in dB (velocity scaling on the GM curve): -6 ≈ half as loud, +6 ≈ twice. Default 0. */
     level: LevelDb.optional(),
     parts: z.record(z.string(), Part),
+    /** The donor's audio track number that holds this track's clips (gb_band). */
+    donorTrack: z.number().int().min(1).max(255).optional(),
+    audio: z.array(AudioClip).min(1).max(64).optional(),
   })
   .strict() // a misspelled key is an error, never a silent default
   .superRefine((t, ctx) => {
@@ -125,6 +136,18 @@ export const SongSchema = z
           issue(["tracks", i, "parts", section], `unknown section "${section}"; sections: ${[...sectionNames].join(", ")}`);
         }
       }
+    });
+    // audio clips: a donor track to hold them, and a place that exists in the song (M7)
+    const sectionBars = new Map(song.sections.map((s) => [s.name, s.bars]));
+    song.tracks.forEach((t, i) => {
+      if (t.audio && t.donorTrack === undefined) issue(["tracks", i, "donorTrack"], "audio clips need donorTrack (the donor's audio track; gb_band inspect lists them)");
+      if (!t.audio && t.donorTrack !== undefined) issue(["tracks", i, "audio"], "donorTrack is only for tracks with audio clips");
+      t.audio?.forEach((c, k) => {
+        const bars = sectionBars.get(c.section);
+        if (bars === undefined) issue(["tracks", i, "audio", k, "section"], `unknown section "${c.section}"; sections: ${[...sectionBars.keys()].join(", ")}`);
+        else if (c.bar > bars) issue(["tracks", i, "audio", k, "bar"], `bar ${c.bar} is past the end of ${c.section} (${bars} bars)`);
+        if (c.beat >= beats + 1) issue(["tracks", i, "audio", k, "beat"], `beat ${c.beat} is past the bar (${beats} beats)`);
+      });
     });
     const melodic = song.tracks.filter((t) => t.role !== "drums").length;
     if (melodic > MAX_MELODIC_TRACKS) issue(["tracks"], `${melodic} melodic tracks; at most ${MAX_MELODIC_TRACKS} (MIDI channels)`);

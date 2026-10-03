@@ -2,16 +2,30 @@
 // Copyright (c) 2026 rafaqat
 import { z } from "zod";
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { AxCore } from "../ax/core.js";
 import { GB_10_4_14, parseSavePrompt, parseTrackHeader, type RootSpec } from "../ax/locators.js";
 import type { Selector } from "../ax/selector.js";
 import type { HelperPort } from "../native/helper-port.js";
 import { callOp, AppStateResult, FindResult } from "../native/protocol.js";
 import { readSmfSummary } from "../midi/smf-read.js";
-import { resolveWorkspaceFile } from "../workspace/paths.js";
-import type { Result } from "../result.js";
-import { verified, uncertain, failed, type Envelope } from "../mcp/envelope.js";
+import { resolveWorkspaceBand, resolveWorkspaceFile, workspaceOutputDir } from "../workspace/paths.js";
+import { ok, err, type Result } from "../result.js";
+import { verified, uncertain, failed, type Envelope, type ErrorCode, type Failed } from "../mcp/envelope.js";
+
+/**
+ * The closed error code for a refused `open -b com.apple.garageband10 <file>`. `reason` is the OS's
+ * stderr, e.g. "Unable to find application named 'com.apple.garageband10'" or "The file … does not exist."
+ * The code is what the agent acts on: each one should point to a different fix.
+ */
+export function openFailureCode(reason: string): ErrorCode {
+  // Only the two texts `open` prints in English on macOS 26; anything else (another language, a new macOS text) keeps
+  // the general code: a wrong specific code would send the agent to the wrong fix.
+  if (/LSCopyApplicationURLsForBundleIdentifier\(\) failed|Unable to find application named /.test(reason)) return "DEPENDENCY_MISSING";
+  if (/^The file .* does not exist\.$/m.test(reason)) return "FILE_NOT_FOUND";
+  return "INTERNAL_ERROR";
+}
+import { bandDifferences, inspectBand } from "../band/inspect.js";
 import { mutationGate } from "./gate.js";
 import { isScreenLocked } from "./screen.js";
 import { classifyDialogs, waitUntilIdle } from "./dialogs.js";
@@ -29,8 +43,9 @@ export const PROJECT_FIELDS = ["document", "dialogs", "tempo", "tracks"] as cons
 export const GbProjectInput = z.discriminatedUnion("command", [
   z.object({ command: z.literal("status"), fields: z.array(z.enum(PROJECT_FIELDS)).min(1).optional().describe("only these fields (running always included)") }).strict(),
   z.object({ command: z.literal("open_midi"), path: z.string(), dry_run: z.boolean().optional().describe("read the file and plan only — opens and saves nothing") }).strict(),
+  z.object({ command: z.literal("open_band"), path: z.string(), dry_run: z.boolean().optional().describe("read the project and plan only — opens and saves nothing") }).strict(),
 ]);
-export const GB_PROJECT_COMMANDS = ["status", "open_midi"] as const;
+export const GB_PROJECT_COMMANDS = ["status", "open_midi", "open_band"] as const;
 
 export type GbProjectDeps = {
   workspaceDir: string;
@@ -38,7 +53,8 @@ export type GbProjectDeps = {
   core?: AxCore;
   scripts: ProjectScripts;
   /** `open -b com.apple.garageband10 <file>` in production. */
-  openFile: (path: string) => Promise<unknown>;
+  /** Asks macOS to open the file in GarageBand; an error is the OS's reason (text with paths: context only). */
+  openFile: (path: string) => Promise<Result<void, string>>;
   /** Defaults to reading the console session's lock flag. */
   screenLocked?: () => Promise<boolean>;
   sleep?: (ms: number) => Promise<void>;
@@ -97,66 +113,67 @@ export function createGbProject(deps: GbProjectDeps) {
     return verified(op, pickFields(all, fields, ["running"]));
   }
 
-  async function openMidi(op: string, input: string, dryRun = false): Promise<Envelope> {
-    const file = resolveWorkspaceFile(deps.workspaceDir, input, [".mid"]);
-    if (!file.ok) return failed(op, file.error.code, file.error.message, { hint: "render one first with gb_song render_midi" });
-    const summary = readSmfSummary(readFileSync(file.value));
-    if (!summary.ok) return failed(op, "INPUT_INVALID", `not a MIDI file: ${summary.error}`);
-    const expected = summary.value.trackNames;
+  const listFailed = (op: string, reason: string) => failed(op, "PERMISSION_AUTOMATION_DENIED", "cannot list GarageBand documents (AppleScript)", {
+    hint: "gb_system doctor shows the Automation permission", context: { reason },
+  });
 
+  /** Before opening anything: the screen is usable and GarageBand is idle with no dialog. The app state on success. */
+  async function preflight(op: string): Promise<Result<z.infer<typeof AppStateResult>, Failed>> {
     if (await (deps.screenLocked ?? isScreenLocked)()) {
-      return failed(op, "SCREEN_LOCKED", "the Mac's screen is locked: GarageBand has no usable windows", { hint: "unlock the Mac, then retry" });
+      return err(failed(op, "SCREEN_LOCKED", "the Mac's screen is locked: GarageBand has no usable windows", { hint: "unlock the Mac, then retry" }));
     }
     const idle = await waitUntilIdle(deps.helper, sleep, Math.min(pollMs, 500), 20);
-    if (idle.kind === "unknown") return failed(op, "HELPER_UNAVAILABLE", idle.message, { hint: "run gb_system doctor" });
+    if (idle.kind === "unknown") return err(failed(op, "HELPER_UNAVAILABLE", idle.message, { hint: "run gb_system doctor" }));
     if (idle.kind === "save_prompt" || idle.kind === "other" || idle.kind === "busy") {
-      return failed(op, "DIALOG_UNEXPECTED", idle.kind === "busy" ? "GarageBand is still busy (a progress window stays open)" : "a dialog is open in GarageBand; refusing to act (it may be yours)", {
+      return err(failed(op, "DIALOG_UNEXPECTED", idle.kind === "busy" ? "GarageBand is still busy (a progress window stays open)" : "a dialog is open in GarageBand; refusing to act (it may be yours)", {
         hint: "deal with the dialog first (gb_system ui_snapshot panel=dialog shows it)",
         ...(idle.kind !== "busy" ? { context: { dialog: idle.texts.map((t) => cleanText(t)) } } : {}),
-      });
+      }));
     }
     const before = await appState();
-    if (!before.ok) return failed(op, "HELPER_UNAVAILABLE", before.error.message, { hint: "run gb_system doctor" });
-    if (dryRun) {
-      const docs = before.value.running ? await deps.scripts.listDocuments() : { ok: true as const, value: [] };
-      if (!docs.ok) return failed(op, "PERMISSION_AUTOMATION_DENIED", "cannot list GarageBand documents (AppleScript)", { hint: "gb_system doctor shows the Automation permission", context: { reason: docs.error } });
-      return verified(op, {
-        dry_run: true, path: file.value, tracks: expected, tempo: summary.value.tempoBpm,
-        would_back_up: docs.value.filter((d) => d.modified).map((d) => d.name),
-        plan: ["copy each unsaved project into sessions/", "open the file in GarageBand", "dismiss the save prompt only for backed-up projects", "verify regions = the file's tracks and the tempo"],
-      });
-    }
+    if (!before.ok) return err(failed(op, "HELPER_UNAVAILABLE", before.error.message, { hint: "run gb_system doctor" }));
+    return ok(before.value);
+  }
 
-    // Safety first: copy every unsaved project into the workspace before GarageBand can ask to discard it.
+  /** The open documents (none while GarageBand is not running). */
+  async function documents(op: string, running: boolean): Promise<Result<ProjectDoc[], Failed>> {
+    if (!running) return ok([]);
+    const docs = await deps.scripts.listDocuments();
+    return docs.ok ? docs : err(listFailed(op, docs.error));
+  }
+
+  /** Safety first: copy every unsaved project into the workspace before GarageBand can ask to discard it. */
+  async function backUpUnsaved(op: string, docs: ProjectDoc[]): Promise<Result<{ backups: string[]; backedUp: Set<string> }, Failed>> {
     const backups: string[] = [];
     const backedUp = new Set<string>();
-    if (before.value.running) {
-      const docs = await deps.scripts.listDocuments();
-      if (!docs.ok) return failed(op, "PERMISSION_AUTOMATION_DENIED", "cannot list GarageBand documents (AppleScript)", { hint: "gb_system doctor shows the Automation permission", context: { reason: docs.error } });
-      const dirty = docs.value.filter((x) => x.modified);
-      // AppleScript addresses documents by name: two unsaved projects with one name cannot be backed up unambiguously.
-      const names = dirty.map((d) => d.name);
-      const dup = names.find((n, i) => names.indexOf(n) !== i);
-      if (dup !== undefined) {
-        return failed(op, "WRITE_FAILED", "two unsaved projects share a name, so they cannot be backed up unambiguously; nothing opened", {
-          hint: "save (or close) one of them in GarageBand yourself, then retry", context: { document: dup },
-        });
-      }
-      for (const d of dirty) {
-        const path = uniquePath(join(deps.workspaceDir, "sessions", `${safeName(d.name)}-${stamp()}`), ".band");
-        const saved = await deps.scripts.backupDocument(d.name, path);
-        if (!saved.ok || !existsSync(join(path, "projectData"))) {
-          return failed(op, "WRITE_FAILED", "could not back up an unsaved project; nothing opened", {
-            hint: "save it in GarageBand yourself, then retry", context: { document: d.name, reason: saved.ok ? "no projectData after save" : saved.error },
-          });
-        }
-        backups.push(path);
-        backedUp.add(d.name);
-      }
+    const dirty = docs.filter((x) => x.modified);
+    // AppleScript addresses documents by name: two unsaved projects with one name cannot be backed up unambiguously.
+    const names = dirty.map((d) => d.name);
+    const dup = names.find((n, i) => names.indexOf(n) !== i);
+    if (dup !== undefined) {
+      return err(failed(op, "WRITE_FAILED", "two unsaved projects share a name, so they cannot be backed up unambiguously; nothing opened", {
+        hint: "save (or close) one of them in GarageBand yourself, then retry", context: { document: dup },
+      }));
     }
+    for (const d of dirty) {
+      const path = uniquePath(join(deps.workspaceDir, "sessions", `${safeName(d.name)}-${stamp()}`), ".band");
+      const saved = await deps.scripts.backupDocument(d.name, path);
+      if (!saved.ok || !existsSync(join(path, "projectData"))) {
+        return err(failed(op, "WRITE_FAILED", "could not back up an unsaved project; nothing opened", {
+          hint: "save it in GarageBand yourself, then retry", context: { document: d.name, reason: saved.ok ? "no projectData after save" : saved.error },
+        }));
+      }
+      backups.push(path);
+      backedUp.add(d.name);
+    }
+    return ok({ backups, backedUp });
+  }
 
-    await deps.openFile(file.value);
-    let titleWaits = 0; // the regions can be ready a moment before GarageBand titles the window
+  /**
+   * After `open`: dismiss only the save prompts of backed-up projects, stop at any other dialog, and ask `ready`
+   * each time no dialog is up. null = the deadline passed and `ready` never answered.
+   */
+  async function awaitOpen(op: string, backedUp: ReadonlySet<string>, ready: () => Promise<Envelope | null>): Promise<Envelope | null> {
     for (let i = 0; i < Math.max(1, Math.ceil(timeoutMs / pollMs)); i++) {
       const d = await classifyDialogs(deps.helper);
       if (d.kind === "save_prompt") {
@@ -173,24 +190,138 @@ export function createGbProject(deps: GbProjectDeps) {
           write_attempted: true, safe_to_retry: false, hint: "answer the dialog in GarageBand yourself", context: { dialog: d.texts.map((t) => cleanText(t)), buttons: d.buttons },
         });
       } else if (d.kind === "none") {
-        const s = await appState();
-        const regions = (await find(MAIN, REGIONS)).map((n) => n.desc ?? "").filter((x) => x && !NOT_REGIONS.test(x));
-        if (s.ok && regions.length === expected.length && regions.every((r, k) => r === expected[k])) {
-          if (documentOf(mainTitle(s.value)) === "" && titleWaits++ < 5) { await sleep(pollMs); continue; }
-          const p = await readProject();
-          const data = { document: documentOf(mainTitle(s.value)) || null, path: file.value, tempo: p.tempo, tracks: p.tracks, backups };
-          if (summary.value.tempoBpm !== null && p.tempo !== Math.round(summary.value.tempoBpm)) {
-            return uncertain(op, "readback_timeout", { write_attempted: true, safe_to_retry: false, hint: `tempo reads ${p.tempo}, the file says ${summary.value.tempoBpm}`, data });
-          }
-          return verified(op, data);
-        }
+        const done = await ready();
+        if (done) return done;
       } // "busy" (loading window) / "not_running" (still launching): keep waiting
       await sleep(pollMs);
     }
-    return uncertain(op, "readback_timeout", {
+    return null;
+  }
+
+  async function openMidi(op: string, input: string, dryRun = false): Promise<Envelope> {
+    const file = resolveWorkspaceFile(deps.workspaceDir, input, [".mid"]);
+    if (!file.ok) return failed(op, file.error.code, file.error.message, { hint: "render one first with gb_song render_midi" });
+    const summary = readSmfSummary(readFileSync(file.value));
+    if (!summary.ok) return failed(op, "INPUT_INVALID", `not a MIDI file: ${summary.error}`);
+    const expected = summary.value.trackNames;
+
+    const pre = await preflight(op);
+    if (!pre.ok) return pre.error;
+    const docs = await documents(op, pre.value.running);
+    if (!docs.ok) return docs.error;
+    if (dryRun) {
+      return verified(op, {
+        dry_run: true, path: file.value, tracks: expected, tempo: summary.value.tempoBpm,
+        would_back_up: docs.value.filter((d) => d.modified).map((d) => d.name),
+        plan: ["copy each unsaved project into sessions/", "open the file in GarageBand", "dismiss the save prompt only for backed-up projects", "verify regions = the file's tracks and the tempo"],
+      });
+    }
+    const saved = await backUpUnsaved(op, docs.value);
+    if (!saved.ok) return saved.error;
+    const { backups, backedUp } = saved.value;
+
+    const opened = await deps.openFile(file.value);
+    if (!opened.ok) return failed(op, openFailureCode(opened.error), "macOS refused to open the file in GarageBand; nothing changed", {
+      hint: "gb_system status checks GarageBand and its permissions", context: { reason: cleanText(opened.error) },
+    });
+    let titleWaits = 0; // the regions can be ready a moment before GarageBand titles the window
+    const done = await awaitOpen(op, backedUp, async () => {
+      const s = await appState();
+      const regions = (await find(MAIN, REGIONS)).map((n) => n.desc ?? "").filter((x) => x && !NOT_REGIONS.test(x));
+      if (!s.ok || regions.length !== expected.length || !regions.every((r, k) => r === expected[k])) return null;
+      if (documentOf(mainTitle(s.value)) === "" && titleWaits++ < 5) return null;
+      const p = await readProject();
+      const data = { document: documentOf(mainTitle(s.value)) || null, path: file.value, tempo: p.tempo, tracks: p.tracks, backups };
+      if (summary.value.tempoBpm !== null && p.tempo !== Math.round(summary.value.tempoBpm)) {
+        return uncertain(op, "readback_timeout", { write_attempted: true, safe_to_retry: false, hint: `tempo reads ${p.tempo}, the file says ${summary.value.tempoBpm}`, data });
+      }
+      return verified(op, data);
+    });
+    return done ?? uncertain(op, "readback_timeout", {
       write_attempted: true, safe_to_retry: false,
       hint: "GarageBand was asked to open the file, but its tracks never matched the MIDI file; check gb_project status before retrying",
       data: { expected, backups },
+    });
+  }
+
+  /**
+   * Open a .band (gb_band build) and verify it the strongest way available: GarageBand saves its own copy of what it
+   * loaded into bands/readback/, and that copy must hold the same tempo, song length, audio placements and MIDI notes.
+   */
+  async function openBand(op: string, input: string, dryRun = false): Promise<Envelope> {
+    const band = resolveWorkspaceBand(deps.workspaceDir, input);
+    if (!band.ok) return failed(op, band.error.code, band.error.message, { hint: "build one first with gb_band build" });
+    const expected = inspectBand(band.value);
+    if (!expected.ok) return failed(op, "INPUT_INVALID", `not a readable GarageBand project: ${expected.error.message}`);
+    const file = basename(band.value);
+    const names = new Set([file, file.replace(/\.band$/i, "")]); // GarageBand names the document with or without the extension
+
+    const pre = await preflight(op);
+    if (!pre.ok) return pre.error;
+    const docs = await documents(op, pre.value.running);
+    if (!docs.ok) return docs.error;
+    if (docs.value.some((d) => names.has(d.name))) {
+      // `open` would only bring that window forward: GarageBand would not read the file again.
+      return failed(op, "DOCUMENT_ALREADY_OPEN", "a project with this name is already open in GarageBand, so it would not read the file again; nothing opened", {
+        hint: "close that project in GarageBand (save it first to keep its changes), or build under a new filename",
+      });
+    }
+    if (dryRun) {
+      return verified(op, {
+        dry_run: true, path: band.value, ...expected.value,
+        would_back_up: docs.value.filter((d) => d.modified).map((d) => d.name),
+        plan: ["copy each unsaved project into sessions/", "open the project in GarageBand", "dismiss the save prompt only for backed-up projects",
+          "let GarageBand save its own copy into bands/readback/", "verify the copy holds the same tempo, length, audio and MIDI"],
+      });
+    }
+    const saved = await backUpUnsaved(op, docs.value);
+    if (!saved.ok) return saved.error;
+    const { backups, backedUp } = saved.value;
+
+    const opened = await deps.openFile(band.value);
+    if (!opened.ok) return failed(op, openFailureCode(opened.error), "macOS refused to open the file in GarageBand; nothing changed", {
+      hint: "gb_system status checks GarageBand and its permissions", context: { reason: cleanText(opened.error) },
+    });
+    const done = await awaitOpen(op, backedUp, async () => {
+      const s = await appState();
+      if (!s.ok || !names.has(documentOf(mainTitle(s.value)))) return null;
+      const list = await deps.scripts.listDocuments();
+      const doc = list.ok ? list.value.find((d) => names.has(d.name)) : undefined;
+      if (!doc) return null;
+      const dir = workspaceOutputDir(deps.workspaceDir, join("bands", "readback"), true);
+      if (!dir.ok) {
+        return uncertain(op, "readback_unavailable", {
+          write_attempted: true, safe_to_retry: false, data: { document: doc.name, path: band.value, backups },
+          hint: "the project opened, but bands/readback/ is not a plain folder inside the workspace, so GarageBand wrote no copy to compare",
+        });
+      }
+      const readback = uniquePath(join(dir.value, `${safeName(file.replace(/\.band$/i, ""))}-${stamp()}`), ".band");
+      const copy = await deps.scripts.backupDocument(doc.name, readback);
+      const actual = copy.ok && existsSync(join(readback, "Alternatives", "000", "ProjectData")) ? inspectBand(readback) : null;
+      if (!actual || !actual.ok) {
+        return uncertain(op, "readback_unavailable", {
+          write_attempted: true, safe_to_retry: false, data: { document: doc.name, path: band.value, backups },
+          hint: "the project opened, but GarageBand wrote no readable copy to compare; check gb_project status, then export it and listen",
+        });
+      }
+      const differences = bandDifferences(expected.value, actual.value);
+      if (differences.length > 0) {
+        return failed(op, "READBACK_MISMATCH", "GarageBand loaded the project differently from the file", {
+          write_attempted: true, safe_to_retry: false, recoverable: false, context: { differences, readback },
+          hint: "the .band format guess is wrong for this donor or edit: compare gb_band inspect of the file and of the readback copy",
+        });
+      }
+      const p = await readProject();
+      const data = { document: doc.name, path: band.value, readback, ...expected.value, tracks: p.tracks, backups };
+      if (expected.value.tempo !== null && p.tempo !== Math.round(expected.value.tempo)) {
+        return uncertain(op, "readback_timeout", { write_attempted: true, safe_to_retry: false, hint: `tempo reads ${p.tempo}, the file says ${expected.value.tempo}`, data });
+      }
+      return verified(op, data);
+    });
+    return done ?? uncertain(op, "readback_timeout", {
+      write_attempted: true, safe_to_retry: false,
+      hint: "GarageBand was asked to open the project, but its window never showed it; check gb_project status before retrying",
+      data: { path: band.value, backups },
     });
   }
 
@@ -202,8 +333,9 @@ export function createGbProject(deps: GbProjectDeps) {
     }
     const op = `gb_project.${parsed.data.command}`;
     if (parsed.data.command === "status") return status(op, parsed.data.fields);
-    const { path, dry_run } = parsed.data;
-    if (dry_run === true) return openMidi(op, path, true);
-    return mutationGate.run(op, () => openMidi(op, path));
+    const { command, path, dry_run } = parsed.data;
+    const open = command === "open_band" ? openBand : openMidi;
+    if (dry_run === true) return open(op, path, true);
+    return mutationGate.run(op, () => open(op, path));
   };
 }

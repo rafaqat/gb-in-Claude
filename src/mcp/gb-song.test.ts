@@ -144,3 +144,26 @@ describe("gb_song render_draft (macOS GM synth, no GarageBand)", () => {
     expect(r).toMatchObject({ status: "failed", error: "DEPENDENCY_MISSING" });
   });
 });
+
+describe("gb_song band_plan (M7: audio clips → gb_band build)", () => {
+  const withVox = { ...song, tracks: [...song.tracks, { name: "Vox", role: "lead", parts: {}, donorTrack: 1, audio: [{ wav: "stems/vox.wav", section: "drop", beat: 2 }] }] };
+  it("returns gb_band build's audio list (absolute bar and beat) and writes nothing", async () => {
+    const r = await gbSong({ command: "band_plan", song: withVox });
+    expect(r).toMatchObject({ status: "verified", op: "gb_song.band_plan", data: { audio: [{ wav: "stems/vox.wav", bar: 3, beat: 2, track: 1 }] } });
+    expect(readdirSync(workspace)).toEqual([]);
+  });
+  it("render_midi leaves the audio clips out and says so in warnings", async () => {
+    const r = await gbSong({ command: "render_midi", song: withVox, filename: "vox.mid", dry_run: true });
+    expect(r).toMatchObject({ status: "verified" });
+    expect(r.status === "verified" && r.warnings).toEqual(expect.arrayContaining([expect.stringContaining("band_plan")]));
+  });
+  it("render_draft leaves the audio clips out and says so in warnings", async () => {
+    const port = { async render() { return { ok: true as const, value: { path: "", seconds: 0, peak: 0 } }; } };
+    const r = await createGbSong({ workspaceDir: workspace, gmRenderer: port })({ command: "render_draft", song: withVox, filename: "vox.wav", dry_run: true });
+    expect(r).toMatchObject({ status: "verified" });
+    expect(r.status === "verified" && r.warnings).toEqual(expect.arrayContaining([expect.stringContaining("band_plan")]));
+  });
+  it("refuses a song without audio clips (NOT_SUPPORTED): it is a MIDI song, render_midi makes it", async () => {
+    expect(await gbSong({ command: "band_plan", song })).toMatchObject({ status: "failed", error: "NOT_SUPPORTED" });
+  });
+});

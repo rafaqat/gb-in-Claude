@@ -36,6 +36,7 @@ export type ErrorCode =
   | "USER_INPUT_ACTIVE"
   | "INTERNAL_ERROR"
   | "NO_PROJECT_OPEN"
+  | "DOCUMENT_ALREADY_OPEN"
   | "CONTENT_NOT_INSTALLED"
   | "DIALOG_UNEXPECTED"
   | "TARGET_NOT_FOUND"
@@ -45,7 +46,12 @@ export type ErrorCode =
   | "TARGET_DISABLED"
   | "NOT_SETTABLE"
   | "AX_ACTION_FAILED"
-  | "MUTATION_IN_PROGRESS";
+  | "MUTATION_IN_PROGRESS"
+  // GarageBand projects written directly (gb_band)
+  | "DONOR_INVALID"
+  | "DONOR_TOO_SMALL"
+  | "TRACK_NOT_IN_DONOR"
+  | "MIDI_REGION_NOT_IN_DONOR";
 
 /** Why an action's effect could not be confirmed (closed set). */
 export type UncertainReason =

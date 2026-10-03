@@ -29,6 +29,13 @@ bass/pad/arp — chords: "Fm | Db | Ab | Eb", style, octave?   (chords in one ba
 any non-drum role — notes: "f5 ab5 c6 ~ | eb6@2 c6 ~"
   tokens share a bar equally · ~ rest · @n = n shares · [c4,e4,g4] chord · | bar
 
+## Audio clips (WAVs: stems, vocals, samples) — built by gb_band, not by render_midi
+a track may hold audio: { donorTrack: n, audio: [{ wav, section, bar?, beat? }] }
+  wav: a 16/24-bit PCM WAV inside the workspace · bar/beat: 1-based, relative to the section start
+  donorTrack: the donor's audio track (gb_band inspect lists them) · 4/4 songs only
+gb_song band_plan {song} → audio [{wav, bar, beat, track}] → pass it as gb_band build's audio, with a donor.
+render_midi and render_draft ignore audio clips (MIDI cannot carry audio).
+
 ## Common mistakes
 1. Real instruments have ranges: render_midi refuses notes a flute/bass/glockenspiel can't play. Move high
    lines to role "lead-high" or transpose.

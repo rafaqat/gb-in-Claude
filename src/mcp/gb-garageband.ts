@@ -38,12 +38,14 @@ export function registerGarageBandTools(server: McpServer, deps: GarageBandToolD
       title: "Open a song in GarageBand (safely) / read the open project",
       description:
         "status: read-only — open document, tracks (region name + patch), tempo, dialogs. open_midi: open a MIDI file from " +
-        "the workspace as a new GarageBand project. Unsaved projects are first saved as copies into sessions/; GarageBand's " +
-        "save prompt is only dismissed for a project that was just backed up; any other dialog stops the operation. " +
-        "Verified when the regions equal the file's track names and the tempo matches. dry_run: plan only.",
+        "the workspace as a new GarageBand project; verified when the regions equal the file's track names and the tempo " +
+        "matches. open_band: open a .band from gb_band build; GarageBand then saves its own copy into bands/readback/, and " +
+        "verified means that copy holds the same tempo, length, audio and MIDI (else READBACK_MISMATCH). Unsaved projects " +
+        "are first saved as copies into sessions/; GarageBand's save prompt is only dismissed for a project that was just " +
+        "backed up; any other dialog stops the operation. dry_run: plan only.",
       inputSchema: z.object({
         command: z.enum(GB_PROJECT_COMMANDS),
-        path: z.string().optional().describe("open_midi: .mid inside the workspace, e.g. ascent-v2.mid"),
+        path: z.string().optional().describe("open_midi: .mid inside the workspace, e.g. ascent-v2.mid · open_band: e.g. bands/my-song-v1.band"),
         fields: z.array(z.enum(PROJECT_FIELDS)).optional().describe("status: only these fields"),
         dry_run: dryRun,
       }).strict(),

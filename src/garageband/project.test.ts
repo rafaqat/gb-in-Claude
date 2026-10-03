@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { describe, it, expect, beforeEach } from "vitest";
-import { mkdtempSync, mkdirSync, existsSync, writeFileSync, realpathSync, readdirSync } from "node:fs";
+import { cpSync, mkdtempSync, mkdirSync, existsSync, writeFileSync, realpathSync, readdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createGbProject, type ProjectScripts } from "./project.js";
+import { fileURLToPath } from "node:url";
+import { createGbProject, openFailureCode, type ProjectScripts } from "./project.js";
 import { FakeHelper } from "../ax/fake-helper.js";
 import type { TreeNode } from "../ax/selector.js";
 import { writeSmf } from "../midi/smf.js";
@@ -43,16 +44,20 @@ let opened: string[];
 let midPath: string;
 
 /** What GarageBand does on `open file.mid`: prompt about an unsaved document, then show the new project. */
+/** What `open` returns when macOS accepts the file. */
+const OPENED = { ok: true as const, value: undefined };
+
 function simulateOpen(newTitle = "Untitled 9", tempo = 126, tracks = SONG_TRACKS) {
   return async (path: string) => {
     opened.push(path);
     const show = () => { fake.app.windows = [projectWindow(newTitle, tempo, tracks)]; };
     const dirty = docs.find((d) => d.modified);
-    if (!dirty) return show();
+    if (!dirty) { show(); return OPENED; }
     const prompt = savePrompt(dirty.name);
     const dontSave = prompt.children!.find((c) => c.title === "Don’t Save")!;
     fake.on(dontSave, { onPress: () => show() });
     fake.app.windows = [...fake.app.windows, prompt];
+    return OPENED;
   };
 }
 
@@ -114,7 +119,7 @@ describe("gb_project open_midi", () => {
 
   it("stops at an unexpected dialog without pressing anything", async () => {
     docs = [{ name: "Untitled 3", modified: true }];
-    const openWithForeignPrompt = async (path: string) => { opened.push(path); fake.app.windows = [...fake.app.windows, savePrompt("Someone Else's Song")]; };
+    const openWithForeignPrompt = async (path: string) => { opened.push(path); fake.app.windows = [...fake.app.windows, savePrompt("Someone Else's Song")]; return OPENED; };
     const r = await createGbProject(deps({ openFile: openWithForeignPrompt }))({ command: "open_midi", path: "ascent-v2.mid" });
     expect(r).toMatchObject({ status: "failed", error: "DIALOG_UNEXPECTED", write_attempted: true });
     expect(fake.calls.some((c) => c.op === "ax.press")).toBe(false);
@@ -154,7 +159,7 @@ describe("gb_project open_midi: GarageBand's transient loading window", () => {
       },
       close: () => fake.close(),
     };
-    const openWithLoading = async (path: string) => { opened.push(path); fake.app.windows = [...fake.app.windows, loading()]; };
+    const openWithLoading = async (path: string) => { opened.push(path); fake.app.windows = [...fake.app.windows, loading()]; return OPENED; };
     const r = await createGbProject(deps({ helper: port, openFile: openWithLoading }))({ command: "open_midi", path: "ascent-v2.mid" });
     expect(r).toMatchObject({ status: "verified", data: { document: "Untitled 9" } });
     expect(fake.calls.some((c) => c.op === "ax.press")).toBe(false);
@@ -163,7 +168,7 @@ describe("gb_project open_midi: GarageBand's transient loading window", () => {
   it("still stops at a dialog that has buttons and is not a save prompt", async () => {
     const alert: TreeNode = { role: "AXWindow", subrole: "AXDialog", title: "", children: [
       { role: "AXStaticText", value: "This project needs content that is not installed." }, { role: "AXButton", title: "Download", actions: ["AXPress"] }] };
-    const r = await createGbProject(deps({ openFile: async (p: string) => { opened.push(p); fake.app.windows = [...fake.app.windows, alert]; } }))(
+    const r = await createGbProject(deps({ openFile: async (p: string) => { opened.push(p); fake.app.windows = [...fake.app.windows, alert]; return OPENED; } }))(
       { command: "open_midi", path: "ascent-v2.mid" });
     expect(r).toMatchObject({ status: "failed", error: "DIALOG_UNEXPECTED" });
     expect(fake.calls.some((c) => c.op === "ax.press")).toBe(false);
@@ -197,7 +202,7 @@ describe("gb_project open_midi dry_run", () => {
   });
 });
 
-describe("gb_project status: silent tracks", () => {
+describe("gb_project status: silent tracks (found live: )", () => {
   it("reports the region name without GarageBand's “, muted” suffix", async () => {
     const regions = fake.app.windows[0]!.children!.find((c) => c.desc === "Tracks contents")!;
     regions.children![0]!.desc = "Drums, muted";
@@ -268,4 +273,121 @@ describe("backups are never ambiguous, never overwritten", () => {
     expect(backups).toHaveLength(2);
     expect(backups[0]!.path).not.toBe(backups[1]!.path);
   });
+});
+
+describe("gb_project open_band", () => {
+  const AV_TRACKS = ["smp1", "smp2", "Keys", "Bass"].map((name, i) => ({ name, channel: 1, program: 0, patch: `Track ${i + 1}` }));
+  let band: string;
+  beforeEach(() => {
+    band = join(ws, "bands", "av.band");
+    cpSync(fileURLToPath(new URL("../../test/fixtures/band/donor-av.band", import.meta.url)), band, { recursive: true });
+  });
+  /** What GarageBand does on `open av.band`: a new document named after the file. */
+  const openBand = (name = "av.band") => async (path: string) => {
+    opened.push(path);
+    docs.push({ name, modified: false });
+    fake.app.windows = [projectWindow(name, 120, AV_TRACKS)];
+    return OPENED;
+  };
+  /** GarageBand's `save … in` for the opened project: the copy it writes (here the file itself, or `as`). */
+  const resave = (as?: string) => scripts({
+    backupDocument: async (name, path) => {
+      backups.push({ name, path });
+      if (name === "av.band") cpSync(as ?? band, path, { recursive: true });
+      else { mkdirSync(path, { recursive: true }); writeFileSync(join(path, "projectData"), "x"); }
+      return { ok: true, value: undefined };
+    },
+  });
+
+  it.each(["open_band", "open_midi"] as const)("%s: a refused `open` fails at once, never waits for a window that cannot come", async (command) => {
+    const refused = async () => ({ ok: false as const, error: "Unable to find application named 'com.apple.garageband10'" });
+    const path = command === "open_band" ? "bands/av.band" : "ascent-v2.mid";
+    const r = await createGbProject(deps({ openFile: refused, scripts: resave() }))({ command, path });
+    expect(r).toMatchObject({ status: "failed", op: `gb_project.${command}` });
+  });
+
+  it("opens a built .band and verifies it through GarageBand's own re-save: same audio, MIDI and song length", async () => {
+    const r = await createGbProject(deps({ openFile: openBand(), scripts: resave() }))({ command: "open_band", path: "bands/av.band" });
+    expect(r).toMatchObject({
+      status: "verified", op: "gb_project.open_band",
+      data: {
+        document: "av.band", path: band, tempo: 120, bars: 2, backups: [],
+        audio: [{ track: 1, bar: 1, file: "smp1.wav" }, { track: 2, bar: 2, file: "smp2.wav" }],
+        midi: [{ region: "Keys" }, { region: "Bass" }],
+      },
+    });
+    const readback = (r as { data: { readback: string } }).data.readback;
+    expect(readback.startsWith(join(ws, "bands", "readback", "av-"))).toBe(true);
+    expect(existsSync(join(readback, "Alternatives", "000", "ProjectData"))).toBe(true);
+    expect(opened).toEqual([band]);
+  });
+
+  it("fails with READBACK_MISMATCH when GarageBand's own copy differs from the file — the format guess was wrong", async () => {
+    const other = fileURLToPath(new URL("../../test/fixtures/band/donor-one-region.band", import.meta.url));
+    const r = await createGbProject(deps({ openFile: openBand(), scripts: resave(other) }))({ command: "open_band", path: "bands/av.band" });
+    expect(r).toMatchObject({ status: "failed", error: "READBACK_MISMATCH", write_attempted: true, safe_to_retry: false });
+    const differences = (r as { context: { differences: string[] } }).context.differences;
+    expect(differences).toEqual(expect.arrayContaining([
+      "bars: 2 in the file, 32 in GarageBand's copy",
+      "audio missing in GarageBand's copy: smp1.wav on track 1 at bar 1 beat 1 (1 s)",
+      "midi missing in GarageBand's copy: Keys: 6 notes over 2 bars",
+    ]));
+  });
+
+  it.each(["av.band", "av"])("refuses DOCUMENT_ALREADY_OPEN when %s is open — GarageBand would not read the file again", async (name) => {
+    docs = [{ name, modified: true }];
+    const r = await createGbProject(deps({ openFile: openBand(), scripts: resave() }))({ command: "open_band", path: "bands/av.band" });
+    expect(r).toMatchObject({ status: "failed", error: "DOCUMENT_ALREADY_OPEN", write_attempted: false });
+    expect(opened).toEqual([]);
+    expect(backups).toEqual([]);
+  });
+
+  it("backs up an unsaved project first and dismisses only that project's save prompt (same flow as open_midi)", async () => {
+    docs = [{ name: "Untitled 3", modified: true }];
+    const openWithPrompt = async (path: string) => {
+      const prompt = savePrompt("Untitled 3");
+      fake.on(prompt.children!.find((c) => c.title === "Don’t Save")!, { onPress: () => openBand()(path) });
+      fake.app.windows = [...fake.app.windows, prompt];
+      return OPENED;
+    };
+    const r = await createGbProject(deps({ openFile: openWithPrompt, scripts: resave() }))({ command: "open_band", path: "bands/av.band" });
+    expect(r).toMatchObject({ status: "verified", data: { document: "av.band", backups: [expect.stringContaining(join(ws, "sessions", "Untitled 3-"))] } });
+    expect(backups.map((b) => b.name)).toEqual(["Untitled 3", "av.band"]);
+  });
+
+  it("dry_run reads the project and plans — opens nothing, saves nothing, no readback copy", async () => {
+    docs = [{ name: "Untitled 3", modified: true }];
+    const r = await createGbProject(deps({ openFile: openBand(), scripts: resave() }))({ command: "open_band", path: "bands/av.band", dry_run: true });
+    expect(r).toMatchObject({ status: "verified", data: { dry_run: true, path: band, bars: 2, would_back_up: ["Untitled 3"] } });
+    expect(opened).toEqual([]);
+    expect(backups).toEqual([]);
+    expect(existsSync(join(ws, "bands", "readback"))).toBe(false);
+  });
+
+  it("refuses a path that is not a .band package (NOT_SUPPORTED) before touching GarageBand", async () => {
+    const r = await createGbProject(deps({ openFile: openBand(), scripts: resave() }))({ command: "open_band", path: "ascent-v2.mid" });
+    expect(r).toMatchObject({ status: "failed", error: "NOT_SUPPORTED" });
+    expect(opened).toEqual([]);
+  });
+
+  it("a bands/readback/ that links out of the workspace gets no copy — uncertain, nothing written there", async () => {
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), "gbmcp-outside-")));
+    symlinkSync(outside, join(ws, "bands", "readback"));
+    const r = await createGbProject(deps({ openFile: openBand(), scripts: resave() }))({ command: "open_band", path: "bands/av.band" });
+    expect(r).toMatchObject({ status: "uncertain", reason: "readback_unavailable", write_attempted: true, safe_to_retry: false });
+    expect(readdirSync(outside)).toEqual([]);
+    expect(backups.filter((b) => b.name === "av.band")).toEqual([]);
+  });
+});
+
+
+describe("openFailureCode: a refused `open` → the code the agent acts on", () => {
+  it.each([
+    // execFile's message as seen on macOS 26: "Command failed: <command>\n" + open's stderr
+    ["Command failed: open -b com.apple.garageband10 /x/a.band\nLSCopyApplicationURLsForBundleIdentifier() failed while trying to determine the application with bundle identifier com.apple.garageband10.\n", "DEPENDENCY_MISSING"],
+    ["Unable to find application named 'com.apple.garageband10'", "DEPENDENCY_MISSING"], // older macOS
+    ["Command failed: open -b com.apple.garageband10 /x/a.band\nThe file /x/a.band does not exist.\n", "FILE_NOT_FOUND"],
+    ["The application cannot be opened for an unexpected reason, error=Error Domain=NSOSStatusErrorDomain Code=-10661", "INTERNAL_ERROR"],
+    ["", "INTERNAL_ERROR"],
+  ])("%j → %s", (reason, code) => expect(openFailureCode(reason)).toBe(code));
 });

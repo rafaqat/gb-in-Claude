@@ -161,16 +161,18 @@ Talk to Claude Code:
 | Playback | *Play it* · *Stop* · *Set the tempo to 124* · *Metronome off* |
 | Listening | *Export it and tell me how it sounds* |
 | A check-up | *Run the gb-mcp doctor* |
+| Your own audio | *Put vocals.wav on bar 9 and the drum loop from bar 1, using my donor project* (see below) |
 
 ### Tools
 
 | Tool | Commands | Touches GarageBand |
 |---|---|---|
-| `gb_song` | validate · preview · render_midi · render_draft | no — writes files to the workspace |
+| `gb_song` | validate · preview · render_midi · render_draft · band_plan | no — writes files to the workspace |
+| `gb_band` | inspect · build | no — writes a GarageBand project (.band) with your WAVs and MIDI notes |
 | `gb_analyze` | audio · against_song · compare | no — reads audio, writes spectrogram PNGs |
 | `gb_sound` | patches · plugins · loops · samples · palette | no — read-only catalog of what this Mac can play |
 | `gb_system` | doctor · describe · ui_snapshot | read-only |
-| `gb_project` | status · open_midi | opens a song (unsaved projects are backed up first) |
+| `gb_project` | status · open_midi · open_band | opens a song (unsaved projects are backed up first) |
 | `gb_tracks` | list · select · mute · solo · set_instrument | yes |
 | `gb_transport` | state · play · stop · rewind · set_tempo · set_metronome · set_count_in | yes |
 | `gb_mix` | get · set_volume (raw or dB) · set_pan | yes |
@@ -180,7 +182,7 @@ Every changing command accepts `dry_run: true` (plan only); every reading comman
 Inputs are strict: a misspelled parameter is rejected before anything runs.
 
 Resources: `gb://knowledge/song-format` (read first), `gb://knowledge/analysis`, `gb://knowledge/production`,
-`gb://knowledge/styles`, `gb://knowledge/gm-patch-map`, and the JSON Schemas `gb://schema/song` and
+`gb://knowledge/styles`, `gb://knowledge/gm-patch-map`, `gb://knowledge/band-files`, and the JSON Schemas `gb://schema/song` and
 `gb://schema/tools`.
 
 ### The workspace
@@ -191,8 +193,19 @@ Resources: `gb://knowledge/song-format` (read first), `gb://knowledge/analysis`,
 ├── *.mid        rendered MIDI files
 ├── exports/     WAV exports from GarageBand
 ├── analysis/    spectrogram pictures
+├── bands/      GarageBand projects written by gb_band (readback/ holds GarageBand's own check copies)
 └── sessions/    automatic backups of unsaved GarageBand projects (.band)
 ```
+
+### Audio: samples, stems and vocals
+
+MIDI cannot carry audio, so `gb_band` writes a GarageBand project file directly. It fills the slots of a
+**donor**: a small project you save once in GarageBand with the audio tracks (one region each) and named MIDI
+regions you need. `gb_band inspect` shows a donor's slots; `gb_band build` places your 16/24-bit PCM WAVs at any bar
+and beat and writes new MIDI notes; `gb_project open_band` opens the result and checks it against the copy GarageBand
+saves itself. In Song JSON, a track can carry `donorTrack` and `audio` clips placed per section; `gb_song band_plan`
+turns them into `gb_band build`'s audio list. The details are in `gb://knowledge/band-files`. The project format is
+GarageBand 10.4.14's and is not documented by Apple: a GarageBand update can break `gb_band` until it is re-probed.
 
 Song JSON is described in `gb://knowledge/song-format`; `examples/twinkle-epic.song.json` shows most of it
 (sections, drum grids, chord parts, melodies, levels).

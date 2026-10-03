@@ -67,6 +67,19 @@ describe("gb_tracks list", () => {
     });
     expect(mutated()).toBe(false);
   });
+
+  it("reads each track's regions from its own lane (a lane may hold several regions, or none)", async () => {
+    const contents = findAll(fake.app.windows[0]!, { role: "AXGroup", description: "Tracks contents" }).matches[0]!.node;
+    contents.children = [
+      { role: "AXLayoutArea", desc: "Track 1 “Soft Saw Lead”", children: [{ role: "AXLayoutItem", desc: "Hook" }, { role: "AXLayoutItem", desc: "Hook 2" }] },
+      { role: "AXLayoutArea", desc: "Track 2 “Taureg Moon Bass”", children: [] },
+    ];
+    const r = await createGbTracks(deps())({ command: "list" });
+    expect(r).toMatchObject({
+      status: "verified",
+      data: { tracks: [{ number: 1, region: "Hook", audible: true }, { number: 2, region: null, audible: null }] },
+    });
+  });
 });
 
 describe("gb_tracks preconditions (the project chooser is a standard window)", () => {
