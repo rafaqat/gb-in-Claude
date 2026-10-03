@@ -239,4 +239,16 @@ GarageBand's interface differs between versions; the element locators live in `s
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE)  
+
+https://github.com/user-attachments/assets/adfaedee-443c-4025-8bd7-0666fc511b71
+
+
+
+https://github.com/user-attachments/assets/d107da04-9f4e-4070-b4e9-2e7cbf7f777e
+
+
+
+https://github.com/user-attachments/assets/e0a83c1a-7a3b-4ddb-8b00-7ad3cdd7d278
+
+
