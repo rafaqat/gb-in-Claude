@@ -155,8 +155,15 @@ export function createGbProject(deps: GbProjectDeps) {
         hint: "save (or close) one of them in GarageBand yourself, then retry", context: { document: dup },
       }));
     }
+    // the backup folder must still be inside the workspace after links are followed, like bands/readback/
+    const sessions = dirty.length > 0 ? workspaceOutputDir(deps.workspaceDir, "sessions", true) : null;
+    if (sessions && !sessions.ok) {
+      return err(failed(op, sessions.error.code, `sessions/: ${sessions.error.message}; nothing backed up, nothing opened`, {
+        hint: "sessions/ must be a plain folder inside the workspace",
+      }));
+    }
     for (const d of dirty) {
-      const path = uniquePath(join(deps.workspaceDir, "sessions", `${safeName(d.name)}-${stamp()}`), ".band");
+      const path = uniquePath(join(sessions!.value, `${safeName(d.name)}-${stamp()}`), ".band");
       const saved = await deps.scripts.backupDocument(d.name, path);
       if (!saved.ok || !existsSync(join(path, "projectData"))) {
         return err(failed(op, "WRITE_FAILED", "could not back up an unsaved project; nothing opened", {

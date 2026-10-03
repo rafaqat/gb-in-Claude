@@ -97,6 +97,17 @@ describe("gb_project open_midi", () => {
     expect(opened).toEqual([midPath]);
   });
 
+  it("refuses to back up through a sessions/ link that leads outside the workspace — nothing saved there, nothing opened", async () => {
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), "gbmcp-elsewhere-")));
+    symlinkSync(outside, join(ws, "sessions"));
+    docs = [{ name: "Untitled 3", modified: true }];
+    const r = await createGbProject(deps())({ command: "open_midi", path: "ascent-v2.mid" });
+    expect(r).toMatchObject({ status: "failed", error: "PATH_OUTSIDE_WORKSPACE" });
+    expect(backups).toEqual([]);
+    expect(readdirSync(outside)).toEqual([]);
+    expect(opened).toEqual([]);
+  });
+
   it("backs up an unsaved project before opening, then discards only that project's prompt", async () => {
     docs = [{ name: "Untitled 3", modified: true }];
     const r = await createGbProject(deps())({ command: "open_midi", path: "ascent-v2.mid" });
