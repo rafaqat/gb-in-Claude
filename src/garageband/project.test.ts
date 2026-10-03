@@ -108,6 +108,20 @@ describe("gb_project open_midi", () => {
     expect(opened).toEqual([]);
   });
 
+  it("accepts the tempo MIDI cannot store exactly: 174 BPM is 344,828 µs per beat, which GarageBand shows as 173.9998", async () => {
+    const smf = writeSmf({ ppq: 480, tempoBpm: 174, timeSignature: [4, 4], tracks: SONG_TRACKS.map((t) => ({
+      name: t.name, channel: t.channel, program: t.program, notes: [{ pitch: 60, startTick: 0, durationTicks: 480, velocity: 90 }] })) });
+    if (!smf.ok) throw new Error(smf.error.message);
+    writeFileSync(join(ws, "dnb.mid"), smf.value);
+    const r = await createGbProject(deps({ openFile: simulateOpen("Untitled 9", 173.9998016357422) }))({ command: "open_midi", path: "dnb.mid" });
+    expect(r).toMatchObject({ status: "verified", data: { tempo: 173.9998016357422 } });
+  });
+
+  it("still refuses a tempo that is really different (126 in the file, 128 in GarageBand)", async () => {
+    const r = await createGbProject(deps({ openFile: simulateOpen("Untitled 9", 128) }))({ command: "open_midi", path: "ascent-v2.mid" });
+    expect(r).toMatchObject({ status: "uncertain" });
+  });
+
   it("backs up an unsaved project before opening, then discards only that project's prompt", async () => {
     docs = [{ name: "Untitled 3", modified: true }];
     const r = await createGbProject(deps())({ command: "open_midi", path: "ascent-v2.mid" });

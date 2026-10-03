@@ -18,6 +18,15 @@ import { verified, uncertain, failed, type Envelope, type ErrorCode, type Failed
  * stderr, e.g. "Unable to find application named 'com.apple.garageband10'" or "The file … does not exist."
  * The code is what the agent acts on: each one should point to a different fix.
  */
+/**
+ * MIDI stores tempo as whole microseconds per beat, so most tempos are not exact: 174 BPM is 344,828 µs, which
+ * GarageBand shows as 173.9998. That rounding is at most bpm² / 60,000,000 (0.0015 BPM at 300), so 0.01 BPM separates
+ * it from a real difference.
+ */
+export function sameTempo(read: number | null, file: number): boolean {
+  return read !== null && Math.abs(read - file) < 0.01;
+}
+
 export function openFailureCode(reason: string): ErrorCode {
   // Only the two texts `open` prints in English on macOS 26; anything else (another language, a new macOS text) keeps
   // the general code: a wrong specific code would send the agent to the wrong fix.
@@ -239,7 +248,7 @@ export function createGbProject(deps: GbProjectDeps) {
       if (documentOf(mainTitle(s.value)) === "" && titleWaits++ < 5) return null;
       const p = await readProject();
       const data = { document: documentOf(mainTitle(s.value)) || null, path: file.value, tempo: p.tempo, tracks: p.tracks, backups };
-      if (summary.value.tempoBpm !== null && p.tempo !== Math.round(summary.value.tempoBpm)) {
+      if (summary.value.tempoBpm !== null && !sameTempo(p.tempo, summary.value.tempoBpm)) {
         return uncertain(op, "readback_timeout", { write_attempted: true, safe_to_retry: false, hint: `tempo reads ${p.tempo}, the file says ${summary.value.tempoBpm}`, data });
       }
       return verified(op, data);
@@ -320,7 +329,7 @@ export function createGbProject(deps: GbProjectDeps) {
       }
       const p = await readProject();
       const data = { document: doc.name, path: band.value, readback, ...expected.value, tracks: p.tracks, backups };
-      if (expected.value.tempo !== null && p.tempo !== Math.round(expected.value.tempo)) {
+      if (expected.value.tempo !== null && !sameTempo(p.tempo, expected.value.tempo)) {
         return uncertain(op, "readback_timeout", { write_attempted: true, safe_to_retry: false, hint: `tempo reads ${p.tempo}, the file says ${expected.value.tempo}`, data });
       }
       return verified(op, data);
