@@ -19,13 +19,13 @@ Three versions of *Twinkle, Twinkle, Little Star*. Claude Code wrote each one as
 instruments play it through gb-mcp, and `gb_analyze` checked every export. They are pastiches in each composer's
 style, not affiliated with the composers.
 
+GitHub starts each player muted: turn the sound on in the player.
+
 ### In the style of John Williams
 
 Celesta and harp magic, a brass fanfare, a march, then a jump up to E♭ for the finale.
 
-<!-- drop twinkle-williams.mp4 on the empty line below -->
-
-
+https://github.com/user-attachments/assets/d107da04-9f4e-4070-b4e9-2e7cbf7f777e
 
 [▶ Listen (MP3)](media/twinkle-williams.mp3) · [Song JSON](examples/twinkle-williams.song.json)
 
@@ -33,9 +33,7 @@ Celesta and harp magic, a brass fanfare, a march, then a jump up to E♭ for the
 
 A ticking ostinato, brass "braams", and a storm in D minor that breaks into D major.
 
-<!-- drop twinkle-zimmer.mp4 on the empty line below -->
-
-
+https://github.com/user-attachments/assets/e0a83c1a-7a3b-4ddb-8b00-7ad3cdd7d278
 
 [▶ Listen (MP3)](media/twinkle-zimmer.mp3) · [Song JSON](examples/twinkle-zimmer.song.json)
 
@@ -43,9 +41,7 @@ A ticking ostinato, brass "braams", and a storm in D minor that breaks into D ma
 
 A toccata flourish, then a three-voice fugue on the tune for pipe organ, ending on a D-major chord.
 
-<!-- drop twinkle-bach.mp4 on the empty line below -->
-
-
+https://github.com/user-attachments/assets/adfaedee-443c-4025-8bd7-0666fc511b71
 
 [▶ Listen (MP3)](media/twinkle-bach.mp3) · [Song JSON](examples/twinkle-bach.song.json)
 
@@ -239,16 +235,4 @@ GarageBand's interface differs between versions; the element locators live in `s
 
 ## License
 
-[MIT](LICENSE)  
-
-https://github.com/user-attachments/assets/adfaedee-443c-4025-8bd7-0666fc511b71
-
-
-
-https://github.com/user-attachments/assets/d107da04-9f4e-4070-b4e9-2e7cbf7f777e
-
-
-
-https://github.com/user-attachments/assets/e0a83c1a-7a3b-4ddb-8b00-7ad3cdd7d278
-
-
+[MIT](LICENSE)
