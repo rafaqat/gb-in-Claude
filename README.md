@@ -278,6 +278,25 @@ GarageBand's interface differs between versions; the element locators live in `s
 
 [MIT](LICENSE)
 
+
+
+
+
+https://github.com/user-attachments/assets/bd76db5a-bce2-4683-864b-7b516084aec5
+
+
+
+https://github.com/user-attachments/assets/0f1adb5a-aa1d-4645-8ae6-9de8a9cd78f1
+
+
+
+https://github.com/user-attachments/assets/4b70c3b3-0a6a-4c90-86cb-a91b52e067ef
+
+
+
+
+
+
 ### Credits
 
 - `src/song/grooves.json` is derived from the [Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove)
