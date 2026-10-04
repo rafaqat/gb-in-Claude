@@ -1,4 +1,4 @@
-# Model benchmark — Apple M4, 32 GB, macOS 26.1 (2026-10-03 20:57, 5 back-to-back runs)
+# Model benchmark — Apple M4, 32 GB, macOS 26.1 (2026-10-04 02:10, 5 back-to-back runs)
 
 | Model | Device | Load s | Cold run 1 s | Median run s (2–5) | Worst run s (2–5) | Peak memory GB (RSS + Metal) | Run 5 / run 1 | Run 5 / run 2 (throttle) | Go? |
 |---|---|---|---|---|---|---|---|---|---|
@@ -17,3 +17,4 @@
 | beat_this (final0), float16 on Metal | mps | 1.3 | 2.84 | 0.57 | 0.63 | 0.5 + 1.3 | 0.22 | 1.32 | go |
 | LAION CLAP music, audio encoder float16 on Metal | mps | 9.7 | 1.06 | 0.66 | 0.67 | 3.1 + 2.4 | 0.62 | 1.00 | no-go: output has NaN/Inf |
 | S-KEY, Core ML MLProgram, all compute units, compiled-model cache | cpu | 0.3 | 0.96 | 0.10 | 0.11 | 0.6 + 0.0 | 0.10 | 0.98 | go |
+| CLaMP 3 (C2, symbolic): text ↔ MIDI similarity — judges infill takes | mps | 8.1 | 0.28 | 0.09 | 0.09 | 4.4 + 2.2 | 0.32 | 0.98 | go |

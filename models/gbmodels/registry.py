@@ -55,6 +55,13 @@ MODELS = {
         "source": "gbmodels/infill.py", "license": "Apache-2.0 (AMT code and weights)",
         "task": "rewrite chosen tracks of one section, keeping everything else",
     },
+    "clamp3": {
+        "name": "CLaMP 3 (C2, symbolic): text ↔ MIDI similarity — judges infill takes",
+        "module": "gbmodels.clamp3", "venv": ".venv", "kind": "torch",
+        "source": "https://github.com/sanderwood/clamp3 · https://huggingface.co/sander-wood/clamp3",
+        "license": "MIT (code and weights)",
+        "task": "similarity of one MIDI song to a text description",
+    },
     "listen": {
         "name": "gb_analyze's model listening: beat_this + S-KEY + LAION CLAP in one request",
         "module": "gbmodels.listen", "venv": ".venv", "kind": "torch",
@@ -144,5 +151,6 @@ THRESHOLDS = {
     "beat_this_fp16": {"max_run_s_per_audio_min": 10.0},
     "clap_fp16": {"max_run_s_per_audio_min": 10.0},
     "skey_cached": {"max_run_s_per_audio_min": 10.0},
+    "clamp3": {"max_run_s": 2.0},
     "_all": {"max_peak_gb": 12.0},
 }

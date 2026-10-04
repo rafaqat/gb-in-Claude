@@ -26,8 +26,12 @@ def run(handle, inputs: dict) -> dict:
     before = ops.clip(events, 0, start, clip_duration=False)
     after = ops.clip(events, end, ops.max_time(events), clip_duration=False)
     chunk = 128 if inputs.get("mode") == "fast" else 0
+    import time
+    # a runaway take is stopped: ≤ 48 notes per second per instrument (real takes ≈ 15) and ≤ 90 s per take
+    budget = {"max_events": int(48 * (end - start) * len(wanted)), "deadline": time.monotonic() + float(inputs.get("max_seconds", 90)),
+              "end_tick": int(TIME_RESOLUTION * end) + 1}
     infill, cache = amt_mlx.generate_mlx(handle, start, end, inputs=ops.sort(before + after), top_p=0.98,
-                                         window_chunk=chunk, instruments=sorted(wanted))
+                                         window_chunk=chunk, instruments=sorted(wanted), budget=budget)
     notes = []
     span = ops.clip(infill, start, end, clip_duration=False)
     for i in range(0, len(span), 3):
@@ -36,4 +40,4 @@ def run(handle, inputs: dict) -> dict:
         if instr in wanted:
             notes.append({"instrument": instr, "pitch": pitch, "start_s": round(t / TIME_RESOLUTION, 3),
                           "dur_s": round(d / TIME_RESOLUTION, 3)})
-    return {"notes": notes, "mode": inputs.get("mode", "exact"), "cache_misses": cache.misses}
+    return {"notes": notes, "mode": inputs.get("mode", "exact"), "cache_misses": cache.misses, "capped": cache.capped}

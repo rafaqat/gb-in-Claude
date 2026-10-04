@@ -24,6 +24,8 @@ class PrefixCache:
         self.ids: list[int] = []
         self.past = None
         self.hits = self.misses = 0
+        self.events = 0      # events this generation produced (for the budget)
+        self.capped = False  # True when the budget ended the generation early
 
     def logits(self, model, ids: list[int]) -> torch.Tensor:
         n = len(self.ids)
@@ -72,10 +74,17 @@ def instrument_mask(instruments, size: int) -> torch.Tensor:
     return mask
 
 
-def make_add_token(cache: PrefixCache, greedy: bool = False, window_chunk: int = 0, instruments=None):
+def make_add_token(cache: PrefixCache, greedy: bool = False, window_chunk: int = 0, instruments=None, budget=None):
+    """budget: {max_events, deadline (time.monotonic() value or None), end_tick}. A runaway take (seed 3 once wrote
+    4,235 notes in 8 bars and took 229 s) is ended by returning a time past the span, so generate() stops normally."""
+    import time
     allowed = {}  # device → mask, built on first use
 
     def add_token(model, z, tokens, top_p, current_time, debug=False):
+        if budget is not None and (cache.events >= budget["max_events"] or (budget["deadline"] is not None and time.monotonic() >= budget["deadline"])):
+            cache.capped = True
+            return [TIME_OFFSET + budget["end_tick"], DUR_OFFSET, NOTE_OFFSET]  # noqa: F405 — "after the end": generate() stops
+        cache.events += 1
         assert len(tokens) % 3 == 0
         history = tokens[window_start(cache, len(tokens), window_chunk):]
         offset = ops.min_time(history, seconds=False)

@@ -31,5 +31,11 @@
     "start_s": 22.588,
     "end_s": 45.176,
     "seed": 1
+  },
+  "clamp3": {
+    "midis": [
+      "tests/fixtures/lofi-unhumanized.mid"
+    ],
+    "prompt": "relaxed hip-hop beat"
   }
 }

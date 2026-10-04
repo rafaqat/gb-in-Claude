@@ -5,7 +5,7 @@
     "macos": "26.1"
   },
   "runs_per_model": 5,
-  "when": "2026-10-03 20:57",
+  "when": "2026-10-04 02:10",
   "thresholds": {
     "amt": {
       "max_run_s": 60.0
@@ -51,6 +51,9 @@
     },
     "skey_cached": {
       "max_run_s_per_audio_min": 10.0
+    },
+    "clamp3": {
+      "max_run_s": 2.0
     },
     "_all": {
       "max_peak_gb": 12.0
@@ -747,6 +750,46 @@
         },
         {
           "device": "cpu",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [],
+      "go": true
+    },
+    "clamp3": {
+      "name": "CLaMP 3 (C2, symbolic): text \u2194 MIDI similarity \u2014 judges infill takes",
+      "module": "gbmodels.clamp3",
+      "venv": ".venv",
+      "kind": "torch",
+      "source": "https://github.com/sanderwood/clamp3 \u00b7 https://huggingface.co/sander-wood/clamp3",
+      "license": "MIT (code and weights)",
+      "task": "similarity of one MIDI song to a text description",
+      "model": "clamp3",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 8.092,
+      "ok": true,
+      "run_s": [
+        0.275,
+        0.09,
+        0.089,
+        0.088,
+        0.088
+      ],
+      "output": {
+        "scores": [
+          0.3565
+        ],
+        "best": 0,
+        "note": "a ranking of takes, not a grade"
+      },
+      "rss_peak_bytes": 4442488832,
+      "mps_peak_bytes": 2223718400,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
           "ok": true,
           "error": null
         }

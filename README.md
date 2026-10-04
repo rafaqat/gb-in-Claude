@@ -230,7 +230,9 @@ from Hugging Face on first use (~4 GB). gb-mcp starts one long-lived model proce
   the 20 genres (LAION CLAP — a ranking for comparing versions, not a grade). About 3 s per analysis once loaded.
 - `gb_song infill {song, section, tracks}` lets the Anticipatory Music Transformer rewrite chosen melodic tracks of
   one section on the song's own instruments: `exact` ≈ 1–1.5 min per 8 bars, `fast` ≈ 20 s (shorter context — listen
-  before trusting it). The model hears the song before and after the section.
+  before trusting it). The model hears the song before and after the section. With `candidates: 2–4` and a `judge`
+  text ("warm neo-soul keys"), CLaMP 3 ranks the takes against that text and the best comes back; a take that runs
+  away is stopped early (`capped`) and never chosen.
 
 Without the models everything else works; `ml` says so and `infill` answers `DEPENDENCY_MISSING`. Measured speeds,
 memory and what each optimisation bought (an exact KV-cache sampler, float16, an MLX port): `models/bench/results.md`.
@@ -285,6 +287,7 @@ GarageBand's interface differs between versions; the element locators live in `s
 - The optional models are downloaded from their authors under their own licenses and are not part of this
   repository: [Anticipatory Music Transformer](https://github.com/jthickstun/anticipation) (Apache-2.0),
   [beat_this](https://github.com/CPJKU/beat_this) (MIT), [LAION CLAP](https://github.com/LAION-AI/CLAP),
-  [S-KEY](https://huggingface.co/musetric/skey-onnx) (MIT). `models/bench` also measured
+  [S-KEY](https://huggingface.co/musetric/skey-onnx) (MIT), [CLaMP 3](https://github.com/sanderwood/clamp3) (MIT; its
+  code is cloned on first use). `models/bench` also measured
   [Foundation-1](https://huggingface.co/RoyalCities/Foundation-1) (Stability AI Community License), which gb-mcp does
   not use yet.

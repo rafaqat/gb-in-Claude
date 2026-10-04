@@ -80,6 +80,13 @@ class SidecarTest(unittest.TestCase):
         self.assertTrue(all(n["instrument"] == 4 for n in notes))
         self.assertTrue(all(span[0] - 0.01 <= n["start_s"] < span[1] for n in notes))
 
+    def test_clamp3_judge_ranks_a_fitting_description_above_a_wrong_one(self):
+        lofi = os.path.join(HERE, "tests", "fixtures", "lofi-unhumanized.mid")
+        fits = self.ask({"id": 40, "op": "run", "model": "clamp3", "inputs": {"midis": [lofi], "prompt": "lo-fi hip-hop with jazzy electric piano chords"}})
+        wrong = self.ask({"id": 41, "op": "run", "model": "clamp3", "inputs": {"midis": [lofi], "prompt": "death metal with fast distorted guitars and blast beats"}})
+        self.assertTrue(fits["ok"] and wrong["ok"], (fits, wrong))
+        self.assertGreater(fits["result"]["scores"][0], wrong["result"]["scores"][0])
+
 
 if __name__ == "__main__":
     unittest.main()

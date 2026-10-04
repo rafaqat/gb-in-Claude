@@ -226,6 +226,44 @@ describe("gb_song infill (M10): AMT rewrites chosen tracks of one section", () =
     expect(r).toMatchObject({ status: "failed", error: "INPUT_INVALID" });
   });
 
+  it("candidates: several takes (seeds seed, seed+1, …), CLaMP 3 judges them against `judge`, the best comes back", async () => {
+    const calls: { model: string; inputs: Record<string, unknown> }[] = [];
+    const models = {
+      async run(model: string, inputs: Record<string, unknown>) {
+        calls.push({ model, inputs });
+        if (model === "infill") return { ok: true as const, value: { notes: [{ instrument: 4, pitch: 60 + Number(inputs.seed), start_s: 4.0, dur_s: 4.0 }] } };
+        return { ok: true as const, value: { scores: [0.11, 0.42, 0.2], best: 1 } };
+      },
+      close() {},
+    };
+    const r = await createGbSong({ workspaceDir: workspace, models })({ command: "infill", song: two, section: "b", tracks: ["Keys"], seed: 5, candidates: 3, judge: "warm neo-soul keys" });
+    expect(calls.filter((c) => c.model === "infill").map((c) => c.inputs.seed)).toEqual([5, 6, 7]);
+    const judged = calls.find((c) => c.model === "clamp3")!;
+    expect(judged.inputs.prompt).toBe("warm neo-soul keys");
+    expect((judged.inputs.midis as string[]).length).toBe(3);
+    expect(r).toMatchObject({ status: "verified", data: { takes: [{ seed: 5, score: 0.11 }, { seed: 6, score: 0.42, best: true }, { seed: 7, score: 0.2 }] } });
+    const song = (r as { data: { song: typeof two } }).data.song;
+    expect(song.tracks[1]!.parts.b).toEqual({ notes: "f#4@16 | f#4@16" }); // seed 6 → pitch 66, the judged best
+    expect(readdirSync(workspace)).toEqual([]);
+  });
+
+  it("never picks a runaway take the model's budget cut short (capped), even with the best score", async () => {
+    const models = {
+      async run(model: string, inputs: Record<string, unknown>) {
+        if (model === "infill") return { ok: true as const, value: { notes: [{ instrument: 4, pitch: 60 + Number(inputs.seed), start_s: 4.0, dur_s: 4.0 }], capped: inputs.seed === 1 } };
+        return { ok: true as const, value: { scores: [0.9, 0.3], best: 0 } };
+      },
+      close() {},
+    };
+    const r = await createGbSong({ workspaceDir: workspace, models })({ command: "infill", song: two, section: "b", tracks: ["Keys"], seed: 1, candidates: 2, judge: "warm keys" });
+    expect(r).toMatchObject({ status: "verified", data: { seed: 2, takes: [{ seed: 1, score: 0.9, capped: true }, { seed: 2, score: 0.3, best: true }] } });
+  });
+
+  it("several candidates need a judge text (INPUT_INVALID otherwise)", async () => {
+    const r = await createGbSong({ workspaceDir: workspace, models: sidecar([]) })({ command: "infill", song: two, section: "b", tracks: ["Keys"], candidates: 2 });
+    expect(r).toMatchObject({ status: "failed", error: "INPUT_INVALID" });
+  });
+
   it("without the model sidecar: DEPENDENCY_MISSING", async () => {
     const r = await gbSong({ command: "infill", song: two, section: "b", tracks: ["Keys"] });
     expect(r).toMatchObject({ status: "failed", error: "DEPENDENCY_MISSING" });

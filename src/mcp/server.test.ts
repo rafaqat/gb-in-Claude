@@ -47,7 +47,7 @@ describe("gb-mcp server", () => {
   });
 
   it("gb_song infill is reachable through MCP (without a sidecar it says DEPENDENCY_MISSING, not a schema error)", async () => {
-    const r = await client.callTool({ name: "gb_song", arguments: { command: "infill", song, section: "a", tracks: ["Lead"], mode: "fast", seed: 2 } });
+    const r = await client.callTool({ name: "gb_song", arguments: { command: "infill", song, section: "a", tracks: ["Lead"], mode: "fast", seed: 2, candidates: 2, judge: "a bright pop lead" } });
     expect(r.structuredContent).toMatchObject({ status: "failed", op: "gb_song.infill", error: "DEPENDENCY_MISSING" });
   });
 

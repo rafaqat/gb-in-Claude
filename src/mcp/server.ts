@@ -26,7 +26,7 @@ import { guarded } from "./tool-result.js";
 import type { Result } from "../result.js";
 import { createGbBand, GB_BAND_COMMANDS, GbBandInput, BandAudioItem, BandMidiItem } from "./gb-band.js";
 
-export const SERVER_VERSION = "0.3.0";
+export const SERVER_VERSION = "0.3.1";
 
 const json = (uri: string, value: unknown) => ({ contents: [{ uri, mimeType: "application/json", text: JSON.stringify(value) }] });
 
@@ -76,6 +76,8 @@ export function createServer(opts: ServerOptions): McpServer {
         tracks: z.array(z.string()).optional().describe("infill: melodic track names to rewrite in `section`"),
         mode: z.enum(["exact", "fast"]).optional().describe("infill: exact (≈1 min / 8 bars) or fast (≈15 s, shorter context)"),
         seed: z.number().int().optional().describe("infill: another seed gives another take"),
+        candidates: z.number().int().optional().describe("infill: 1–4 takes; CLaMP 3 keeps the one closest to `judge`"),
+        judge: z.string().optional().describe('infill: what the music should be, e.g. "warm neo-soul keys" (needed with candidates > 1)'),
       }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },

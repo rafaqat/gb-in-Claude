@@ -1,7 +1,7 @@
 ---
 name: make-track
 description: Use when the user asks to make, write, compose or produce a new track/song in GarageBand with gb-mcp. Turns a brief into Song JSON, renders it, opens it in GarageBand, exports and analyzes it — hands-free (no clicks from you).
-version: 0.3.0
+version: 0.3.1
 ---
 
 # Make a track (gb-mcp)
@@ -20,7 +20,7 @@ You compose; gb-mcp renders, drives GarageBand and measures. You cannot hear —
 - Save it with your file tool as `<workspace>/songs/<slug>-v1.song.json` — the workspace is `GB_MCP_WORKSPACE` (default `~/Music/gb-mcp`; `gb_system doctor` shows the path).
 
 ## 3. Check before writing anything
-- Optional, when a section needs more life: `gb_song infill {song, section, tracks}` lets the AI rewrite chosen melodic tracks of that section (exact mode by default; another `seed` for another take). Validate the result like any Song JSON.
+- Optional, when a section needs more life: `gb_song infill {song, section, tracks}` lets the AI rewrite chosen melodic tracks of that section (exact mode by default; another `seed` for another take; `candidates: 3, judge: "<what it should be>"` keeps the best of three). Validate the result like any Song JSON.
 - `gb_song validate {song}` → fix every `error`; read every `warning` (ranges, register, empty sections).
 - `gb_song preview {song, section}` for the main sections (intro, drop): does the grid look like the brief?
 - Optional quick structure check without GarageBand: `gb_song render_draft {song, filename: "<slug>-v1-draft.wav"}` (macOS GM synth — never judge tone from it).

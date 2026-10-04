@@ -12,3 +12,4 @@ models/bench/*.wav
 models/bench/inputs/*.wav
 # other git worktrees of this repo (e.g. created by Claude Code)
 .claude/worktrees/
+models/bench/*.log

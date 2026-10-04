@@ -16,5 +16,6 @@ transformers==5.18.0
 laion-clap==1.1.7
 librosa==0.11.0
 mcp==2.3.0
-anticipation @ git+https://github.com/jthickstun/anticipation
-beat_this @ git+https://github.com/CPJKU/beat_this
+unidecode==1.4.0
+anticipation @ git+https://github.com/jthickstun/anticipation@af37397922665a0fb8d474d7988b0f3755a38d45
+beat_this @ git+https://github.com/CPJKU/beat_this@b95c8ab0c58c2d9fcfd40508ae8dffbc05ac4f5c

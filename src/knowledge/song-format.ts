@@ -48,6 +48,8 @@ melodic tracks' parts in that section rewritten by the Anticipatory Music Transf
 song's own instruments. The model hears the song before and after the section (not the other tracks inside it).
 exact ≈ 1–1.5 min per 8 bars, fast ≈ 20 s (shorter context: listen before trusting it). Another seed = another take.
 Drums are never infilled. Two tracks on the same instrument cannot be infilled together.
+candidates: 2–4 takes (seeds seed, seed+1, …) and judge: "what the music should be" → CLaMP 3 ranks the takes against
+that text and returns the best (scores of all takes in "takes": a ranking, not a grade).
 
 ## Audio clips (WAVs: stems, vocals, samples) — built by gb_band, not by render_midi
 a track may hold audio: { donorTrack: n, audio: [{ wav, section, bar?, beat? }] }

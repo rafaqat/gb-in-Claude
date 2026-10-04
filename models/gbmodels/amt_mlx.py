@@ -87,6 +87,7 @@ class MLXPrefixCache:
     def __init__(self, model):
         self.mlx_model, self.window_start = model, 0
         self.ids, self.past, self.hits, self.misses = [], None, 0, 0
+        self.events, self.capped = 0, False
 
     def logits(self, _torch_model, ids):
         n = len(self.ids)
@@ -100,12 +101,12 @@ class MLXPrefixCache:
         return torch.from_numpy(np.array(out[0, -1].astype(mx.float32)))
 
 
-def generate_mlx(handle, start_time, end_time, inputs=None, top_p=1.0, greedy=False, window_chunk=0, instruments=None):
+def generate_mlx(handle, start_time, end_time, inputs=None, top_p=1.0, greedy=False, window_chunk=0, instruments=None, budget=None):
     from anticipation import sample
     from gbmodels.amt_fast import make_add_token
     cache = MLXPrefixCache(handle["model"])
     shipped = sample.add_token
-    sample.add_token = make_add_token(cache, greedy, window_chunk, instruments)
+    sample.add_token = make_add_token(cache, greedy, window_chunk, instruments, budget)
     try:
         events = sample.generate(_DeviceShim(), start_time, end_time, inputs=inputs, top_p=top_p)
     finally:

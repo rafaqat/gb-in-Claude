@@ -44,6 +44,8 @@ export const GbSongInput = z.discriminatedUnion("command", [
     tracks: z.array(z.string().min(1)).min(1).max(8).describe("melodic tracks to rewrite in that section (not drums)"),
     mode: z.enum(["exact", "fast"]).default("exact").describe("exact ≈ 1 min per 8 bars; fast ≈ 15 s (shorter context)"),
     seed: z.number().int().optional(),
+    candidates: z.number().int().min(1).max(4).default(1).describe("takes to generate (seeds seed, seed+1, …); CLaMP 3 keeps the best"),
+    judge: z.string().min(3).max(300).optional().describe("what the music should be, e.g. \"warm neo-soul keys\": takes are ranked against it"),
   }).strict(),
 ]);
 export type GbSongInput = z.infer<typeof GbSongInput>;
@@ -120,6 +122,7 @@ export function createGbSong(deps: GbSongDeps) {
       }
 
       case "infill": {
+        if (cmd.candidates > 1 && !cmd.judge) return failed(op, "INPUT_INVALID", "judge: several candidates need a judge text (what the music should be)", { hint: 'e.g. judge: "warm neo-soul keys"' });
         if (!deps.models) return failed(op, "DEPENDENCY_MISSING", "the model sidecar is not set up", { hint: "install the models (models/.venv) to use infill" });
         const sectionIndex = song.sections.findIndex((s) => s.name === cmd.section);
         if (sectionIndex < 0) return failed(op, "INPUT_INVALID", "section: not in the song", { hint: `sections: ${song.sections.map((s) => s.name).join(", ")}` });
@@ -140,19 +143,53 @@ export function createGbSong(deps: GbSongDeps) {
         const barS = (beats * 60) / song.tempo;
         const startS = song.sections.slice(0, sectionIndex).reduce((sum, s) => sum + s.bars, 0) * barS;
         const bars = song.sections[sectionIndex]!.bars;
-        const heard = await deps.models.run("infill", { midi, start_s: startS, end_s: startS + bars * barS, instruments: programs, mode: cmd.mode, seed: cmd.seed ?? song.seed });
-        if (!heard.ok) return failed(op, heard.error.code === "SIDECAR_UNAVAILABLE" ? "DEPENDENCY_MISSING" : "RENDER_FAILED", heard.error.message);
-        const notes = (heard.value as { notes: (InfillNote & { instrument: number })[] }).notes;
-        const tracks = song.tracks.map((t) => ({ ...t }));
-        const changed = targets.map((i, k) => {
-          const part = notesToPart(notes.filter((n) => n.instrument === programs[k]), { startS, bpm: song.tempo, beatsPerBar: beats, bars });
-          tracks[i] = { ...tracks[i]!, parts: { ...tracks[i]!.parts, [cmd.section]: { notes: part } } };
-          return { track: song.tracks[i]!.name, section: cmd.section, notes: notes.filter((n) => n.instrument === programs[k]).length };
+        const models = deps.models;
+        /** one take: the model writes the section with this seed; the caller's own Song JSON comes back with only those parts replaced */
+        const take = async (seed: number) => {
+          const heard = await models.run("infill", { midi, start_s: startS, end_s: startS + bars * barS, instruments: programs, mode: cmd.mode, seed });
+          if (!heard.ok) return heard;
+          const { notes, capped } = heard.value as { notes: (InfillNote & { instrument: number })[]; capped?: boolean };
+          const parts = targets.map((_, k) => notesToPart(notes.filter((n) => n.instrument === programs[k]), { startS, bpm: song.tempo, beatsPerBar: beats, bars }));
+          const raw = cmd.song as { tracks: unknown[] };
+          const out = { ...(cmd.song as object), tracks: raw.tracks.map((t, i) => (targets.includes(i) ? { ...(t as object), parts: { ...((t as { parts: object }).parts), [cmd.section]: { notes: parts[targets.indexOf(i)]! } } } : t)) };
+          const changed = targets.map((i, k) => ({ track: song.tracks[i]!.name, section: cmd.section, notes: notes.filter((n) => n.instrument === programs[k]).length }));
+          return { ok: true as const, value: { seed, song: out, changed, capped: capped === true } };
+        };
+        const first = cmd.seed ?? song.seed;
+        const takes: { seed: number; song: Record<string, unknown>; changed: { track: string; section: string; notes: number }[]; capped: boolean }[] = [];
+        for (let k = 0; k < cmd.candidates; k++) {
+          const t = await take(first + k);
+          if (!t.ok) return failed(op, t.error.code === "SIDECAR_UNAVAILABLE" ? "DEPENDENCY_MISSING" : "RENDER_FAILED", t.error.message);
+          takes.push(t.value);
+        }
+        if (takes.length === 1) {
+          const t = takes[0]!;
+          return verified(op, { song: t.song, changed: t.changed, mode: cmd.mode, seed: t.seed, ...(t.capped ? { capped: true } : {}),
+            note: t.capped ? "the model ran away and was stopped early (capped): try another seed" : "validate, render and listen; infill again with another seed for a different take" });
+        }
+        // judge: each take as a whole song (MIDI) against the text, by CLaMP 3 — a ranking, not a grade
+        const midis = [];
+        for (const t of takes) {
+          const parsed = parseSong(t.song);
+          const r = parsed.ok ? renderSong({ ...parsed.value, humanize: "off" }) : null;
+          const bytes = r?.ok ? writeSmf(r.value) : null;
+          if (!bytes?.ok) return failed(op, "RENDER_FAILED", `take with seed ${t.seed} does not render`);
+          const path = join(tmpdir(), `gb-mcp-take-${process.pid}-${Date.now()}-${t.seed}.mid`);
+          writeFileSync(path, bytes.value, { flag: "wx" });
+          midis.push(path);
+        }
+        const judged = await models.run("clamp3", { midis, prompt: cmd.judge });
+        if (!judged.ok) return failed(op, judged.error.code === "SIDECAR_UNAVAILABLE" ? "DEPENDENCY_MISSING" : "RENDER_FAILED", judged.error.message);
+        const { scores } = judged.value as { scores: number[] };
+        // a capped take is a runaway the budget stopped: never the pick while a normal take exists
+        const eligible = takes.map((t, k) => k).filter((k) => !takes[k]!.capped);
+        const pool = eligible.length > 0 ? eligible : takes.map((_, k) => k);
+        const best = pool.reduce((b, k) => (scores[k]! > scores[b]! ? k : b), pool[0]!);
+        return verified(op, {
+          song: takes[best]!.song, changed: takes[best]!.changed, mode: cmd.mode, seed: takes[best]!.seed, judge: cmd.judge,
+          takes: takes.map((t, k) => ({ seed: t.seed, score: scores[k], ...(t.capped ? { capped: true } : {}), ...(k === best ? { best: true } : {}) })),
+          note: "CLaMP 3 ranked the takes against `judge` (a ranking, not a grade); any take can be had again with its seed",
         });
-        const raw = cmd.song as { tracks: unknown[] };
-        // return the caller's own Song JSON with only those parts replaced (no defaults filled in)
-        const out = { ...(cmd.song as object), tracks: raw.tracks.map((t, i) => (targets.includes(i) ? { ...(t as object), parts: { ...((t as { parts: object }).parts), [cmd.section]: tracks[i]!.parts[cmd.section] } } : t)) };
-        return verified(op, { song: out, changed, mode: cmd.mode, note: "validate, render and listen; infill again with another seed for a different take" });
       }
 
       case "preview":
