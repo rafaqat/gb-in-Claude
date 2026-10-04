@@ -4,6 +4,7 @@ import { z } from "zod";
 import { existsSync, mkdirSync } from "node:fs";
 import { basename, extname, join } from "node:path";
 import { parseSong } from "../song/schema.js";
+import { sectionTimes } from "../song/expression.js";
 import { resolveWorkspaceFile } from "../workspace/paths.js";
 import { compareAnalyses } from "../analysis/compare.js";
 import type { AnalysisResult, AnalyzerError, AnalyzerPort } from "../analysis/analyzer.js";
@@ -93,7 +94,11 @@ export function createGbAnalyze(deps: GbAnalyzeDeps) {
       context = {
         title: s.value.title, tempo: s.value.tempo, beats_per_bar: s.value.timeSignature[0], key: s.value.key ?? null,
         ...(s.value.swing ? { swing: s.value.swing, swing_unit: s.value.swingUnit } : {}),
-        style: s.value.style ?? null, sections: s.value.sections, tracks: s.value.tracks.map((t) => ({ name: t.name, role: t.role, sections: Object.keys(t.parts) })),
+        style: s.value.style ?? null,
+        // M11: with section tempi the bar map is not uniform: pass each section's real times
+        sections: s.value.sections.some((x) => x.tempo !== undefined || x.tempoTo !== undefined)
+          ? ((times) => s.value.sections.map((x, i) => ({ ...x, ...times[i] })))(sectionTimes(s.value)) : s.value.sections,
+        tracks: s.value.tracks.map((t) => ({ name: t.name, role: t.role, sections: Object.keys(t.parts) })),
       };
     }
 

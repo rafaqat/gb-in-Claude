@@ -1,0 +1,56 @@
+[
+ {
+  "feature": "meend (slide d5\u2192e5)",
+  "measured": "starts 507\u00a2, ends 697\u00a2, 72 frames between",
+  "pass": true,
+  "rule": "starts on D5, ends on E5, passes through the pitches between"
+ },
+ {
+  "feature": "shruti (a4-30c)",
+  "measured": "-33.0\u00a2",
+  "pass": true,
+  "rule": "median \u221230 \u00b1 8 cents"
+ },
+ {
+  "feature": "vibrato (wide)",
+  "measured": "pitch wobble 18.0\u00a2",
+  "pass": true,
+  "rule": "pitch wobble > 15 cents in the second half"
+ },
+ {
+  "feature": "hairpin (pp<ff)",
+  "measured": "+14.3 dB",
+  "pass": true,
+  "rule": "level rises > 10 dB"
+ },
+ {
+  "feature": "pedal (bar)",
+  "measured": "+10.2 dB between notes",
+  "pass": true,
+  "rule": "pedal keeps notes ringing: > 6 dB more between notes"
+ },
+ {
+  "feature": "pan (\u22121)",
+  "measured": "L\u2212R +10.7 dB",
+  "pass": true,
+  "rule": "left louder than right by > 8 dB"
+ },
+ {
+  "feature": "brightness (1\u21920)",
+  "measured": "centroid 5769 \u2192 838 Hz",
+  "pass": true,
+  "rule": "centroid falls > 25 %"
+ },
+ {
+  "feature": "volume fade (1\u21920)",
+  "measured": "-34.2 dB",
+  "pass": true,
+  "rule": "level falls > 15 dB"
+ },
+ {
+  "feature": "ritardando (120\u219260)",
+  "measured": "beat 0.50 s \u2192 0.82 s",
+  "pass": true,
+  "rule": "beats 0.5 s apart, then > 1.6\u00d7 further apart"
+ }
+]

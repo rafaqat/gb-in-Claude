@@ -18,6 +18,12 @@ export const SmfControllerSchema = z.object({
   value: int(0, 127),
 });
 
+/** Pitch bend: −8192..8191 around the centre (0 = no bend); the range in semitones is the patch's (bendRange). */
+export const SmfBendSchema = z.object({
+  tick: int(0, 0x0fffffff),
+  value: z.number().int().min(-8192).max(8191),
+});
+
 export const SmfTrackSchema = z.object({
   /** Becomes the GarageBand region name. Printable ASCII only: it is written raw into the file. */
   name: z.string().min(1).max(64).regex(/^[\x20-\x7e]+$/, "printable ASCII only"),
@@ -28,6 +34,12 @@ export const SmfTrackSchema = z.object({
   notes: z.array(SmfNoteSchema),
   /** Continuous controllers, e.g. CC1 mod wheel (vibrato), CC11 expression, CC64 sustain. */
   controllers: z.array(SmfControllerSchema).optional(),
+  /** Pitch bends (M11): meend slides, vibrato, microtones. GarageBand honours them (probe 2026-10-04). */
+  bends: z.array(SmfBendSchema).optional(),
+  /** Channel pressure (aftertouch): synth patches turn it into vibrato/brightness; samplers ignore it. */
+  pressure: z.array(z.object({ tick: int(0, 0x0fffffff), value: int(0, 127) })).optional(),
+  /** Pitch-bend range in semitones, sent as RPN 0 at the start. Only some patches honour it (Flute Solo does). */
+  bendRange: int(1, 24).optional(),
 });
 
 export const SmfSongSchema = z.object({
@@ -35,11 +47,18 @@ export const SmfSongSchema = z.object({
   tempoBpm: z.number().min(20).max(300),
   timeSignature: z.tuple([int(1, 32), z.union([z.literal(1), z.literal(2), z.literal(4), z.literal(8), z.literal(16), z.literal(32)])]),
   tracks: z.array(SmfTrackSchema).max(254),
+  /** Tempo changes after the start (M11): ritardando, accelerando, a new tempo per section. */
+  tempoMap: z.array(z.object({ tick: int(0, 0x0fffffff), bpm: z.number().min(20).max(300) })).optional(),
+  /** Key signature meta event: sharps (+) or flats (−), and minor. No audio effect; DAWs show it. */
+  keySignature: z.object({ accidentals: int(-7, 7), minor: z.boolean() }).optional(),
+  /** Marker meta events (section names). Printable ASCII, written raw. */
+  markers: z.array(z.object({ tick: int(0, 0x0fffffff), text: z.string().min(1).max(64).regex(/^[\x20-\x7e]+$/) })).optional(),
 });
 
 export type SmfNote = z.infer<typeof SmfNoteSchema>;
 export type SmfTrack = z.infer<typeof SmfTrackSchema>;
 export type SmfController = z.infer<typeof SmfControllerSchema>;
+export type SmfBend = z.infer<typeof SmfBendSchema>;
 export type SmfSong = z.infer<typeof SmfSongSchema>;
 export type SmfError = { code: "INVALID_SMF_INPUT"; message: string };
 
@@ -50,13 +69,28 @@ const u32 = (n: number): number[] => [(n >>> 24) & 0xff, (n >> 16) & 0xff, (n >>
 const ascii = (s: string): number[] => Array.from(s, (c) => c.charCodeAt(0));
 const chunk = (kind: string, body: number[]): number[] => [...ascii(kind), ...u32(body.length), ...body];
 
-function conductorTrack(tempoBpm: number, [num, den]: [number, number]): number[] {
-  const microsPerQuarter = Math.round(60_000_000 / tempoBpm);
-  return chunk("MTrk", [
-    0x00, 0xff, 0x51, 0x03, (microsPerQuarter >> 16) & 0xff, (microsPerQuarter >> 8) & 0xff, microsPerQuarter & 0xff,
-    0x00, 0xff, 0x58, 0x04, num, Math.log2(den), 0x18, 0x08,
-    ...END_OF_TRACK,
-  ]);
+const tempoBytes = (bpm: number) => {
+  const us = Math.round(60_000_000 / bpm);
+  return [0xff, 0x51, 0x03, (us >> 16) & 0xff, (us >> 8) & 0xff, us & 0xff];
+};
+
+function conductorTrack(song: SmfSong): number[] {
+  const [num, den] = song.timeSignature;
+  const timed: { tick: number; data: number[] }[] = [
+    { tick: 0, data: tempoBytes(song.tempoBpm) },
+    { tick: 0, data: [0xff, 0x58, 0x04, num, Math.log2(den), 0x18, 0x08] },
+    ...(song.keySignature ? [{ tick: 0, data: [0xff, 0x59, 0x02, song.keySignature.accidentals & 0xff, song.keySignature.minor ? 1 : 0] }] : []),
+    ...(song.markers ?? []).map((m) => ({ tick: m.tick, data: [0xff, 0x06, ...vlq(m.text.length), ...ascii(m.text)] })),
+    ...(song.tempoMap ?? []).map((t) => ({ tick: t.tick, data: tempoBytes(t.bpm) })),
+  ];
+  timed.sort((a, b) => a.tick - b.tick); // stable: the start's tempo and meter stay first
+  let last = 0;
+  const body = timed.flatMap((e) => {
+    const delta = vlq(e.tick - last);
+    last = e.tick;
+    return [...delta, ...e.data];
+  });
+  return chunk("MTrk", [...body, ...END_OF_TRACK]);
 }
 
 /** At equal ticks: setup, note-offs, controllers, note-ons (a repeated pitch re-triggers; CCs land between notes). */
@@ -68,6 +102,11 @@ function instrumentTrack(track: SmfTrack): number[] {
   const name = ascii(track.name);
   const events: TimedEvent[] = [{ tick: 0, order: ORDER.setup, data: [0xff, 0x03, ...vlq(name.length), ...name] }];
   if (track.program !== undefined) events.push({ tick: 0, order: ORDER.setup, data: [0xc0 | ch, track.program] });
+  if (track.bendRange !== undefined) {
+    for (const [cc, value] of [[101, 0], [100, 0], [6, track.bendRange], [38, 0], [101, 127], [100, 127]] as const) {
+      events.push({ tick: 0, order: ORDER.setup, data: [0xb0 | ch, cc, value] });
+    }
+  }
   for (const n of track.notes) {
     events.push({ tick: n.startTick, order: ORDER.noteOn, data: [0x90 | ch, n.pitch, n.velocity] });
     events.push({ tick: n.startTick + n.durationTicks, order: ORDER.noteOff, data: [0x80 | ch, n.pitch, 0] });
@@ -75,6 +114,11 @@ function instrumentTrack(track: SmfTrack): number[] {
   for (const c of track.controllers ?? []) {
     events.push({ tick: c.tick, order: ORDER.controller, data: [0xb0 | ch, c.controller, c.value] });
   }
+  for (const b of track.bends ?? []) {
+    const v = b.value + 8192;
+    events.push({ tick: b.tick, order: ORDER.controller, data: [0xe0 | ch, v & 0x7f, v >> 7] });
+  }
+  for (const p of track.pressure ?? []) events.push({ tick: p.tick, order: ORDER.controller, data: [0xd0 | ch, p.value] });
   events.sort((a, b) => a.tick - b.tick || a.order - b.order);
   let last = 0;
   const body = events.flatMap((e) => {
@@ -117,7 +161,7 @@ export function writeSmf(input: unknown): Result<Uint8Array, SmfError> {
   const header = chunk("MThd", [...u16(1), ...u16(song.tracks.length + 1), ...u16(song.ppq)]);
   return ok(Uint8Array.from([
     ...header,
-    ...conductorTrack(song.tempoBpm, song.timeSignature),
+    ...conductorTrack(song),
     ...song.tracks.flatMap(instrumentTrack),
   ]));
 }

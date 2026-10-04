@@ -57,6 +57,15 @@ class SectionAwareTest(unittest.TestCase):
 
 
 class ShapeTest(unittest.TestCase):
+    def test_sections_follow_given_times_when_the_song_has_a_tempo_map(self):
+        # M11: a ritardando stretches later sections; gb-mcp passes each section's real start and end
+        ctx = dict(SectionAwareTest.CONTEXT, sections=[{"name": "breakdown", "bars": 4, "start_s": 0.0, "end_s": 10.0},
+                                           {"name": "drop", "bars": 4, "start_s": 10.0, "end_s": 16.0}])
+        x = np.vstack([full_mix(BPM, 8) * 0.25, full_mix(BPM, 8)])
+        sections = {s["name"]: s for s in analyze(x, SR, ctx)["sections"]}
+        self.assertEqual((sections["breakdown"]["start_s"], sections["breakdown"]["end_s"]), (0.0, 10.0))
+        self.assertEqual(sections["drop"]["start_s"], 10.0)
+
     def test_without_context_there_are_no_sections_and_no_intent_checks(self):
         out = analyze(full_mix(BPM, 8), SR)
         self.assertEqual(out["sections"], [])

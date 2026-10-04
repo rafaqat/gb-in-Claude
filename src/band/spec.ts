@@ -25,6 +25,9 @@ export const BandNote = z.object({
   pitch: z.number().int().min(0).max(127),
   velocity: z.number().int().min(1).max(127),
   length: z.number().int().min(1).max(2_000_000_000),
+  /** M11: the note bends to `semitones` arriving at `at` (0–1 of its length) — meend; cents: a fixed offset. */
+  slide: z.array(z.object({ at: z.number().min(0).max(1), semitones: z.number().min(-24).max(24) }).strict()).max(16).optional(),
+  cents: z.number().min(-99).max(99).optional(),
 }).strict();
 
 export const BandMidi = z.object({
@@ -47,7 +50,7 @@ export type BuildBandInput = z.infer<typeof BuildBandInput>;
 /** gb_band build's limits for one audio item list (4/4 donors); gb_song band_plan plans only within them. */
 export const BAND_AUDIO_LIMITS = { maxItems: 64, maxBar: 9999, maxBeat: 4.999 } as const;
 
-export const BuildBandErrorCode = z.enum(["INPUT_INVALID", "OUT_EXISTS", "DONOR_INVALID", "WAV_INVALID", "REGION_COUNT", "TRACK_NOT_IN_DONOR", "MIDI_REGION_NOT_IN_DONOR", "WRITE_FAILED", "UNKNOWN_ERROR"]);
+export const BuildBandErrorCode = z.enum(["INPUT_INVALID", "OUT_EXISTS", "DONOR_INVALID", "WAV_INVALID", "REGION_COUNT", "TRACK_NOT_IN_DONOR", "MIDI_REGION_NOT_IN_DONOR", "BEND_RANGE", "WRITE_FAILED", "UNKNOWN_ERROR"]);
 export type BuildBandError = {
   code: z.infer<typeof BuildBandErrorCode>; message: string; recoverable: boolean; suggestion?: string;
   /** true when the build had begun to write: a partial project exists under the output name. */

@@ -14,6 +14,7 @@ import { writeSmf, type SmfSong } from "../midi/smf.js";
 import { smfSongToEvents } from "../render/gm-events.js";
 import type { GmRendererPort } from "../render/gm-renderer.js";
 import { applyTrackLevels } from "../song/levels.js";
+import { applyExpression } from "../song/expression.js";
 import { patchFor } from "../knowledge/gm-patch-map.js";
 import { bandPlan } from "../song/band-plan.js";
 import { GENRE_TEMPLATES, templateSong } from "../song/genres.js";
@@ -57,7 +58,7 @@ const AUDIO_LEFT_OUT = "AUDIO_LEFT_OUT: MIDI cannot carry the audio clips; gb_so
 /** models: the M8 model sidecar (gb_song infill); optional — without it infill is DEPENDENCY_MISSING */
 export type GbSongDeps = { workspaceDir: string; gmRenderer?: GmRendererPort; models?: ModelSidecar };
 
-/** Render + humanize: the performance that both the MIDI file and the draft audio are made from. */
+/** Render + swing + humanize + levels + expression: the performance the MIDI file and the draft audio are made from. */
 function perform(song: Song): { ok: true; smf: SmfSong } | { ok: false; message: string } {
   const rendered = renderSong(song);
   if (!rendered.ok) return { ok: false, message: `${rendered.error.path}: ${rendered.error.message}` };
@@ -67,7 +68,9 @@ function perform(song: Song): { ok: true; smf: SmfSong } | { ok: false; message:
   const performed = humanize(roleTracks, { feel: song.humanize, seed: song.seed, tempoBpm: song.tempo, ppq: PPQ, ...groove });
   const levels = Object.fromEntries(song.tracks.filter((t) => t.level !== undefined).map((t) => [t.name, t.level!]));
   const leveled = applyTrackLevels(performed.map(({ role: _role, glide: _glide, ...t }) => t), levels);
-  return { ok: true, smf: { ...rendered.value, tracks: leveled } };
+  // M11: expression becomes messages last, on the performed notes (bends follow their notes after swing and humanize)
+  const { tracks, ...conductor } = applyExpression(song, leveled, PPQ);
+  return { ok: true, smf: { ...rendered.value, ...conductor, tracks } };
 }
 
 function summarize(song: Song) {

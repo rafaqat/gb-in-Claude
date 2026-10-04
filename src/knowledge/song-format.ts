@@ -42,6 +42,26 @@ groove?: a style mined from real drummers (Groove MIDI Dataset): the drums take 
   afrobeat · afrocuban · blues · country · dance · funk · gospel · highlife · hiphop · jazz · latin · middleeastern ·
   neworleans · pop · punk · reggae · rock · soul
 
+## Expression (M11) — only messages GarageBand honours (measured: eval/m11/MESSAGES.md)
+In notes (single-note lines only — a bend moves every note on the channel):
+  meend / slide  "d5@7>e5@2"  one note bends into e5, arriving after 7 of its 9 shares (glide = last 35 % of the held part)
+                 "a4@2>c5@2>b4@4"  one breath through several pitches
+  shruti         "e5-20c"  20 cents flat for the note's length (also on slide targets: "a4>bb4+30c")
+  accent / soft  "a5!" (+4 dB)   "a5?" (−8 dB)
+  Bend range is the patch's: Flute Solo ±12 · Soft Saw Lead, String Ensemble, Taureg Moon Bass ±2 · Harp none.
+  validate refuses wider slides (BEND_RANGE) and slides on tracks with chords (BEND_NEEDS_MONO).
+tracks[].vibrato: "off" | "light" | "normal" | "wide" — pitch-bend vibrato on notes ≥ 1 beat (leads default "normal").
+On a notes/chords part:
+  dynamics "mf" | "p<f" | "pp<ff>mp" (CC11 hairpins across the section; ppp…fff)
+  pedal "bar" | "half" | "beat" (CC64, re-pedalled)
+  pan −1…1 | {from, to} | {cycle: bars, depth: 0–1, center?} (CC10: fixed, sweep, auto-pan)
+  brightness 0–1 | {from, to} (CC74, synth patches)   volume 0–1 | {from, to} (CC7, fades; 1 = default)
+On a drum part: volume (fades). Drums take levels, not dynamics.
+sections[].tempo (new tempo from the section) · sections[].tempoTo (ramp to it by the section end: rit./accel.)
+Automatic: a key signature from "key", a marker per section. GarageBand ignores CC1 on sampled patches, aftertouch,
+portamento, reverb/chorus sends, mid-track program changes and RPN tuning — gb-mcp does not offer them.
+gb_band build: notes may carry slides and cent offsets too (bends written into the .band region).
+
 ## AI infill (M10, needs the model sidecar)
 gb_song infill {song, section, tracks: ["Keys"], mode?: "exact" | "fast", seed?} → the same Song JSON with those
 melodic tracks' parts in that section rewritten by the Anticipatory Music Transformer (as "notes", 16th grid), on the

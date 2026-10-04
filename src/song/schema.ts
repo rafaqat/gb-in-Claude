@@ -24,10 +24,35 @@ export const CHORD_STYLES: Partial<Record<Role, readonly string[]>> = {
   arp: ["up", "down", "updown", "broken", "gated"],
 };
 
+/** M11 expression — every field maps to a MIDI message GarageBand honours (eval/m11/MESSAGES.md). */
+const DYN = "(ppp|pp|p|mp|mf|f|ff|fff)";
+export const DYNAMIC_MARKS = ["ppp", "pp", "p", "mp", "mf", "f", "ff", "fff"] as const;
+/** CC11 hairpins across the part's section: "mf", "p<f", "pp<ff>mp" (stages evenly spaced). */
+const Dynamics = z.string().regex(new RegExp(`^${DYN}([<>]${DYN})*$`), 'dynamics like "mf", "p<f" or "pp<ff>mp"');
+const Unit = z.number().min(0).max(1);
+/** A fixed value, or a ramp across the section. */
+const Ramp = z.union([Unit, z.object({ from: Unit, to: Unit }).strict()]);
+const PanValue = z.number().min(-1).max(1);
+/** −1 left … 1 right: fixed, a sweep across the section, or auto-pan (one cycle per `cycle` bars). */
+const Pan = z.union([PanValue, z.object({ from: PanValue, to: PanValue }).strict(),
+  z.object({ cycle: z.number().min(0.25).max(64), depth: Unit, center: PanValue.optional() }).strict()]);
+const Expression = {
+  dynamics: Dynamics.optional(),
+  /** Sustain pedal (CC64), re-pedalled each bar, half bar or beat. */
+  pedal: z.enum(["bar", "half", "beat"]).optional(),
+  pan: Pan.optional(),
+  /** Filter brightness (CC74), 0–1: synth patches (measured on Soft Saw Lead). */
+  brightness: Ramp.optional(),
+  /** Channel volume (CC7), 0–1 (1 = GM default 100): fades. */
+  volume: Ramp.optional(),
+};
+export type PartExpression = { dynamics?: string; pedal?: "bar" | "half" | "beat"; pan?: z.infer<typeof Pan>; brightness?: z.infer<typeof Ramp>; volume?: z.infer<typeof Ramp> };
+
 const ChordsPart = z.object({
   chords: z.string().min(1),
   style: z.string().min(1),
   octave: z.number().int().min(0).max(8).optional(),
+  ...Expression,
 }).strict();
 
 /** Level in dB applied as velocity scaling on the GM curve (dB = 40·log10(v'/v)). */
@@ -37,11 +62,14 @@ const GridPart = z.object({
   grid: z.record(z.enum(DRUM_VOICE_NAMES), z.string().min(1)),
   /** Per-voice level in dB, e.g. { kick: -6 } to tame a thumpy kick without touching the hats. */
   levels: z.record(z.enum(DRUM_VOICE_NAMES), LevelDb).optional(),
+  /** Kit volume (CC7) — fades; drums take levels, not dynamics. */
+  volume: Ramp.optional(),
 }).strict().refine((p) => !p.levels || Object.keys(p.levels).every((v) => v in p.grid),
   { message: "levels may only name voices that are in the grid" });
 
 const NotesPart = z.object({
   notes: z.string().min(1),
+  ...Expression,
 }).strict();
 
 const Part = z.union([ChordsPart, GridPart, NotesPart]);
@@ -76,6 +104,8 @@ const Track = z
     level: LevelDb.optional(),
     /** Notes run legato into the next so a mono synth slides (e.g. a trap 808). Leads always glide. */
     glide: z.boolean().optional(),
+    /** Pitch-bend vibrato on notes of a beat or longer (M11). Default: "normal" for leads, "off" otherwise. */
+    vibrato: z.enum(["off", "light", "normal", "wide"]).optional(),
     parts: z.record(z.string(), Part),
     /** The donor's audio track number that holds this track's clips (gb_band). */
     donorTrack: z.number().int().min(1).max(255).optional(),
@@ -98,7 +128,9 @@ const Track = z
     ),
   }));
 
-const Section = z.object({ name: z.string().min(1).max(32), bars: z.number().int().min(1).max(256) }).strict();
+const Tempo = z.number().min(20).max(300);
+/** tempo: a new tempo from the section's start; tempoTo: a ramp to it by the section's end (ritardando, accelerando). */
+const Section = z.object({ name: z.string().min(1).max(32), bars: z.number().int().min(1).max(256), tempo: Tempo.optional(), tempoTo: Tempo.optional() }).strict();
 
 /** 15 melodic channels (1–16 minus drum channel 10). */
 export const MAX_MELODIC_TRACKS = 15;
@@ -164,10 +196,18 @@ export const SongSchema = z
 export type Song = z.output<typeof SongSchema>;
 export type SongError = { code: "SONG_INVALID"; path: string; message: string };
 
+/** For a part (a union of grid / chords / notes), report the issue of the branch the input is meant to be. */
+function specificIssue(issue: z.ZodIssue): z.ZodIssue {
+  if (issue.code !== "invalid_union") return issue;
+  const branch = issue.unionErrors.find((e) => !e.issues.some((i) => i.code === "invalid_type" && i.received === "undefined"
+    && ["grid", "chords", "notes"].includes(String(i.path[i.path.length - 1]))));
+  return branch ? specificIssue(branch.issues[0]!) : issue;
+}
+
 export function parseSong(input: unknown): Result<Song, SongError> {
   const parsed = SongSchema.safeParse(input);
   if (!parsed.success) {
-    const issue = parsed.error.issues[0]!;
+    const issue = specificIssue(parsed.error.issues[0]!);
     return err({ code: "SONG_INVALID", path: issue.path.join("."), message: issue.message });
   }
   return ok(parsed.data);

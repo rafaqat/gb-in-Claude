@@ -5,6 +5,7 @@
  * placed into a GarageBand-made donor project. Paths stay inside the workspace; nothing is ever overwritten.
  */
 import { z } from "zod";
+import { scaleVelocity } from "../song/levels.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { resolveWorkspaceBand, resolveWorkspaceFile, workspaceOutputDir } from "../workspace/paths.js";
@@ -58,8 +59,9 @@ export type GbBandDeps = { workspaceDir: string };
 /** The builder's error codes in the shared result contract. */
 const BAND_CODES: Record<BuildBandError["code"], ErrorCode> = {
   INPUT_INVALID: "INPUT_INVALID", OUT_EXISTS: "FILE_EXISTS", DONOR_INVALID: "DONOR_INVALID", WAV_INVALID: "AUDIO_INVALID", REGION_COUNT: "DONOR_TOO_SMALL",
-  TRACK_NOT_IN_DONOR: "TRACK_NOT_IN_DONOR", MIDI_REGION_NOT_IN_DONOR: "MIDI_REGION_NOT_IN_DONOR", WRITE_FAILED: "WRITE_FAILED", UNKNOWN_ERROR: "INTERNAL_ERROR",
+  TRACK_NOT_IN_DONOR: "TRACK_NOT_IN_DONOR", MIDI_REGION_NOT_IN_DONOR: "MIDI_REGION_NOT_IN_DONOR", BEND_RANGE: "VALIDATION_FAILED", WRITE_FAILED: "WRITE_FAILED", UNKNOWN_ERROR: "INTERNAL_ERROR",
 };
+const ACCENT_DB = { accent: 4, soft: -8 } as const;
 
 /** Song JSON note syntax → the builder's notes (ticks at 960 PPQ), or why not. */
 function midiPart(m: z.infer<typeof BandMidiItem>, i: number): { ok: true; value: BandMidi } | { ok: false; message: string } {
@@ -67,7 +69,9 @@ function midiPart(m: z.infer<typeof BandMidiItem>, i: number): { ok: true; value
   if (!parsed.ok) return { ok: false, message: `midi.${i}: ${parsed.error.message}` };
   if (parsed.value.bars > m.bars) return { ok: false, message: `midi.${i}: the notes span ${parsed.value.bars} bars but the region is ${m.bars}` };
   const notes = parsed.value.events.flatMap((e) => e.pitches.map((pitch) => ({
-    tick: Math.round(e.startBeat * TICKS_PER_BEAT), pitch, velocity: m.velocity ?? 96, length: Math.max(1, Math.round(e.durationBeats * TICKS_PER_BEAT)),
+    tick: Math.round(e.startBeat * TICKS_PER_BEAT), pitch, length: Math.max(1, Math.round(e.durationBeats * TICKS_PER_BEAT)),
+    velocity: e.accent ? scaleVelocity(m.velocity ?? 96, ACCENT_DB[e.accent]) : (m.velocity ?? 96),
+    ...(e.slide ? { slide: e.slide } : {}), ...(e.cents !== undefined ? { cents: e.cents } : {}), // M11: bends, computed by the builder
   })));
   return { ok: true, value: { region: m.region, notes, length: m.bars * BEATS_PER_BAR * TICKS_PER_BEAT, ...(m.program !== undefined ? { program: m.program } : {}) } };
 }

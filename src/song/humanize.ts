@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
-import type { SmfController, SmfNote, SmfTrack } from "../midi/smf.js";
+import type { SmfNote, SmfTrack } from "../midi/smf.js";
 import type { Role } from "./schema.js";
 import { HUMANIZE_FEELS } from "./schema.js";
 import type { GrooveFeel } from "./grooves.js";
@@ -33,8 +33,6 @@ const FEEL_SCALE: Record<Exclude<Feel, "off">, number> = { tight: 0.5, natural: 
 const MAX_SHIFT_MS = 30;
 const LEAD_ROLES = new Set<Role>(["lead", "lead-high"]);
 const GLIDE_OVERLAP_MS = 12;
-const VIBRATO_DEPTH = 45; // CC1 peak
-const VIBRATO_STEPS = 6;
 const WALK_MEMORY = 0.85;
 
 /** Seeded PRNG (mulberry32) — same seed, same performance. */
@@ -122,12 +120,11 @@ function humanizeTrack(track: RoleTrack, opts: HumanizeOptions, scale: number, r
       const [lo, hi] = feel.gate;
       durationTicks = Math.max(opts.ppq / 32, Math.round(n.durationTicks * (lo + ((hi - lo) * velocity) / 127)));
     }
-    return { pitch: n.pitch, velocity, durationTicks, startTick: Math.max(0, n.startTick + Math.round(shiftMs * ticksPerMs)) };
+    return { ...n, velocity, durationTicks, startTick: Math.max(0, n.startTick + Math.round(shiftMs * ticksPerMs)) }; // keeps expression (slide, cents)
   });
   if (LEAD_ROLES.has(track.role) || track.glide) addGlide(out, opts.ppq, Math.round(GLIDE_OVERLAP_MS * ticksPerMs));
   const notes = removeSamePitchOverlaps(out).sort((a, b) => a.startTick - b.startTick || a.pitch - b.pitch);
-  const controllers = LEAD_ROLES.has(track.role) ? delayedVibrato(notes, opts.ppq, track.controllers ?? []) : track.controllers;
-  return { ...track, notes, ...(controllers ? { controllers } : {}) };
+  return { ...track, notes }; // vibrato is a pitch-bend LFO in song/expression.ts (samplers ignore CC1, probe 2026-10-04)
 }
 
 /** Legato: a lead note runs slightly into the next different note, so mono synths glide between them. */
@@ -141,21 +138,6 @@ function addGlide(notes: SmfNote[], ppq: number, overlapTicks: number): void {
       a.durationTicks = b.startTick - a.startTick + overlapTicks;
     }
   }
-}
-
-/** CC1 vibrato that blooms after the first third of each long (≥ 1 beat) note, reset at its end. */
-function delayedVibrato(notes: SmfNote[], ppq: number, existing: SmfController[]): SmfController[] {
-  const cc: SmfController[] = [...existing];
-  for (const n of notes) {
-    if (n.durationTicks < ppq) continue;
-    const end = n.startTick + n.durationTicks;
-    const t0 = n.startTick + Math.ceil(n.durationTicks / 3);
-    for (let s = 0; s <= VIBRATO_STEPS; s++) {
-      cc.push({ tick: t0 + Math.floor(((end - t0) * s) / VIBRATO_STEPS), controller: 1, value: Math.round((VIBRATO_DEPTH * s) / VIBRATO_STEPS) });
-    }
-    cc.push({ tick: end, controller: 1, value: 0 });
-  }
-  return cc;
 }
 
 /** Musical humanization: correlated micro-timing, per-role pocket, metric accents, phrase arcs. */

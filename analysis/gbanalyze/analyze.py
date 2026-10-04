@@ -42,7 +42,8 @@ def _section_windows(context: dict, seconds: float):
     bar_s = beats * 60.0 / tempo_bpm
     windows, missing, cursor = [], [], 0.0
     for s in context["sections"]:
-        start, end = cursor, cursor + s["bars"] * bar_s
+        # M11: with a tempo map gb-mcp passes each section's real start and end (seconds)
+        start, end = (s["start_s"], s["end_s"]) if "start_s" in s and "end_s" in s else (cursor, cursor + s["bars"] * bar_s)
         cursor = end
         if start >= seconds:
             missing.append(s["name"])

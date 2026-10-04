@@ -8,7 +8,7 @@ import { voiceChord, renderPadSpan, type PadStyle } from "../composition/pad-pat
 import { renderArpSpan, type ArpStyle } from "../composition/arp-patterns.js";
 import { parseProgression } from "../composition/progression.js";
 import { parseGrid } from "../composition/drum-grid.js";
-import { parseNotes } from "../composition/mini-notation.js";
+import { parseNotes, type Slide } from "../composition/mini-notation.js";
 import { DRUM_VOICES, type DrumVoice } from "../composition/drums.js";
 import { resolveProgram } from "./styles.js";
 import { scaleVelocity } from "./levels.js";
@@ -20,10 +20,14 @@ const DRUM_HIT_BEATS = 0.25;
 const MELODY_VELOCITY = 96;
 
 export type RenderError = { code: "RENDER_FAILED"; path: string; message: string };
+/** A note with its expression (M11): turned into pitch bends after swing and humanize (song/expression.ts). */
+export type ExpressiveNote = SmfNote & { slide?: Slide[]; cents?: number };
+const ACCENT_DB = { accent: 4, soft: -8 } as const;
 
 type Part = Song["tracks"][number]["parts"][string];
 /** A rendered pattern: notes in beats relative to its start, and how many bars it spans before looping. */
-type Pattern = { bars: number; notes: NoteEvent[] };
+type PatternNote = NoteEvent & { slide?: Slide[]; cents?: number };
+type Pattern = { bars: number; notes: PatternNote[] };
 
 function renderChords(role: Role, part: Extract<Part, { chords: string }>, beatsPerBar: number): Result<Pattern, string> {
   const prog = parseProgression(part.chords, beatsPerBar);
@@ -68,7 +72,11 @@ function renderMelody(notes: string, beatsPerBar: number): Result<Pattern, strin
   return ok({
     bars: parsed.value.bars,
     notes: parsed.value.events.flatMap((e) =>
-      e.pitches.map((pitch) => ({ pitch, startBeat: e.startBeat, durationBeats: e.durationBeats, velocity: MELODY_VELOCITY }))),
+      e.pitches.map((pitch) => ({
+        pitch, startBeat: e.startBeat, durationBeats: e.durationBeats,
+        velocity: e.accent ? scaleVelocity(MELODY_VELOCITY, ACCENT_DB[e.accent]) : MELODY_VELOCITY,
+        ...(e.slide ? { slide: e.slide } : {}), ...(e.cents !== undefined ? { cents: e.cents } : {}),
+      }))),
   });
 }
 
@@ -83,9 +91,9 @@ function renderPart(role: Role, part: Part, beatsPerBar: number): Result<Pattern
 }
 
 /** Loop a pattern from `startBeat` to fill `lengthBeats`, truncating (and clipping) at the section end. */
-function placeLooped(pattern: Pattern, startBeat: number, lengthBeats: number, beatsPerBar: number): NoteEvent[] {
+function placeLooped(pattern: Pattern, startBeat: number, lengthBeats: number, beatsPerBar: number): PatternNote[] {
   const patternBeats = pattern.bars * beatsPerBar;
-  const placed: NoteEvent[] = [];
+  const placed: PatternNote[] = [];
   for (let offset = 0; offset < lengthBeats; offset += patternBeats) {
     for (const n of pattern.notes) {
       const local = offset + n.startBeat;
@@ -116,7 +124,7 @@ export function renderSong(song: Song): Result<SmfSong, RenderError> {
   const tracks: SmfTrack[] = [];
   for (const track of song.tracks) {
     const channel = track.role === "drums" ? DRUM_CHANNEL : channels.shift()!;
-    const notes: SmfNote[] = [];
+    const notes: ExpressiveNote[] = [];
     for (const [sectionName, part] of Object.entries(track.parts)) {
       const section = sectionStart.get(sectionName)!;
       const patterns = renderPart(track.role, part, beatsPerBar);
@@ -125,7 +133,8 @@ export function renderSong(song: Song): Result<SmfSong, RenderError> {
       }
       for (const pattern of patterns.value) {
         for (const n of placeLooped(pattern, section.startBeat, section.lengthBeats, beatsPerBar)) {
-          notes.push({ pitch: n.pitch, startTick: toTicks(n.startBeat), durationTicks: Math.max(1, toTicks(n.durationBeats)), velocity: n.velocity });
+          notes.push({ pitch: n.pitch, startTick: toTicks(n.startBeat), durationTicks: Math.max(1, toTicks(n.durationBeats)), velocity: n.velocity,
+            ...(n.slide ? { slide: n.slide } : {}), ...(n.cents !== undefined ? { cents: n.cents } : {}) });
         }
       }
     }

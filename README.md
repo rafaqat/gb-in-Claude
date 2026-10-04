@@ -221,6 +221,22 @@ UK garage, trap, drum and bass, EDM, classical/pop crossover, ambient trance, Le
 Song JSON also takes `groove` (the timing and accents of real drummers in 18 styles, mined from the Groove MIDI
 Dataset), `swing` (50 straight … 75 hard, on 16ths or 8ths) and, per track, `glide` (legato, so a mono 808 slides).
 
+### Expression: slides, vibrato, dynamics, pedal, pan, tempo changes
+
+Song JSON can shape a performance with the MIDI messages GarageBand actually honours — measured in its exports
+(`eval/m11/MESSAGES.md`):
+
+- **Slides (meend) and microtones** in the notes: `"d5@7>e5@2"` bends one note into the next, `"a4@2>c5@2>b4@4"`
+  bends through several in one breath, `"e5-20c"` tunes a note 20 cents flat. Accents `"a5!"`, soft notes `"a5?"`.
+- **Vibrato** per track (pitch bend, so sampled instruments respond too): `"vibrato": "light" | "normal" | "wide"`.
+- **Per part:** `dynamics` hairpins (`"p<f"`, `"pp<ff>mp"`), sustain `pedal`, `pan` (fixed, sweep or auto-pan),
+  synth `brightness`, `volume` fades.
+- **Per section:** a new `tempo`, or `tempoTo` for a ritardando or accelerando.
+
+How far a sound can bend is a property of the GarageBand patch — Flute Solo ±12 semitones, most others ±2, the harp
+not at all — and `gb_song validate` refuses a slide the instrument cannot play. `gb_band build` writes the same bends
+into `.band` files. `eval/m11` is the live check: one Song JSON, every feature measured in the GarageBand export.
+
 ### Optional: AI models (Apple Silicon)
 
 `./scripts/install.sh --with-models` creates `models/.venv` (Python 3.12, PyTorch on Metal, MLX). Model weights download

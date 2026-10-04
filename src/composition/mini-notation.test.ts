@@ -58,3 +58,41 @@ describe("parseNotes", () => {
     });
   });
 });
+
+describe("parseNotes: expression (M11)", () => {
+  it("a slide token is one note that bends into the next pitch: d5@7>e5@2 (meend)", () => {
+    const r = parseNotes("d5@7>e5@2", 4);
+    expect(r.ok && r.value.events).toEqual([
+      { startBeat: 0, durationBeats: 4, pitches: [74], slide: [{ at: 7 / 9, semitones: 2 }] },
+    ]);
+  });
+  it("a chain bends through several pitches in one breath: a4@2>c5@2>b4@4", () => {
+    const r = parseNotes("a4@2>c5@2>b4@4 | ~", 4);
+    expect(r.ok && r.value.events).toEqual([
+      { startBeat: 0, durationBeats: 4, pitches: [69], slide: [{ at: 0.25, semitones: 3 }, { at: 0.5, semitones: 2 }] },
+    ]);
+  });
+  it("a cent offset tunes one note off the tempered grid (shruti): e5-20c, and a slide may land off-grid too", () => {
+    const r = parseNotes("e5-20c a4>bb4+30c", 4);
+    expect(r.ok && r.value.events).toEqual([
+      { startBeat: 0, durationBeats: 4 / 3, pitches: [76], cents: -20 }, // a chain weighs the sum of its points: 1 + 2 shares
+      { startBeat: 4 / 3, durationBeats: 8 / 3, pitches: [69], slide: [{ at: 0.5, semitones: 1.3 }] },
+    ]);
+  });
+  it("! accents a note, ? softens it; plain tokens keep their old shape", () => {
+    const r = parseNotes("a4! c5? e5 [a3,e4]@1!", 4);
+    expect(r.ok && r.value.events.map((e) => e.accent)).toEqual(["accent", "soft", undefined, "accent"]);
+    expect(r.ok && Object.keys(r.value.events[2]!)).toEqual(["startBeat", "durationBeats", "pitches"]);
+  });
+  it.each([
+    ["[a4,c5]>d5", "a slide joins single pitches"],
+    ["~>a4", "a slide joins single pitches"],
+    ["~-20c", "a rest has no pitch"],
+    ["~!", "a rest cannot be accented"],
+    ["a4>", "bad token"],
+  ])("refuses %s", (input, message) => {
+    const r = parseNotes(input, 4);
+    expect(!r.ok && r.error.message).toContain(message);
+  });
+});
+

@@ -85,7 +85,7 @@ describe("parseSong: levels", () => {
   it.each([
     ["track level above +6 dB", { name: "Drums", role: "drums", level: 9, parts: { intro: { grid: { kick: "x..." } } } }, "tracks.0.level"],
     ["track level below -24 dB", { name: "Drums", role: "drums", level: -30, parts: { intro: { grid: { kick: "x..." } } } }, "tracks.0.level"],
-    ["a level for a voice the grid does not have", { name: "Drums", role: "drums", parts: { intro: { grid: { kick: "x..." }, levels: { cowbell: -3 } } } }, "tracks.0.parts.intro"],
+    ["a level for a voice the grid does not have", { name: "Drums", role: "drums", parts: { intro: { grid: { kick: "x..." }, levels: { cowbell: -3 } } } }, "tracks.0.parts.intro.levels.cowbell"], // M11: the exact field, not just the part
   ])("rejects %s", (_label, track, path) => {
     const out = parseSong({ ...minimal, tracks: [track] });
     expect(out.ok).toBe(false);
@@ -155,5 +155,38 @@ describe("parseSong: audio clips (M7, section-relative)", () => {
     const out = parseSong(song);
     expect(out.ok).toBe(false);
     if (!out.ok) expect(out.error.path).toBe(path);
+  });
+});
+
+describe("parseSong: expression fields (M11)", () => {
+  const base = (track: object, sections: object[] = [{ name: "a", bars: 2 }]) =>
+    parseSong({ title: "t", tempo: 100, sections, tracks: [{ name: "X", role: "lead", parts: { a: { notes: "a4" } }, ...track }] });
+  it("accepts dynamics hairpins, pedal, pan (fixed, sweep, auto-pan), brightness and volume on a notes part", () => {
+    for (const extra of [{ dynamics: "p<f" }, { dynamics: "mf" }, { dynamics: "pp<ff>mp" }, { pedal: "bar" }, { pan: -0.5 },
+      { pan: { from: -1, to: 1 } }, { pan: { cycle: 2, depth: 0.5 } }, { brightness: 0.3 }, { brightness: { from: 0, to: 1 } },
+      { volume: { from: 0, to: 1 } }]) {
+      const r = base({ parts: { a: { notes: "a4", ...extra } } });
+      expect(r.ok, JSON.stringify(extra)).toBe(true);
+    }
+  });
+  it.each([
+    [{ parts: { a: { notes: "a4", dynamics: "loud" } } }, "dynamics"],
+    [{ parts: { a: { notes: "a4", dynamics: "p<" } } }, "dynamics"],
+    [{ parts: { a: { notes: "a4", pan: 2 } } }, "pan"],
+    [{ parts: { a: { notes: "a4", pedal: "always" } } }, "pedal"],
+    [{ vibrato: "huge" }, "vibrato"],
+  ])("refuses %j", (track, field) => {
+    const r = base(track);
+    expect(!r.ok && r.error.path).toContain(field);
+  });
+  it("accepts track vibrato, a section tempo and a tempo ramp; refuses a tempo outside 20–300", () => {
+    expect(base({ vibrato: "wide" }, [{ name: "a", bars: 2, tempo: 90, tempoTo: 72 }]).ok).toBe(true);
+    expect(base({}, [{ name: "a", bars: 2, tempo: 400 }]).ok).toBe(false);
+  });
+  it("drum parts take volume, not dynamics (drums use levels)", () => {
+    const drums = (part: object) => parseSong({ title: "t", tempo: 100, sections: [{ name: "a", bars: 1 }],
+      tracks: [{ name: "D", role: "drums", parts: { a: { grid: { kick: "x..." }, ...part } } }] });
+    expect(drums({ volume: { from: 0, to: 1 } }).ok).toBe(true);
+    expect(drums({ dynamics: "p<f" }).ok).toBe(false);
   });
 });

@@ -62,7 +62,7 @@ describe("humanize: musical feel (approved by ear as v3)", () => {
   });
 });
 
-describe("humanize: lead expression (legato glide + delayed vibrato)", () => {
+describe("humanize: lead expression (legato glide)", () => {
   const lead = humanize(fixture(), opts).find((t) => t.name === "Lead")!;
   const notes = [...lead.notes].sort((a, b) => a.startTick - b.startTick);
 
@@ -73,14 +73,10 @@ describe("humanize: lead expression (legato glide + delayed vibrato)", () => {
     for (const [a, b] of overlapping) expect(a.startTick + a.durationTicks - b.startTick).toBeLessThanOrEqual(msToTicks(20));
   });
 
-  it("adds CC1 vibrato on notes of a beat or longer: starts at 0, rises after the first third, resets at note end", () => {
-    const cc = lead.controllers ?? [];
-    expect(cc.length).toBeGreaterThan(0);
-    expect(cc.every((c) => c.controller === 1 && c.value <= 64)).toBe(true);
-    const long = notes.find((n) => n.durationTicks >= PPQ)!;
-    const inNote = cc.filter((c) => c.tick >= long.startTick && c.tick <= long.startTick + long.durationTicks);
-    expect(inNote[0]!.tick).toBeGreaterThanOrEqual(long.startTick + long.durationTicks / 3 - 1);
-    expect(inNote.at(-1)!.value).toBe(0);
+  // M11 (requirement changed): GarageBand's sampled patches ignore CC1 (probe 2026-10-04), so vibrato is now a
+  // pitch-bend LFO added by song/expression.ts; humanize adds no controllers.
+  it("adds no CC1 vibrato (pitch-bend vibrato comes from the expression stage)", () => {
+    expect(lead.controllers ?? []).toEqual([]);
   });
 
   it("does not add vibrato or glide to non-lead roles", () => {
@@ -126,5 +122,14 @@ describe("humanize: invariants (same notes in, same notes out)", () => {
   it("is deterministic per seed, and different seeds differ", () => {
     expect(humanize(fixture(), opts)).toEqual(humanize(fixture(), opts));
     expect(humanize(fixture(), opts)).not.toEqual(humanize(fixture(), { ...opts, seed: 8 }));
+  });
+});
+
+describe("humanize keeps expression (M11)", () => {
+  it("a moved note keeps its slide and cent offset", () => {
+    const track = { name: "Fl", channel: 1, role: "lead" as const,
+      notes: [{ pitch: 74, startTick: 0, durationTicks: 960, velocity: 96, slide: [{ at: 0.75, semitones: 2 }], cents: -10 }] };
+    const [out] = humanize([track], { feel: "natural", seed: 3, tempoBpm: 120, ppq: 480 });
+    expect(out!.notes[0]).toMatchObject({ slide: [{ at: 0.75, semitones: 2 }], cents: -10 });
   });
 });

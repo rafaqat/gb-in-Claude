@@ -10,6 +10,7 @@ import { BuildBandHandler } from "./handler.js";
 import { parseProjectData, serializeProjectData } from "./projectdata.js";
 import { audioPlacements, linkedAudio, readAudioFile, readAudioRegion } from "./audio.js";
 import { midiRegions } from "./midi.js";
+import { decodeNoteList } from "./notes.js";
 import { songLength } from "./song.js";
 import { wavInfo } from "./wav.js";
 import { bareWav } from "./testing.js";
@@ -187,6 +188,33 @@ describe("BuildBandHandler", () => {
       { name: "Keys", length: 7680, notes: keys },
       { name: "Bass", length: 7680, notes: bass },
     ]);
+  });
+
+  it("M11: a slide on a Flute Solo region writes RPN 12 and pitch bends into the region's event list", async () => {
+    writeFileSync(join(dir, "vox.wav"), bareWav(3000));
+    const out = join(dir, "meend.band");
+    const r = await new BuildBandHandler().execute({
+      donor: avDonor, out, regions: [{ wav: join(dir, "vox.wav"), tick: 0, track: 1 }],
+      midi: [{ region: "Keys", program: 73, length: 3840, notes: [{ tick: 0, pitch: 74, velocity: 90, length: 1920, slide: [{ at: 0.75, semitones: 2 }] }] }],
+    });
+    expect(r.ok).toBe(true);
+    const pd = parseProjectData(new Uint8Array(readFileSync(join(out, "Alternatives", "000", "ProjectData"))));
+    if (!pd.ok) throw new Error(pd.error.message);
+    const keys = midiRegions(pd.value).find((m) => m.name === "Keys")!;
+    const events = decodeNoteList(pd.value.records[keys.noteRecord]!.payload);
+    expect(events.filter((e) => e.kind === "controller").map((e) => e.kind === "controller" && [e.controller, e.value])).toEqual([[101, 0], [100, 0], [6, 12], [38, 0], [101, 127], [100, 127]]);
+    const bends = events.flatMap((e) => (e.kind === "bend" ? [e] : []));
+    expect(bends.find((b) => b.tick === 1440)?.value).toBe(Math.round((2 / 12) * 8192)); // arrives at ¾ of 1920 ticks
+    expect(bends[bends.length - 1]!.value).toBe(0); // reset after the note
+  });
+
+  it("M11: refuses a slide wider than the region's instrument can bend (String Ensemble: ±2)", async () => {
+    writeFileSync(join(dir, "vox.wav"), bareWav(3000));
+    const r = await new BuildBandHandler().execute({
+      donor: avDonor, out: join(dir, "wide.band"), regions: [{ wav: join(dir, "vox.wav"), tick: 0, track: 1 }],
+      midi: [{ region: "Keys", program: 48, length: 3840, notes: [{ tick: 0, pitch: 60, velocity: 90, length: 1920, slide: [{ at: 0.5, semitones: 4 }] }] }],
+    });
+    expect(!r.ok && r.error.code).toBe("BEND_RANGE");
   });
 
   it("refuses MIDI for a region the donor does not have, naming the regions it does have", async () => {

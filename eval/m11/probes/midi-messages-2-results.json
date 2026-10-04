@@ -1,0 +1,17 @@
+{
+ "SynCC1": "pitch wobble 0.5 \u2192 47.3 cents \u00b7 level wobble 2.07 \u2192 2.49 dB \u00b7 centroid 2496 \u2192 3078 Hz \u00b7 level +1.0 dB",
+ "StrCC1": "pitch wobble 728.6 \u2192 21.7 cents \u00b7 level wobble 4.02 \u2192 3.72 dB \u00b7 centroid 2223 \u2192 2009 Hz \u00b7 level -1.4 dB",
+ "SynPres": "pitch wobble 0.0 \u2192 10.4 cents \u00b7 level wobble 1.97 \u2192 1.79 dB \u00b7 centroid 2389 \u2192 3269 Hz \u00b7 level +0.0 dB",
+ "SynPoly": "pitch wobble 0.5 \u2192 0.0 cents \u00b7 level wobble 1.78 \u2192 1.90 dB \u00b7 centroid 2413 \u2192 2381 Hz \u00b7 level +0.5 dB",
+ "SynPorta": "time between the two pitches per transition 0 \u2192 0 ms",
+ "SynReso": "spectral peakiness 59.0 \u2192 57.7 dB \u00b7 centroid 3870 \u2192 4364 Hz",
+ "SynRel": "tail after the note -17.3 \u2192 -16.8 dB",
+ "FluRev": "tail after the note -3.5 \u2192 -5.9 dB",
+ "SynRev": "tail after the note -17.0 \u2192 -17.3 dB",
+ "SynCho": "side/mid -2.0 \u2192 -1.6 dB",
+ "SynBend": "bend at full scale: +2.00 semitones (12 = RPN range honoured, 2 = default only)",
+ "StrBend": "bend at full scale: +2.00 semitones (12 = RPN range honoured, 2 = default only)",
+ "BasBend": "bend at full scale: +2.00 semitones (12 = RPN range honoured, 2 = default only)",
+ "HrpBend": "bend at full scale: +0.00 semitones (12 = RPN range honoured, 2 = default only)",
+ "PnoOffVel": "release (after note-off) -6.7 \u2192 -4.9 dB"
+}

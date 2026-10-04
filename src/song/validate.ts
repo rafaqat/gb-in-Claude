@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { INSTRUMENT_RANGES } from "../knowledge/instrument-ranges.js";
-import { renderSong } from "./render.js";
-import type { Song } from "./schema.js";
+import { patchFor } from "../knowledge/gm-patch-map.js";
+import { bendRangeFor } from "../knowledge/bend-ranges.js";
+import { renderSong, type ExpressiveNote } from "./render.js";
+import type { PartExpression, Song } from "./schema.js";
 
 export type Issue = {
   severity: "error" | "warning";
-  code: "OUT_OF_INSTRUMENT_RANGE" | "RENDER_FAILED" | "ROLE_REGISTER" | "EMPTY_SECTION" | "HUMANIZE_OFF";
+  code: "OUT_OF_INSTRUMENT_RANGE" | "RENDER_FAILED" | "ROLE_REGISTER" | "EMPTY_SECTION" | "HUMANIZE_OFF"
+    | "BEND_RANGE" | "BEND_NEEDS_MONO" | "BEND_RANGE_UNMEASURED" | "NO_PITCH_BEND" | "BRIGHTNESS_SYNTH_ONLY";
   path: string;
   message: string;
 };
@@ -65,5 +68,51 @@ export function validateSong(song: Song): Issue[] {
         `Transpose the part, or move it to an instrument that reaches it (e.g. role "lead-high").`,
     });
   }
+  issues.push(...expressionIssues(song, rendered.value.tracks));
+  return issues;
+}
+
+/** GM synth programs (synth bass, leads, pads, fx): CC74 brightness was measured on one of them (Soft Saw Lead). */
+const isSynth = (program: number) => program === 38 || program === 39 || (program >= 80 && program <= 103);
+
+/** M11: bends and controllers against what the GarageBand patch does (eval/m11/MESSAGES.md). */
+function expressionIssues(song: Song, tracks: { name: string; channel: number; program?: number | undefined; notes: ExpressiveNote[] }[]): Issue[] {
+  const issues: Issue[] = [];
+  song.tracks.forEach((t, i) => {
+    const track = tracks[i]!;
+    if (t.role === "drums" || track.program === undefined) return;
+    const patch = patchFor(track.program, track.channel) ?? `program ${track.program}`;
+    const range = bendRangeFor(patchFor(track.program, track.channel));
+    const path = `tracks.${t.name}`;
+    const bent = track.notes.filter((n) => n.slide?.length || n.cents !== undefined);
+    if (bent.length) {
+      const chords = track.notes.some((n, k) => track.notes.some((m, j) => j !== k && m.startTick === n.startTick))
+        || Object.values(t.parts).some((p) => "chords" in p);
+      if (chords) {
+        issues.push({ severity: "error", code: "BEND_NEEDS_MONO", path,
+          message: "slides and cent offsets need a single-note line: a pitch bend moves every note sounding on the channel. Move the chords to another track." });
+      }
+      const widest = Math.max(...bent.flatMap((n) => [Math.abs((n.cents ?? 0) / 100), ...(n.slide ?? []).map((s) => Math.abs(s.semitones))]));
+      if (range.semitones === 0) {
+        issues.push({ severity: "error", code: "BEND_RANGE", path, message: `${patch} does not respond to pitch bend: slides and cent offsets would not sound. Use another instrument for this line.` });
+      } else if (widest > range.semitones + 1e-9) {
+        issues.push({ severity: "error", code: "BEND_RANGE", path,
+          message: `${patch} bends ±${range.semitones} semitones; this part bends ${Math.round(widest * 100) / 100}. ` +
+            `Split the slide into notes, or use Flute Solo (program 73: ±12).` });
+      }
+      if (!range.measured) {
+        issues.push({ severity: "warning", code: "BEND_RANGE_UNMEASURED", path,
+          message: `${patch}'s bend range has not been measured; gb-mcp assumes ±2 semitones. Listen to the slides.` });
+      }
+    }
+    if (t.vibrato !== undefined && t.vibrato !== "off" && range.semitones === 0) {
+      issues.push({ severity: "warning", code: "NO_PITCH_BEND", path, message: `${patch} does not respond to pitch bend: vibrato "${t.vibrato}" has no effect.` });
+    }
+    const bright = Object.values(t.parts).some((p) => (p as PartExpression).brightness !== undefined);
+    if (bright && !isSynth(track.program)) {
+      issues.push({ severity: "warning", code: "BRIGHTNESS_SYNTH_ONLY", path,
+        message: `brightness (CC74) moves a synth's filter; ${patch} is a sampled instrument and may ignore it.` });
+    }
+  });
   return issues;
 }

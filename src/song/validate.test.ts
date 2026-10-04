@@ -65,3 +65,42 @@ describe("validateSong: instrument ranges (the flute problem)", () => {
     expect(issues.filter((i) => i.severity === "error")).toEqual([]);
   });
 });
+
+describe("validateSong: expression against what the patch can do (M11, probe 2026-10-04)", () => {
+  const check = (track: object, sections: object[] = [{ name: "a", bars: 1 }]) => {
+    const p = parseSong({ title: "t", tempo: 100, sections, tracks: [{ name: "X", role: "lead", ...track }] });
+    if (!p.ok) throw new Error(p.error.message);
+    return validateSong(p.value);
+  };
+  const codes = (issues: ReturnType<typeof check>) => issues.map((i) => `${i.severity}:${i.code}`);
+  it("Flute Solo slides up to ±12 semitones; wider is an error", () => {
+    expect(codes(check({ program: 73, parts: { a: { notes: "c5@3>c6@1" } } }))).toEqual([]);
+    expect(codes(check({ program: 73, parts: { a: { notes: "c5@3>d6@1" } } }))).toContain("error:BEND_RANGE");
+  });
+  it("±2-semitone patches (Soft Saw Lead, String Ensemble) refuse a third, accept a whole step", () => {
+    expect(codes(check({ program: 81, parts: { a: { notes: "c5@3>d5@1" } } }))).toEqual([]);
+    const issues = check({ program: 48, parts: { a: { notes: "c5@3>e5@1" } } });
+    expect(codes(issues)).toContain("error:BEND_RANGE");
+    expect(issues.find((i) => i.code === "BEND_RANGE")!.message).toContain("±2");
+  });
+  it("the harp does not bend: a slide or a cent offset is an error; explicit vibrato is a warning", () => {
+    expect(codes(check({ program: 46, parts: { a: { notes: "c5@3>d5@1" } } }))).toContain("error:BEND_RANGE");
+    expect(codes(check({ program: 46, parts: { a: { notes: "c5-20c" } } }))).toContain("error:BEND_RANGE");
+    expect(codes(check({ program: 46, vibrato: "wide", parts: { a: { notes: "c5" } } }))).toContain("warning:NO_PITCH_BEND");
+  });
+  it("a bend on a track that also plays chords is an error (a bend moves every note on the channel)", () => {
+    expect(codes(check({ program: 73, parts: { a: { notes: "c5@3>d5@1 [c5,e5]" } } }))).toContain("error:BEND_NEEDS_MONO");
+    const pad = check({ role: "pad", program: 81, parts: { a: { notes: "c5@3>d5@1" }, b: { chords: "C", style: "sustain" } } },
+      [{ name: "a", bars: 1 }, { name: "b", bars: 1 }]);
+    expect(codes(pad)).toContain("error:BEND_NEEDS_MONO");
+  });
+  it("Steinway Grand Piano and Fingerstyle Bass were measured at ±2 (M11 gate, .band export): a whole step, no warning", () => {
+    expect(codes(check({ program: 0, vibrato: "off", parts: { a: { notes: "c5@3>d5@1" } } }))).toEqual([]);
+    expect(codes(check({ role: "bass", program: 33, parts: { a: { notes: "a2@3>b2@1" } } }))).toEqual([]);
+  });
+  it("an unmeasured patch's bend range is assumed ±2 (warning); brightness on a sampled patch is a warning", () => {
+    expect(codes(check({ program: 71, parts: { a: { notes: "c5@3>d5@1" } } }))).toContain("warning:BEND_RANGE_UNMEASURED");
+    expect(codes(check({ program: 73, parts: { a: { notes: "c5", brightness: 0.2 } } }))).toContain("warning:BRIGHTNESS_SYNTH_ONLY");
+    expect(codes(check({ program: 81, parts: { a: { notes: "c5", brightness: 0.2 } } }))).toEqual([]);
+  });
+});

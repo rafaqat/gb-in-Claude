@@ -85,3 +85,23 @@ describe("renderSong", () => {
     if (!out.ok) expect(out.error).toMatchObject({ code: "RENDER_FAILED", path: "tracks.Lead.parts.intro" });
   });
 });
+
+describe("renderSong: expression in notes (M11)", () => {
+  const song = (notes: string) => {
+    const p = parseSong({ title: "t", tempo: 120, sections: [{ name: "a", bars: 1 }],
+      tracks: [{ name: "Fl", role: "lead", program: 73, parts: { a: { notes } } }] });
+    if (!p.ok) throw new Error(p.error.message);
+    const r = renderSong(p.value);
+    if (!r.ok) throw new Error(r.error.message);
+    return r.value.tracks[0]!.notes;
+  };
+  it("keeps a slide and a cent offset on the rendered note", () => {
+    expect(song("d5@3>e5@1 a4-20c@4")).toEqual([
+      { pitch: 74, startTick: 0, durationTicks: 960, velocity: 96, slide: [{ at: 0.75, semitones: 2 }] },
+      { pitch: 69, startTick: 960, durationTicks: 960, velocity: 96, cents: -20 },
+    ]);
+  });
+  it("an accent is 4 dB louder, a soft note 8 dB quieter (velocity on the GM curve)", () => {
+    expect(song("a4! a4 a4? ~").map((n) => n.velocity)).toEqual([121, 96, 61]); // 96·10^(±dB/40)
+  });
+});

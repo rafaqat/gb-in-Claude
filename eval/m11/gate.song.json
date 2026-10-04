@@ -1,0 +1,21 @@
+{
+  "title": "M11 gate", "tempo": 60, "key": "A minor", "humanize": "off",
+  "sections": [
+    { "name": "meend", "bars": 1 }, { "name": "shruti", "bars": 1 }, { "name": "vibrato", "bars": 1 },
+    { "name": "hairpin", "bars": 2 }, { "name": "pedoff", "bars": 1 }, { "name": "pedon", "bars": 1 },
+    { "name": "pan", "bars": 1 }, { "name": "bright", "bars": 2 }, { "name": "fade", "bars": 1 },
+    { "name": "rit0", "bars": 1, "tempo": 120 }, { "name": "rit", "bars": 2, "tempoTo": 60 }
+  ],
+  "tracks": [
+    { "name": "Flute", "role": "lead", "program": 73, "vibrato": "off",
+      "parts": { "meend": { "notes": "d5@5>e5@3" }, "shruti": { "notes": "a4-30c" } } },
+    { "name": "FluteV", "role": "lead", "program": 73, "vibrato": "wide", "parts": { "vibrato": { "notes": "a4" } } },
+    { "name": "Strings", "role": "pad", "program": 48,
+      "parts": { "hairpin": { "notes": "a3 | a3", "dynamics": "pp<ff" }, "pan": { "notes": "a3", "pan": -1 }, "fade": { "notes": "a3", "volume": { "from": 1, "to": 0 } } } },
+    { "name": "Piano", "role": "lead", "program": 0, "vibrato": "off",
+      "parts": { "pedoff": { "notes": "c4 ~@3 c4 ~@3" }, "pedon": { "notes": "c4 ~@3 c4 ~@3", "pedal": "bar" },
+                 "rit0": { "notes": "c5 c5 c5 c5" }, "rit": { "notes": "c5 c5 c5 c5 | c5 c5 c5 c5" } } },
+    { "name": "Synth", "role": "lead", "program": 81, "vibrato": "off",
+      "parts": { "bright": { "notes": "a3 a3 a3 a3 | a3 a3 a3 a3", "brightness": { "from": 1, "to": 0 } } } }
+  ]
+}

@@ -3,7 +3,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { decodeNoteList, encodeNote, encodeNoteList, type Note } from "./notes.js";
+import { decodeNoteList, encodeNote, encodeNoteList, type Note, encodeController, encodeBend } from "./notes.js";
 
 const list = (name: string) => new Uint8Array(readFileSync(fileURLToPath(new URL(`../../test/fixtures/band/${name}.evsq`, import.meta.url))));
 
@@ -42,5 +42,27 @@ describe("encodeNoteList", () => {
     for (let at = 16; at < expected.length - 16; at += 32) expected[at + 0x0a] = 0;
     const shuffled = [...notes].reverse();
     expect(Buffer.from(encodeNoteList({ channel: 0, program: 0 }, shuffled)).equals(Buffer.from(expected))).toBe(true);
+  });
+});
+
+describe("controller and pitch-bend events (M11; layout read from GarageBand's own save of an imported MIDI file)", () => {
+  const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(" ");
+  it("a CC: status|channel, tick +38400 at +4, value at +0x0B (second data byte), controller at +0x0C (first)", () => {
+    expect(hex(encodeController({ channel: 0, tick: 0, controller: 11, value: 20 }))).toBe("b0 00 00 00 00 96 00 00 00 00 00 14 0b 00 00 01");
+  });
+  it("value 127 is stored as GarageBand stores it: flag 0x20 at +1 and a full-scale fraction", () => {
+    expect(hex(encodeController({ channel: 7, tick: 107544, controller: 64, value: 127 }))).toBe("b7 20 00 00 18 3a 02 00 ff ff ff 7f 40 00 00 01");
+  });
+  it("a pitch bend: MSB at +0x0B, LSB at +0x0C (centre = 0x40 0x00)", () => {
+    expect(hex(encodeBend({ channel: 5, tick: 0, value: 0 }))).toBe("e5 00 00 00 00 96 00 00 00 00 00 40 00 00 00 01");
+    expect(hex(encodeBend({ channel: 5, tick: 0, value: 4 })).slice(33, 38)).toBe("40 04");
+  });
+  it("decodes them back, and a note list interleaves them with the notes in time order", () => {
+    const list = encodeNoteList({ channel: 0, program: 73 }, [{ channel: 0, tick: 480, pitch: 69, velocity: 90, length: 960 }],
+      { controllers: [{ tick: 0, controller: 11, value: 50 }], bends: [{ tick: 960, value: -4096 }] });
+    const events = decodeNoteList(list);
+    expect(events.map((e) => e.kind)).toEqual(["program", "controller", "note", "bend"]);
+    expect(events[1]).toEqual({ kind: "controller", channel: 0, tick: 0, controller: 11, value: 50 });
+    expect(events[3]).toEqual({ kind: "bend", channel: 0, tick: 960, value: -4096 });
   });
 });

@@ -15,6 +15,9 @@ import { parseProjectData, serializeProjectData } from "./projectdata.js";
 import { audioPlacements, MAX_PLACEMENTS, regionRecords, withoutRegionsFrom, withPlacement, writeAudioFile, writeAudioRegion } from "./audio.js";
 import { wavInfo, withOverview, type WavInfo } from "./wav.js";
 import { midiRegions, withMidiNotes } from "./midi.js";
+import { patchFor } from "../knowledge/gm-patch-map.js";
+import { bendRangeFor } from "../knowledge/bend-ranges.js";
+import { bendsForLine, rpnBendRange } from "../song/expression.js";
 import { projectTempo, songLength, withSongLength } from "./song.js";
 import { BuildBandInput, type BuildBandError, type BuildBandResult, type BuildBandSpec } from "./spec.js";
 
@@ -151,9 +154,26 @@ export class BuildBandHandler implements BuildBandSpec {
           // region names are text a person typed: detail only
           return fail("MIDI_REGION_NOT_IN_DONOR", "the donor has no MIDI region with that name", true, { detail: `${item.region} (the donor has: ${names})` });
         }
+        // M11: slides and cent offsets become pitch bends the region's instrument can play (probe 2026-10-04)
+        const program = item.program ?? region.program;
+        const bent = item.notes.filter((n) => n.slide?.length || n.cents !== undefined);
+        let expression = {};
+        if (bent.length) {
+          const patch = region.channel === 9 ? undefined : patchFor(program, region.channel + 1);
+          const range = region.channel === 9 ? { semitones: 0, rpn: false } : bendRangeFor(patch);
+          const widest = Math.max(...bent.flatMap((n) => [Math.abs((n.cents ?? 0) / 100), ...(n.slide ?? []).map((x) => Math.abs(x.semitones))]));
+          const chords = item.notes.some((n, k) => item.notes.some((m, j) => j !== k && m.tick === n.tick));
+          if (chords || widest > range.semitones + 1e-9) {
+            return fail("BEND_RANGE", chords ? "slides need a single-note line: a pitch bend moves every note on the channel"
+              : `${patch ?? "this instrument"} bends ±${range.semitones} semitones; the notes bend ${Math.round(widest * 100) / 100}`, true, { detail: item.region });
+          }
+          const line = item.notes.map((n) => ({ startTick: n.tick, durationTicks: n.length, pitch: n.pitch, velocity: n.velocity,
+            ...(n.slide ? { slide: n.slide } : {}), ...(n.cents !== undefined ? { cents: n.cents } : {}) }));
+          expression = { bends: bendsForLine(line, range.semitones, 0, 960, 120), ...(range.rpn ? { controllers: rpnBendRange(range.semitones) } : {}) };
+        }
         project = withMidiNotes(project, region, {
-          program: item.program ?? region.program, length: item.length,
-          notes: item.notes.map((n) => ({ ...n, channel: region.channel })),
+          program, length: item.length, ...expression,
+          notes: item.notes.map(({ slide: _slide, cents: _cents, ...n }) => ({ ...n, channel: region.channel })),
         });
       }
       input.regions.forEach((region, i) => {

@@ -8,7 +8,7 @@
  */
 import type { ProjectData } from "./projectdata.js";
 import { groupOf } from "./audio.js";
-import { decodeNoteList, encodeNoteList, type Note } from "./notes.js";
+import { decodeNoteList, encodeNoteList, type BendEvent, type ControllerEvent, type Note } from "./notes.js";
 
 const NAME_AT = 0x10;
 const LENGTH_AFTER_NAME = 0x3c;
@@ -53,7 +53,8 @@ export function midiRegions(pd: ProjectData): MidiRegion[] {
 }
 
 /** A copy of `pd` with `region`'s note list rebuilt (its channel kept) and its length set; nothing else changes. */
-export function withMidiNotes(pd: ProjectData, region: MidiRegion, content: { program: number; notes: readonly Note[]; length: number }): ProjectData {
+export function withMidiNotes(pd: ProjectData, region: MidiRegion,
+  content: { program: number; notes: readonly Note[]; length: number; controllers?: readonly ControllerEvent[]; bends?: readonly BendEvent[] }): ProjectData {
   const records = pd.records.slice();
   const host = records[region.record]!;
   const payload = host.payload.slice();
@@ -61,6 +62,7 @@ export function withMidiNotes(pd: ProjectData, region: MidiRegion, content: { pr
   records[region.record] = { ...host, payload };
   const list = records[region.noteRecord]!;
   const notes = content.notes.map((n) => ({ ...n, channel: region.channel }));
-  records[region.noteRecord] = { ...list, payload: encodeNoteList({ channel: region.channel, program: content.program }, notes) };
+  records[region.noteRecord] = { ...list, payload: encodeNoteList({ channel: region.channel, program: content.program }, notes,
+    { ...(content.controllers ? { controllers: content.controllers } : {}), ...(content.bends ? { bends: content.bends } : {}) }) };
   return { ...pd, records };
 }

@@ -269,3 +269,22 @@ describe("gb_song infill (M10): AMT rewrites chosen tracks of one section", () =
     expect(r).toMatchObject({ status: "failed", error: "DEPENDENCY_MISSING" });
   });
 });
+
+describe("gb_song render_midi: expression reaches the file (M11)", () => {
+  it("a slide on the flute writes RPN 12 and pitch bends; a hairpin writes CC11; a section tempo writes a tempo change", async () => {
+    const expressive = {
+      title: "Meend", tempo: 100, key: "E minor",
+      sections: [{ name: "aalap", bars: 1 }, { name: "rit", bars: 1, tempoTo: 80 }],
+      tracks: [{ name: "Bansuri", role: "lead", program: 73, parts: { aalap: { notes: "d5@3>e5@1 b4@4", dynamics: "p<f" }, rit: { notes: "e4@4" } } }],
+    };
+    const r = await gbSong({ command: "render_midi", song: expressive, filename: "meend.mid" });
+    expect(r.status).toBe("verified");
+    const bytes = Array.from(readFileSync(join(workspace, "meend.mid")));
+    const has = (seq: number[]) => bytes.some((_, i) => seq.every((b, k) => bytes[i + k] === b));
+    expect(has([0xb0, 101, 0, 0x00, 0xb0, 100, 0, 0x00, 0xb0, 6, 12])).toBe(true); // RPN 0 = 12 on channel 1
+    expect(bytes.some((b) => b === 0xe0)).toBe(true); // pitch bend
+    expect(has([0xb0, 11])).toBe(true); // expression
+    expect(bytes.filter((b, i) => b === 0xff && bytes[i + 1] === 0x51).length).toBeGreaterThan(1); // tempo changes
+    expect(has([0xff, 0x59, 0x02, 0x01, 0x01])).toBe(true); // E minor key signature
+  });
+});
