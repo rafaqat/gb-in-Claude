@@ -80,7 +80,8 @@ The script:
    project only);
 7. copies the four skills into `~/.claude/skills/` (an existing, different copy is left alone).
 
-Options: `--dry-run` (print, change nothing), `--no-register`, `--no-skills`.
+Options: `--dry-run` (print, change nothing), `--no-register`, `--no-skills`, and `--with-models` for the optional
+AI models (see [Optional: AI models](#optional-ai-models-apple-silicon)).
 
 ### Option B — let Claude Code install it
 
@@ -167,9 +168,9 @@ Talk to Claude Code:
 
 | Tool | Commands | Touches GarageBand |
 |---|---|---|
-| `gb_song` | validate · preview · render_midi · render_draft · band_plan | no — writes files to the workspace |
+| `gb_song` | validate · preview · render_midi · render_draft · band_plan · template · infill | no — writes files to the workspace |
 | `gb_band` | inspect · build | no — writes a GarageBand project (.band) with your WAVs and MIDI notes |
-| `gb_analyze` | audio · against_song · compare | no — reads audio, writes spectrogram PNGs |
+| `gb_analyze` | audio · against_song · compare (+ field `ml` with the optional models) | no — reads audio, writes spectrogram PNGs |
 | `gb_sound` | patches · plugins · loops · samples · palette | no — read-only catalog of what this Mac can play |
 | `gb_system` | doctor · describe · ui_snapshot | read-only |
 | `gb_project` | status · open_midi · open_band | opens a song (unsaved projects are backed up first) |
@@ -210,6 +211,31 @@ GarageBand 10.4.14's and is not documented by Apple: a GarageBand update can bre
 Song JSON is described in `gb://knowledge/song-format`; `examples/twinkle-epic.song.json` shows most of it
 (sections, drum grids, chord parts, melodies, levels).
 
+### Genre drafts, grooves, swing and glide
+
+`gb_song template {genre, key, bpm}` returns a complete Song JSON draft for one of 20 genres — form, chord
+progressions in any key, the genre's GarageBand drum kit and instruments, a hook, and drums — for Claude to develop:
+lo-fi hip-hop, R&B, ambient, jazz ballad, reggaeton, synthwave, pop, afrobeats, funk, indie rock, deep house, techno,
+UK garage, trap, drum and bass, EDM, classical/pop crossover, ambient trance, Levantine strings and epic orchestral.
+
+Song JSON also takes `groove` (the timing and accents of real drummers in 18 styles, mined from the Groove MIDI
+Dataset), `swing` (50 straight … 75 hard, on 16ths or 8ths) and, per track, `glide` (legato, so a mono 808 slides).
+
+### Optional: AI models (Apple Silicon)
+
+`./scripts/install.sh --with-models` creates `models/.venv` (Python 3.12, PyTorch on Metal, MLX). Model weights download
+from Hugging Face on first use (~4 GB). gb-mcp starts one long-lived model process and keeps the models loaded:
+
+- `gb_analyze` adds a field `ml`: beats and a grid check (beat_this), the key (S-KEY) and a ranking of the closest of
+  the 20 genres (LAION CLAP — a ranking for comparing versions, not a grade). About 3 s per analysis once loaded.
+- `gb_song infill {song, section, tracks}` lets the Anticipatory Music Transformer rewrite chosen melodic tracks of
+  one section on the song's own instruments: `exact` ≈ 1–1.5 min per 8 bars, `fast` ≈ 20 s (shorter context — listen
+  before trusting it). The model hears the song before and after the section.
+
+Without the models everything else works; `ml` says so and `infill` answers `DEPENDENCY_MISSING`. Measured speeds,
+memory and what each optimisation bought (an exact KV-cache sampler, float16, an MLX port): `models/bench/results.md`.
+`eval/` holds 20 frozen genre briefs and `eval/run.py`, which renders, exports and scores them to compare versions.
+
 ## Troubleshooting
 
 | Code | Do this |
@@ -249,3 +275,16 @@ GarageBand's interface differs between versions; the element locators live in `s
 ## License
 
 [MIT](LICENSE)
+
+### Credits
+
+- `src/song/grooves.json` is derived from the [Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove)
+  (Gillick, Roberts, Engel, Eck, Bamman — Google Magenta), licensed
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): per-style hit probabilities, velocities and timing,
+  computed by `models/mine_grooves.py`.
+- The optional models are downloaded from their authors under their own licenses and are not part of this
+  repository: [Anticipatory Music Transformer](https://github.com/jthickstun/anticipation) (Apache-2.0),
+  [beat_this](https://github.com/CPJKU/beat_this) (MIT), [LAION CLAP](https://github.com/LAION-AI/CLAP),
+  [S-KEY](https://huggingface.co/musetric/skey-onnx) (MIT). `models/bench` also measured
+  [Foundation-1](https://huggingface.co/RoyalCities/Foundation-1) (Stability AI Community License), which gb-mcp does
+  not use yet.

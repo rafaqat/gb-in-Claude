@@ -1,0 +1,148 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 rafaqat
+"""The models of the M8 sidecar and what is known about them. `license` is recorded, never used to filter. `venv` names the Python environment the model runs in."""
+
+MODELS = {
+    "amt": {
+        "name": "Anticipatory Music Transformer (music-medium-800k)",
+        "module": "gbmodels.amt", "venv": ".venv", "kind": "torch",
+        "source": "https://huggingface.co/stanford-crfm/music-medium-800k",
+        "license": "Apache-2.0 (code and weights)",
+        "task": "MIDI infill: 8 bars of a 4-track song",
+    },
+    "amt_patched": {
+        "name": "Anticipatory Music Transformer, patched sampler (prefix KV cache, no mask sync)",
+        "module": "gbmodels.amt_patched", "venv": ".venv", "kind": "torch",
+        "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_fast.py",
+        "license": "Apache-2.0 (code and weights); sampler is ours",
+        "task": "MIDI infill: 8 bars of a 4-track song",
+    },
+    "amt_fp16": {
+        "name": "AMT, patched sampler, float16 on Metal (exact window)",
+        "module": "gbmodels.amt_patched", "venv": ".venv", "kind": "torch", "inputs": "amt",
+        "load_options": {"dtype": "float16"},
+        "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_fast.py",
+        "license": "Apache-2.0 (code and weights); sampler is ours",
+        "task": "MIDI infill: 8 bars of a 4-track song",
+    },
+    "amt_fp16_chunked": {
+        "name": "AMT, patched sampler, float16, chunked window (128 events; changes sampling context)",
+        "module": "gbmodels.amt_patched", "venv": ".venv", "kind": "torch", "inputs": "amt",
+        "load_options": {"dtype": "float16"}, "run_options": {"window_chunk": 128},
+        "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_fast.py",
+        "license": "Apache-2.0 (code and weights); sampler is ours",
+        "task": "MIDI infill: 8 bars of a 4-track song",
+    },
+    "amt_mlx": {
+        "name": "AMT on MLX, float16, patched sampler (exact window)",
+        "module": "gbmodels.amt_mlx", "venv": ".venv", "kind": "mlx", "inputs": "amt",
+        "load_options": {"dtype": "float16"},
+        "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_mlx.py",
+        "license": "Apache-2.0 (code and weights); MLX port and sampler are ours",
+        "task": "MIDI infill: 8 bars of a 4-track song",
+    },
+    "amt_mlx_chunked": {
+        "name": "AMT on MLX, float16, chunked window (128 events; changes sampling context)",
+        "module": "gbmodels.amt_mlx", "venv": ".venv", "kind": "mlx", "inputs": "amt",
+        "load_options": {"dtype": "float16"}, "run_options": {"window_chunk": 128},
+        "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_mlx.py",
+        "license": "Apache-2.0 (code and weights); MLX port and sampler are ours",
+        "task": "MIDI infill: 8 bars of a 4-track song",
+    },
+    "infill": {
+        "name": "gb_song infill: AMT on MLX, song instruments only (exact or fast)",
+        "module": "gbmodels.infill", "venv": ".venv", "kind": "mlx",
+        "source": "gbmodels/infill.py", "license": "Apache-2.0 (AMT code and weights)",
+        "task": "rewrite chosen tracks of one section, keeping everything else",
+    },
+    "listen": {
+        "name": "gb_analyze's model listening: beat_this + S-KEY + LAION CLAP in one request",
+        "module": "gbmodels.listen", "venv": ".venv", "kind": "torch",
+        "source": "gbmodels/listen.py", "license": "MIT (beat_this, S-KEY); CLAP checkpoint license not stated",
+        "task": "beats/grid, key, genre ranking of one recording",
+    },
+    "foundation1": {
+        "name": "Foundation-1 (Stable Audio Open fine-tune)",
+        "module": "gbmodels.foundation1", "venv": ".venv-sat", "kind": "torch",
+        "source": "https://huggingface.co/RoyalCities/Foundation-1",
+        "license": "Stability AI Community License",
+        "task": "one 8-bar loop at 120 BPM (stereo, 44.1 kHz)",
+    },
+    "foundation1_fp16": {
+        "name": "Foundation-1, float16 on Metal (100 steps)",
+        "module": "gbmodels.foundation1", "venv": ".venv-sat", "kind": "torch", "inputs": "foundation1",
+        "load_options": {"dtype": "float16"},
+        "source": "https://huggingface.co/RoyalCities/Foundation-1", "license": "Stability AI Community License",
+        "task": "one 8-bar loop at 120 BPM (stereo, 44.1 kHz)",
+    },
+    "foundation1_fp16_50": {
+        "name": "Foundation-1, float16 on Metal, 50 steps (listening check needed)",
+        "module": "gbmodels.foundation1", "venv": ".venv-sat", "kind": "torch", "inputs": "foundation1",
+        "load_options": {"dtype": "float16"}, "run_options": {"steps": 50},
+        "source": "https://huggingface.co/RoyalCities/Foundation-1", "license": "Stability AI Community License",
+        "task": "one 8-bar loop at 120 BPM (stereo, 44.1 kHz)",
+    },
+    "beat_this": {
+        "name": "beat_this (final0)",
+        "module": "gbmodels.beatthis", "venv": ".venv", "kind": "torch",
+        "source": "https://github.com/CPJKU/beat_this",
+        "license": "MIT (code and weights)",
+        "task": "beats + downbeats of 60 s of audio",
+    },
+    "clap": {
+        "name": "LAION CLAP, music checkpoint (music_audioset_epoch_15_esc_90.14, HTSAT-base)",
+        "module": "gbmodels.clap", "venv": ".venv", "kind": "torch",
+        "source": "https://huggingface.co/lukewys/laion_clap",
+        "license": "CC0-1.0 repository; checkpoint license not stated separately",
+        "task": "audio embedding of 60 s (six 10 s windows) + similarity to 3 genre prompts",
+    },
+    "skey": {
+        "name": "S-KEY (Deezer), ONNX export",
+        "module": "gbmodels.skey", "venv": ".venv", "kind": "onnx",
+        "device": "cpu",  # benchmark: CPU 0.1 s warm, no compile; Core ML 0.2 s + 14 s compile, MLProgram fails
+        "source": "https://huggingface.co/musetric/skey-onnx",
+        "license": "MIT (per the ONNX model card)",
+        "task": "global key of 60 s of audio",
+    },
+    "beat_this_fp16": {
+        "name": "beat_this (final0), float16 on Metal",
+        "module": "gbmodels.beatthis", "venv": ".venv", "kind": "torch", "inputs": "beat_this",
+        "load_options": {"float16": True},
+        "source": "https://github.com/CPJKU/beat_this", "license": "MIT (code and weights)",
+        "task": "beats + downbeats of 60 s of audio",
+    },
+    "clap_fp16": {
+        "name": "LAION CLAP music, audio encoder float16 on Metal",
+        "module": "gbmodels.clap", "venv": ".venv", "kind": "torch", "inputs": "clap",
+        "load_options": {"dtype": "float16"},
+        "source": "https://huggingface.co/lukewys/laion_clap", "license": "CC0-1.0 repository; checkpoint license not stated separately",
+        "task": "audio embedding of 60 s (six 10 s windows) + similarity to 3 genre prompts",
+    },
+    "skey_cached": {
+        "name": "S-KEY, Core ML MLProgram, all compute units, compiled-model cache",
+        "module": "gbmodels.skey", "venv": ".venv", "kind": "onnx", "inputs": "skey",
+        "load_options": {"compiled_cache": True},
+        "source": "https://huggingface.co/musetric/skey-onnx", "license": "MIT (per the ONNX model card)",
+        "task": "global key of 60 s of audio",
+    },
+}
+
+# Go/no-go thresholds (the user's defaults): flagged, never decided automatically.
+THRESHOLDS = {
+    "amt": {"max_run_s": 60.0},
+    "amt_patched": {"max_run_s": 60.0},
+    "amt_fp16": {"max_run_s": 60.0},
+    "amt_fp16_chunked": {"max_run_s": 60.0},
+    "amt_mlx": {"max_run_s": 60.0},
+    "amt_mlx_chunked": {"max_run_s": 60.0},
+    "foundation1": {"max_run_s": 30.0},
+    "foundation1_fp16": {"max_run_s": 30.0},
+    "foundation1_fp16_50": {"max_run_s": 30.0},
+    "beat_this": {"max_run_s_per_audio_min": 10.0},
+    "clap": {"max_run_s_per_audio_min": 10.0},
+    "skey": {"max_run_s_per_audio_min": 10.0},
+    "beat_this_fp16": {"max_run_s_per_audio_min": 10.0},
+    "clap_fp16": {"max_run_s_per_audio_min": 10.0},
+    "skey_cached": {"max_run_s_per_audio_min": 10.0},
+    "_all": {"max_peak_gb": 12.0},
+}

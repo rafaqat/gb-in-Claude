@@ -122,6 +122,29 @@ describe("gb_project open_midi", () => {
     expect(r).toMatchObject({ status: "uncertain" });
   });
 
+  it("waits past the time limit for a late save prompt of the project it backed up in this call, then opens (m9b)", async () => {
+    docs = [{ name: "Untitled 3", modified: true }];
+    let polls = 0;
+    const lateOpen = async (path: string) => { opened.push(path); return OPENED; }; // GarageBand is slow: nothing yet
+    const sleep = async () => {
+      polls++;
+      if (polls === 35) { // after the 20-poll limit: the prompt for the backed-up project finally appears
+        const prompt = savePrompt("Untitled 3");
+        fake.on(prompt.children!.find((c) => c.title === "Don’t Save")!, { onPress: () => { fake.app.windows = [projectWindow("Untitled 9", 126, SONG_TRACKS)]; } });
+        fake.app.windows = [...fake.app.windows, prompt];
+      }
+    };
+    const r = await createGbProject(deps({ openFile: lateOpen, sleep }))({ command: "open_midi", path: "ascent-v2.mid" });
+    expect(r).toMatchObject({ status: "verified", data: { document: "Untitled 9" } });
+  });
+
+  it("does not wait longer when nothing was backed up (no prompt can be owed)", async () => {
+    let polls = 0;
+    const r = await createGbProject(deps({ openFile: async () => OPENED, sleep: async () => { polls++; } }))({ command: "open_midi", path: "ascent-v2.mid" });
+    expect(r).toMatchObject({ status: "uncertain" });
+    expect(polls).toBeLessThanOrEqual(21);
+  });
+
   it("backs up an unsaved project before opening, then discards only that project's prompt", async () => {
     docs = [{ name: "Untitled 3", modified: true }];
     const r = await createGbProject(deps())({ command: "open_midi", path: "ascent-v2.mid" });

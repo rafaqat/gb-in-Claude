@@ -1,0 +1,116 @@
+{
+  "id": "09-funk",
+  "genre": "funk",
+  "bpm": 110,
+  "key": "E minor",
+  "meter": "4/4",
+  "form": "groove 8 \u00b7 break 4 \u00b7 groove2 8",
+  "description": "Funk: tight sixteenth-note hats, ghost-note snare, slap bass and clean guitar stabs on the one.",
+  "song": {
+    "title": "eval funk",
+    "tempo": 110,
+    "key": "E minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "groove",
+        "bars": 8
+      },
+      {
+        "name": "break",
+        "bars": 4
+      },
+      {
+        "name": "groove2",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "groove": {
+            "grid": {
+              "kick": "x..x..x...x..x..",
+              "snare": "....x..o....x..o",
+              "hat": "xxxxxxxxxxxxxxxx"
+            },
+            "levels": {
+              "hat": -6
+            }
+          },
+          "groove2": {
+            "grid": {
+              "kick": "x..x..x...x..x..",
+              "snare": "....x..o....x..o",
+              "hat": "xxxxxxxxxxxxxxxx"
+            },
+            "levels": {
+              "hat": -6
+            }
+          },
+          "break": {
+            "grid": {
+              "kick": "x...............",
+              "snare": "....x..o.o..x..."
+            }
+          }
+        }
+      },
+      {
+        "name": "Guitar",
+        "role": "pad",
+        "parts": {
+          "groove": {
+            "chords": "Em7 | A7 | Em7 | A7",
+            "style": "stabs"
+          },
+          "break": {
+            "chords": "Em7 | A7 | Em7 | A7",
+            "style": "stabs"
+          },
+          "groove2": {
+            "chords": "Em7 | A7 | Em7 | A7",
+            "style": "stabs"
+          }
+        },
+        "program": 28
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "groove": {
+            "chords": "Em7 | A7 | Em7 | A7",
+            "style": "rolling"
+          },
+          "break": {
+            "chords": "Em7 | A7 | Em7 | A7",
+            "style": "rolling"
+          },
+          "groove2": {
+            "chords": "Em7 | A7 | Em7 | A7",
+            "style": "rolling"
+          }
+        },
+        "program": 36
+      },
+      {
+        "name": "Horns",
+        "role": "lead",
+        "parts": {
+          "groove2": {
+            "notes": "e4 ~ g4 e4 | d4@2 b3@2 | e4 ~ g4 a4 | b4@4"
+          }
+        },
+        "program": 61
+      }
+    ]
+  }
+}

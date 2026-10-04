@@ -1,0 +1,118 @@
+{
+  "id": "01-lofi-hiphop",
+  "genre": "lo-fi hip-hop",
+  "bpm": 85,
+  "key": "D minor",
+  "meter": "4/4",
+  "form": "intro 4 \u00b7 loop 8 \u00b7 variation 8 \u00b7 outro 4",
+  "description": "Dusty Rhodes chords over a lazy boom-bap beat, tape-warm and unhurried.",
+  "song": {
+    "title": "eval lofi-hiphop",
+    "tempo": 85,
+    "key": "D minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "loop",
+        "bars": 8
+      },
+      {
+        "name": "variation",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "loop": {
+            "grid": {
+              "kick": "x......x..x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            },
+            "levels": {
+              "hat": -6
+            }
+          },
+          "variation": {
+            "grid": {
+              "kick": "x......x..x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            },
+            "levels": {
+              "hat": -6
+            }
+          }
+        }
+      },
+      {
+        "name": "Rhodes",
+        "role": "pad",
+        "parts": {
+          "intro": {
+            "chords": "Dm9 | Gm7 | Cmaj7 | Am7",
+            "style": "stabs"
+          },
+          "loop": {
+            "chords": "Dm9 | Gm7 | Cmaj7 | Am7",
+            "style": "stabs"
+          },
+          "variation": {
+            "chords": "Dm9 | Gm7 | Cmaj7 | Am7",
+            "style": "stabs"
+          },
+          "outro": {
+            "chords": "Dm9 | Gm7 | Cmaj7 | Am7",
+            "style": "stabs"
+          }
+        },
+        "program": 4
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "loop": {
+            "chords": "Dm9 | Gm7 | Cmaj7 | Am7",
+            "style": "sustain"
+          },
+          "variation": {
+            "chords": "Dm9 | Gm7 | Cmaj7 | Am7",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "Dm9 | Gm7 | Cmaj7 | Am7",
+            "style": "sustain"
+          }
+        },
+        "program": 33
+      },
+      {
+        "name": "Lead",
+        "role": "lead",
+        "parts": {
+          "variation": {
+            "notes": "a4 ~ c5 d5 | f5@2 e5 d5 | e5 ~ c5 ~ | a4@4"
+          }
+        },
+        "program": 11
+      }
+    ]
+  }
+}

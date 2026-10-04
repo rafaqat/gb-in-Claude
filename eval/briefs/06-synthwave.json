@@ -1,0 +1,136 @@
+{
+  "id": "06-synthwave",
+  "genre": "synthwave",
+  "bpm": 100,
+  "key": "E minor",
+  "meter": "4/4",
+  "form": "intro 8 \u00b7 verse 8 \u00b7 chorus 8 \u00b7 outro 4",
+  "description": "Synthwave: gated arpeggios, big retro pads, driving octave bass and a soaring lead.",
+  "song": {
+    "title": "eval synthwave",
+    "tempo": 100,
+    "key": "E minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 8
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "....x.......x...",
+              "hat": "..x...x...x...x."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "....x.......x...",
+              "hat": "..x...x...x...x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Pad",
+        "role": "pad",
+        "parts": {
+          "intro": {
+            "chords": "Em | C | G | D",
+            "style": "sustain"
+          },
+          "verse": {
+            "chords": "Em | C | G | D",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Em | C | G | D",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "Em | C | G | D",
+            "style": "sustain"
+          }
+        },
+        "program": 90
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "parts": {
+          "intro": {
+            "chords": "Em | C | G | D",
+            "style": "gated"
+          },
+          "verse": {
+            "chords": "Em | C | G | D",
+            "style": "gated"
+          },
+          "chorus": {
+            "chords": "Em | C | G | D",
+            "style": "gated"
+          },
+          "outro": {
+            "chords": "Em | C | G | D",
+            "style": "gated"
+          }
+        },
+        "program": 81,
+        "level": -3
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "verse": {
+            "chords": "Em | C | G | D",
+            "style": "octave"
+          },
+          "chorus": {
+            "chords": "Em | C | G | D",
+            "style": "octave"
+          },
+          "outro": {
+            "chords": "Em | C | G | D",
+            "style": "octave"
+          }
+        },
+        "program": 38
+      },
+      {
+        "name": "Lead",
+        "role": "lead",
+        "parts": {
+          "chorus": {
+            "notes": "b5@2 a5 g5 | e5@4 | g5 a5 b5 d6 | a5@4"
+          }
+        },
+        "program": 81
+      }
+    ]
+  }
+}

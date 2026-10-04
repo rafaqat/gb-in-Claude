@@ -1,0 +1,758 @@
+{
+  "machine": {
+    "chip": "Apple M4",
+    "memory_gb": 32,
+    "macos": "26.1"
+  },
+  "runs_per_model": 5,
+  "when": "2026-10-03 20:57",
+  "thresholds": {
+    "amt": {
+      "max_run_s": 60.0
+    },
+    "amt_patched": {
+      "max_run_s": 60.0
+    },
+    "amt_fp16": {
+      "max_run_s": 60.0
+    },
+    "amt_fp16_chunked": {
+      "max_run_s": 60.0
+    },
+    "amt_mlx": {
+      "max_run_s": 60.0
+    },
+    "amt_mlx_chunked": {
+      "max_run_s": 60.0
+    },
+    "foundation1": {
+      "max_run_s": 30.0
+    },
+    "foundation1_fp16": {
+      "max_run_s": 30.0
+    },
+    "foundation1_fp16_50": {
+      "max_run_s": 30.0
+    },
+    "beat_this": {
+      "max_run_s_per_audio_min": 10.0
+    },
+    "clap": {
+      "max_run_s_per_audio_min": 10.0
+    },
+    "skey": {
+      "max_run_s_per_audio_min": 10.0
+    },
+    "beat_this_fp16": {
+      "max_run_s_per_audio_min": 10.0
+    },
+    "clap_fp16": {
+      "max_run_s_per_audio_min": 10.0
+    },
+    "skey_cached": {
+      "max_run_s_per_audio_min": 10.0
+    },
+    "_all": {
+      "max_peak_gb": 12.0
+    }
+  },
+  "models": {
+    "skey": {
+      "name": "S-KEY (Deezer), ONNX export",
+      "module": "gbmodels.skey",
+      "venv": ".venv",
+      "kind": "onnx",
+      "source": "https://huggingface.co/musetric/skey-onnx",
+      "license": "MIT (per the ONNX model card)",
+      "task": "global key of 60 s of audio",
+      "model": "skey",
+      "device": "coreml",
+      "mps_cpu_fallback": false,
+      "load_s": 1.001,
+      "providers": [
+        "CoreMLExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "ok": true,
+      "run_s": [
+        13.712,
+        0.233,
+        0.211,
+        0.209,
+        0.202
+      ],
+      "output": {
+        "key": "G# Major",
+        "confidence": 0.0919
+      },
+      "rss_peak_bytes": 1530707968,
+      "mps_peak_bytes": 9388032,
+      "device_label": "coreml",
+      "attempts": [
+        {
+          "device": "coreml",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [],
+      "go": true,
+      "cold_start_warning": "cold first run 13.7s > 10s (warm-up; load once and keep it)"
+    },
+    "beat_this": {
+      "name": "beat_this (final0)",
+      "module": "gbmodels.beatthis",
+      "venv": ".venv",
+      "kind": "torch",
+      "source": "https://github.com/CPJKU/beat_this",
+      "license": "MIT (code and weights)",
+      "task": "beats + downbeats of 60 s of audio",
+      "model": "beat_this",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 21.065,
+      "ok": true,
+      "run_s": [
+        3.938,
+        0.44,
+        0.436,
+        0.441,
+        0.44
+      ],
+      "output": {
+        "beats": 127,
+        "downbeats": 32,
+        "bpm_median": 125.0
+      },
+      "rss_peak_bytes": 546635776,
+      "mps_peak_bytes": 1512947712,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [],
+      "go": true
+    },
+    "clap": {
+      "name": "LAION CLAP, music checkpoint (music_audioset_epoch_15_esc_90.14, HTSAT-base)",
+      "module": "gbmodels.clap",
+      "venv": ".venv",
+      "kind": "torch",
+      "source": "https://huggingface.co/lukewys/laion_clap",
+      "license": "CC0-1.0 repository; checkpoint license not stated separately",
+      "task": "audio embedding of 60 s (six 10 s windows) + similarity to 3 genre prompts",
+      "model": "clap",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 10.083,
+      "ok": true,
+      "run_s": [
+        0.913,
+        0.585,
+        0.575,
+        0.604,
+        0.599
+      ],
+      "output": {
+        "windows": 6,
+        "similarity": {
+          "ambient trance": 0.3241,
+          "deep house": 0.2531,
+          "drum and bass": 0.2392
+        }
+      },
+      "rss_peak_bytes": 3084484608,
+      "mps_peak_bytes": 2408316928,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [],
+      "go": true
+    },
+    "amt": {
+      "name": "Anticipatory Music Transformer (music-medium-800k)",
+      "module": "gbmodels.amt",
+      "venv": ".venv",
+      "kind": "torch",
+      "source": "https://huggingface.co/stanford-crfm/music-medium-800k",
+      "license": "Apache-2.0 (code and weights)",
+      "task": "MIDI infill: 8 bars of a 4-track song",
+      "model": "amt",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 6.488,
+      "ok": true,
+      "run_s": [
+        373.844,
+        411.164,
+        379.815,
+        451.227,
+        449.201
+      ],
+      "output": {
+        "notes_generated": 252,
+        "instruments": [
+          4,
+          11,
+          33,
+          128
+        ]
+      },
+      "rss_peak_bytes": 1033961472,
+      "mps_peak_bytes": 4371202048,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "cold_start_warning": "cold first run 373.8s > 60s (warm-up; load once and keep it)",
+      "flags": [
+        "warm run 430.2s > 60s"
+      ],
+      "go": false
+    },
+    "foundation1": {
+      "name": "Foundation-1 (Stable Audio Open fine-tune)",
+      "module": "gbmodels.foundation1",
+      "venv": ".venv-sat",
+      "kind": "torch",
+      "source": "https://huggingface.co/RoyalCities/Foundation-1",
+      "license": "Stability AI Community License",
+      "task": "one 8-bar loop at 120 BPM (stereo, 44.1 kHz)",
+      "model": "foundation1",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 12.054,
+      "ok": true,
+      "run_s": [
+        159.052,
+        162.259,
+        168.846,
+        165.72,
+        164.377
+      ],
+      "output": {
+        "seconds": 16.0,
+        "channels": 2,
+        "sample_rate": 44100,
+        "steps": 100,
+        "nan": false,
+        "peak": 0.8643
+      },
+      "rss_peak_bytes": 7930265600,
+      "mps_peak_bytes": 9990848512,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "cold_start_warning": "cold first run 159.1s > 30s (warm-up; load once and keep it)",
+      "flags": [
+        "warm run 165.0s > 30s",
+        "peak 17.9 GB > 12 GB"
+      ],
+      "go": false
+    },
+    "amt_patched": {
+      "name": "Anticipatory Music Transformer, patched sampler (prefix KV cache, no mask sync)",
+      "module": "gbmodels.amt_patched",
+      "venv": ".venv",
+      "kind": "torch",
+      "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_fast.py",
+      "license": "Apache-2.0 (code and weights); sampler is ours",
+      "task": "MIDI infill: 8 bars of a 4-track song",
+      "model": "amt_patched",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 5.431,
+      "ok": true,
+      "run_s": [
+        133.623,
+        136.183,
+        132.876,
+        138.783,
+        130.893
+      ],
+      "output": {
+        "notes_generated": 252,
+        "instruments": [
+          4,
+          11,
+          33,
+          128
+        ],
+        "cache_hits": 651,
+        "cache_misses": 105
+      },
+      "rss_peak_bytes": 454033408,
+      "mps_peak_bytes": 3297460224,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "cold_start_warning": "cold first run 133.6s > 60s (warm-up; load once and keep it)",
+      "flags": [
+        "warm run 134.5s > 60s"
+      ],
+      "go": false
+    },
+    "amt_fp16": {
+      "name": "AMT, patched sampler, float16 on Metal (exact window)",
+      "module": "gbmodels.amt_patched",
+      "venv": ".venv",
+      "kind": "torch",
+      "inputs": "amt",
+      "load_options": {
+        "dtype": "float16"
+      },
+      "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_fast.py",
+      "license": "Apache-2.0 (code and weights); sampler is ours",
+      "task": "MIDI infill: 8 bars of a 4-track song",
+      "model": "amt_fp16",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 3.909,
+      "ok": true,
+      "run_s": [
+        85.765,
+        90.578,
+        90.637,
+        94.884,
+        87.525
+      ],
+      "output": {
+        "notes_generated": 253,
+        "instruments": [
+          4,
+          11,
+          33,
+          128
+        ],
+        "cache_hits": 653,
+        "cache_misses": 106
+      },
+      "rss_peak_bytes": 2614820864,
+      "mps_peak_bytes": 2190163968,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "cold_start_warning": "cold first run 85.8s > 60s (warm-up; load once and keep it)",
+      "flags": [
+        "warm run 90.6s > 60s"
+      ],
+      "go": false
+    },
+    "amt_fp16_chunked": {
+      "name": "AMT, patched sampler, float16, chunked window (128 events; changes sampling context)",
+      "module": "gbmodels.amt_patched",
+      "venv": ".venv",
+      "kind": "torch",
+      "inputs": "amt",
+      "load_options": {
+        "dtype": "float16"
+      },
+      "run_options": {
+        "window_chunk": 128
+      },
+      "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_fast.py",
+      "license": "Apache-2.0 (code and weights); sampler is ours",
+      "task": "MIDI infill: 8 bars of a 4-track song",
+      "model": "amt_fp16_chunked",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 4.735,
+      "ok": true,
+      "run_s": [
+        13.452,
+        13.57,
+        14.161,
+        14.005,
+        14.131
+      ],
+      "output": {
+        "notes_generated": 258,
+        "instruments": [
+          4,
+          33,
+          128
+        ],
+        "cache_hits": 771,
+        "cache_misses": 3
+      },
+      "rss_peak_bytes": 2614919168,
+      "mps_peak_bytes": 2185969664,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [],
+      "go": true
+    },
+    "amt_mlx": {
+      "name": "AMT on MLX, float16, patched sampler (exact window)",
+      "module": "gbmodels.amt_mlx",
+      "venv": ".venv",
+      "kind": "mlx",
+      "inputs": "amt",
+      "load_options": {
+        "dtype": "float16"
+      },
+      "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_mlx.py",
+      "license": "Apache-2.0 (code and weights); MLX port and sampler are ours",
+      "task": "MIDI infill: 8 bars of a 4-track song",
+      "model": "amt_mlx",
+      "device": "mlx",
+      "mps_cpu_fallback": false,
+      "load_s": 0.555,
+      "ok": true,
+      "run_s": [
+        52.364,
+        62.894,
+        66.461,
+        65.498,
+        66.105
+      ],
+      "output": {
+        "notes_generated": 256,
+        "instruments": [
+          4,
+          33,
+          128
+        ],
+        "cache_hits": 659,
+        "cache_misses": 109
+      },
+      "rss_peak_bytes": 3129966592,
+      "mps_peak_bytes": 1795964928,
+      "device_label": "mlx",
+      "attempts": [
+        {
+          "device": "mlx",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [
+        "warm run 65.8s > 60s"
+      ],
+      "go": false
+    },
+    "amt_mlx_chunked": {
+      "name": "AMT on MLX, float16, chunked window (128 events; changes sampling context)",
+      "module": "gbmodels.amt_mlx",
+      "venv": ".venv",
+      "kind": "mlx",
+      "inputs": "amt",
+      "load_options": {
+        "dtype": "float16"
+      },
+      "run_options": {
+        "window_chunk": 128
+      },
+      "source": "https://huggingface.co/stanford-crfm/music-medium-800k + gbmodels/amt_mlx.py",
+      "license": "Apache-2.0 (code and weights); MLX port and sampler are ours",
+      "task": "MIDI infill: 8 bars of a 4-track song",
+      "model": "amt_mlx_chunked",
+      "device": "mlx",
+      "mps_cpu_fallback": false,
+      "load_s": 0.626,
+      "ok": true,
+      "run_s": [
+        12.994,
+        13.709,
+        12.956,
+        12.974,
+        13.159
+      ],
+      "output": {
+        "notes_generated": 248,
+        "instruments": [
+          4,
+          33,
+          128
+        ],
+        "cache_hits": 741,
+        "cache_misses": 3
+      },
+      "rss_peak_bytes": 3130621952,
+      "mps_peak_bytes": 1796489216,
+      "device_label": "mlx",
+      "attempts": [
+        {
+          "device": "mlx",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [],
+      "go": true
+    },
+    "foundation1_fp16": {
+      "name": "Foundation-1, float16 on Metal (100 steps)",
+      "module": "gbmodels.foundation1",
+      "venv": ".venv-sat",
+      "kind": "torch",
+      "inputs": "foundation1",
+      "load_options": {
+        "dtype": "float16"
+      },
+      "source": "https://huggingface.co/RoyalCities/Foundation-1",
+      "license": "Stability AI Community License",
+      "task": "one 8-bar loop at 120 BPM (stereo, 44.1 kHz)",
+      "model": "foundation1_fp16",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 10.476,
+      "ok": true,
+      "run_s": [
+        167.021,
+        168.72,
+        149.937,
+        139.265,
+        137.33
+      ],
+      "output": {
+        "seconds": 16.0,
+        "channels": 2,
+        "sample_rate": 44100,
+        "steps": 100,
+        "nan": false,
+        "peak": 0.8638
+      },
+      "rss_peak_bytes": 8670085120,
+      "mps_peak_bytes": 7763673088,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "cold_start_warning": "cold first run 167.0s > 30s (warm-up; load once and keep it)",
+      "flags": [
+        "warm run 144.6s > 30s",
+        "peak 16.4 GB > 12 GB"
+      ],
+      "go": false
+    },
+    "foundation1_fp16_50": {
+      "name": "Foundation-1, float16 on Metal, 50 steps (listening check needed)",
+      "module": "gbmodels.foundation1",
+      "venv": ".venv-sat",
+      "kind": "torch",
+      "inputs": "foundation1",
+      "load_options": {
+        "dtype": "float16"
+      },
+      "run_options": {
+        "steps": 50
+      },
+      "source": "https://huggingface.co/RoyalCities/Foundation-1",
+      "license": "Stability AI Community License",
+      "task": "one 8-bar loop at 120 BPM (stereo, 44.1 kHz)",
+      "model": "foundation1_fp16_50",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 11.545,
+      "ok": true,
+      "run_s": [
+        66.905,
+        66.891,
+        66.415,
+        70.214,
+        69.02
+      ],
+      "output": {
+        "seconds": 16.0,
+        "channels": 2,
+        "sample_rate": 44100,
+        "steps": 50,
+        "nan": false,
+        "peak": 0.8711
+      },
+      "rss_peak_bytes": 8671412224,
+      "mps_peak_bytes": 7763673088,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "cold_start_warning": "cold first run 66.9s > 30s (warm-up; load once and keep it)",
+      "flags": [
+        "warm run 68.0s > 30s",
+        "peak 16.4 GB > 12 GB"
+      ],
+      "go": false
+    },
+    "beat_this_fp16": {
+      "name": "beat_this (final0), float16 on Metal",
+      "module": "gbmodels.beatthis",
+      "venv": ".venv",
+      "kind": "torch",
+      "inputs": "beat_this",
+      "load_options": {
+        "float16": true
+      },
+      "source": "https://github.com/CPJKU/beat_this",
+      "license": "MIT (code and weights)",
+      "task": "beats + downbeats of 60 s of audio",
+      "model": "beat_this_fp16",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 1.313,
+      "ok": true,
+      "run_s": [
+        2.842,
+        0.48,
+        0.551,
+        0.59,
+        0.633
+      ],
+      "output": {
+        "beats": 127,
+        "downbeats": 32,
+        "bpm_median": 125.0
+      },
+      "rss_peak_bytes": 547192832,
+      "mps_peak_bytes": 1325252608,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [],
+      "go": true
+    },
+    "clap_fp16": {
+      "name": "LAION CLAP music, audio encoder float16 on Metal",
+      "module": "gbmodels.clap",
+      "venv": ".venv",
+      "kind": "torch",
+      "inputs": "clap",
+      "load_options": {
+        "dtype": "float16"
+      },
+      "source": "https://huggingface.co/lukewys/laion_clap",
+      "license": "CC0-1.0 repository; checkpoint license not stated separately",
+      "task": "audio embedding of 60 s (six 10 s windows) + similarity to 3 genre prompts",
+      "model": "clap_fp16",
+      "device": "mps",
+      "mps_cpu_fallback": false,
+      "load_s": 9.738,
+      "ok": true,
+      "run_s": [
+        1.058,
+        0.65,
+        0.669,
+        0.67,
+        0.652
+      ],
+      "output": {
+        "windows": 6,
+        "similarity": {
+          "ambient trance": NaN,
+          "deep house": NaN,
+          "drum and bass": NaN
+        }
+      },
+      "rss_peak_bytes": 3086041088,
+      "mps_peak_bytes": 2376859648,
+      "device_label": "mps",
+      "attempts": [
+        {
+          "device": "mps",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [
+        "output has NaN/Inf"
+      ],
+      "go": false
+    },
+    "skey_cached": {
+      "name": "S-KEY, Core ML MLProgram, all compute units, compiled-model cache",
+      "module": "gbmodels.skey",
+      "venv": ".venv",
+      "kind": "onnx",
+      "inputs": "skey",
+      "load_options": {
+        "compiled_cache": true
+      },
+      "source": "https://huggingface.co/musetric/skey-onnx",
+      "license": "MIT (per the ONNX model card)",
+      "task": "global key of 60 s of audio",
+      "model": "skey_cached",
+      "device": "cpu",
+      "mps_cpu_fallback": false,
+      "load_s": 0.312,
+      "providers": [
+        "CPUExecutionProvider"
+      ],
+      "ok": true,
+      "run_s": [
+        0.965,
+        0.1,
+        0.112,
+        0.107,
+        0.098
+      ],
+      "output": {
+        "key": "G# Major",
+        "confidence": 0.0919
+      },
+      "rss_peak_bytes": 579354624,
+      "mps_peak_bytes": 475136,
+      "device_label": "cpu",
+      "attempts": [
+        {
+          "device": "coreml",
+          "ok": false,
+          "error": "Fail: [ONNXRuntimeError] : 1 : FAIL : Failed to create MLModel, error: Failed to build the model execution plan using a model architecture file '~/Library/Caches/gb-mcp/coreml/16272559086560355062/11_dynamic_mlprogram/model/compiled_model.mlmodelc/model.mil' with error code: -7."
+        },
+        {
+          "device": "cpu",
+          "ok": true,
+          "error": null
+        }
+      ],
+      "flags": [],
+      "go": true
+    }
+  }
+}

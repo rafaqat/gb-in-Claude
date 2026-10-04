@@ -1,0 +1,131 @@
+{
+  "id": "13-uk-garage",
+  "genre": "UK garage",
+  "bpm": 132,
+  "key": "C minor",
+  "meter": "4/4",
+  "form": "intro 4 \u00b7 verse 8 \u00b7 chorus 8 \u00b7 outro 4",
+  "description": "UK garage: shuffled two-step drums, chopped organ chords and a bouncy sub bass.",
+  "song": {
+    "title": "eval uk-garage",
+    "tempo": 132,
+    "key": "C minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "snare": "....x.......x...",
+              "hat": "..x...x...x...xx",
+              "shaker": "x.xxx.xxx.xxx.xx"
+            },
+            "levels": {
+              "shaker": -10
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "snare": "....x.......x...",
+              "hat": "..x...x...x...xx",
+              "shaker": "x.xxx.xxx.xxx.xx"
+            },
+            "levels": {
+              "shaker": -10
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "snare": "....x.......x...",
+              "hat": "..x...x...x...xx",
+              "shaker": "x.xxx.xxx.xxx.xx"
+            },
+            "levels": {
+              "shaker": -10
+            }
+          }
+        }
+      },
+      {
+        "name": "Organ",
+        "role": "pad",
+        "parts": {
+          "intro": {
+            "chords": "Cm9 | Fm9 | Abmaj7 | G7",
+            "style": "stabs"
+          },
+          "verse": {
+            "chords": "Cm9 | Fm9 | Abmaj7 | G7",
+            "style": "stabs"
+          },
+          "chorus": {
+            "chords": "Cm9 | Fm9 | Abmaj7 | G7",
+            "style": "stabs"
+          },
+          "outro": {
+            "chords": "Cm9 | Fm9 | Abmaj7 | G7",
+            "style": "stabs"
+          }
+        },
+        "program": 16
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "verse": {
+            "chords": "Cm9 | Fm9 | Abmaj7 | G7",
+            "style": "offbeat"
+          },
+          "chorus": {
+            "chords": "Cm9 | Fm9 | Abmaj7 | G7",
+            "style": "offbeat"
+          },
+          "outro": {
+            "chords": "Cm9 | Fm9 | Abmaj7 | G7",
+            "style": "offbeat"
+          }
+        },
+        "program": 38
+      },
+      {
+        "name": "Vox",
+        "role": "lead",
+        "parts": {
+          "chorus": {
+            "notes": "g5 ~ eb5 f5 | g5@2 ~ c5 | bb4 c5 eb5 f5 | d5@4"
+          }
+        },
+        "program": 85
+      }
+    ]
+  }
+}

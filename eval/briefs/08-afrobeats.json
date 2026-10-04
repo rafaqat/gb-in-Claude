@@ -1,0 +1,131 @@
+{
+  "id": "08-afrobeats",
+  "genre": "afrobeats",
+  "bpm": 108,
+  "key": "G major",
+  "meter": "4/4",
+  "form": "intro 4 \u00b7 verse 8 \u00b7 hook 8 \u00b7 outro 4",
+  "description": "Afrobeats: syncopated log-drum groove, bright guitar skank and a warm call-and-response lead.",
+  "song": {
+    "title": "eval afrobeats",
+    "tempo": 108,
+    "key": "G major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "hook",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "rim": "..x..x....x..x..",
+              "shaker": "xxxxxxxxxxxxxxxx",
+              "clap": "....x.......x..."
+            },
+            "levels": {
+              "shaker": -9
+            }
+          },
+          "hook": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "rim": "..x..x....x..x..",
+              "shaker": "xxxxxxxxxxxxxxxx",
+              "clap": "....x.......x..."
+            },
+            "levels": {
+              "shaker": -9
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "rim": "..x..x....x..x..",
+              "shaker": "xxxxxxxxxxxxxxxx",
+              "clap": "....x.......x..."
+            },
+            "levels": {
+              "shaker": -9
+            }
+          }
+        }
+      },
+      {
+        "name": "Guitar",
+        "role": "arp",
+        "parts": {
+          "intro": {
+            "chords": "G | Em | C | D",
+            "style": "broken"
+          },
+          "verse": {
+            "chords": "G | Em | C | D",
+            "style": "broken"
+          },
+          "hook": {
+            "chords": "G | Em | C | D",
+            "style": "broken"
+          },
+          "outro": {
+            "chords": "G | Em | C | D",
+            "style": "broken"
+          }
+        },
+        "program": 27
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "verse": {
+            "chords": "G | Em | C | D",
+            "style": "offbeat"
+          },
+          "hook": {
+            "chords": "G | Em | C | D",
+            "style": "offbeat"
+          },
+          "outro": {
+            "chords": "G | Em | C | D",
+            "style": "offbeat"
+          }
+        },
+        "program": 38
+      },
+      {
+        "name": "Lead",
+        "role": "lead",
+        "parts": {
+          "hook": {
+            "notes": "b4 d5 ~ b4 | e5@2 d5 b4 | g4 a4 b4 d5 | a4@4"
+          }
+        },
+        "program": 73
+      }
+    ]
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "id": "16-edm-bigroom",
+  "genre": "EDM (big room)",
+  "bpm": 128,
+  "key": "F minor",
+  "meter": "4/4",
+  "form": "intro 8 \u00b7 build 8 \u00b7 drop 8 \u00b7 outro 8",
+  "description": "Big-room EDM: festival build with a snare roll, then a huge supersaw drop on four-on-the-floor.",
+  "song": {
+    "title": "eval edm-bigroom",
+    "tempo": 128,
+    "key": "F minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 8
+      },
+      {
+        "name": "build",
+        "bars": 8
+      },
+      {
+        "name": "drop",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "intro": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "clap": "....x.......x...",
+              "open-hat": "..x...x...x...x."
+            }
+          },
+          "build": {
+            "grid": {
+              "snare": "x...x...x...x...",
+              "kick": "x...x...x...x..."
+            }
+          },
+          "drop": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "clap": "....x.......x...",
+              "open-hat": "..x...x...x...x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Supersaw",
+        "role": "pad",
+        "parts": {
+          "drop": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "stabs"
+          }
+        },
+        "program": 81
+      },
+      {
+        "name": "Lead",
+        "role": "lead",
+        "parts": {
+          "drop": {
+            "notes": "f5 f5 ab5 f5 | c6@2 bb5 ab5 | f5 f5 ab5 c6 | bb5@4"
+          }
+        },
+        "program": 81
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "drop": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "offbeat"
+          },
+          "outro": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "offbeat"
+          }
+        },
+        "program": 38
+      },
+      {
+        "name": "Pad",
+        "role": "pad",
+        "parts": {
+          "intro": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "sustain"
+          },
+          "build": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "sustain"
+          }
+        },
+        "program": 89,
+        "level": -6
+      }
+    ],
+    "style": "club-trance"
+  }
+}

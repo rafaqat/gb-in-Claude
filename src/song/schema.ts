@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ok, err, type Result } from "../result.js";
 import { DRUM_VOICE_NAMES } from "../composition/drums.js";
 import { STYLE_NAMES } from "./styles.js";
+import { GROOVE_NAMES } from "./grooves.js";
 
 export const HUMANIZE_FEELS = ["off", "tight", "natural", "loose"] as const;
 
@@ -73,6 +74,8 @@ const Track = z
     program: z.number().int().min(0).max(127).optional(),
     /** Track level in dB (velocity scaling on the GM curve): -6 ≈ half as loud, +6 ≈ twice. Default 0. */
     level: LevelDb.optional(),
+    /** Notes run legato into the next so a mono synth slides (e.g. a trap 808). Leads always glide. */
+    glide: z.boolean().optional(),
     parts: z.record(z.string(), Part),
     /** The donor's audio track number that holds this track's clips (gb_band). */
     donorTrack: z.number().int().min(1).max(255).optional(),
@@ -111,6 +114,11 @@ export const SongSchema = z
     key: z.string().regex(/^[A-G][#b]? (major|minor)$/, 'like "F minor" or "Ab major"').optional(),
     style: z.enum(STYLE_NAMES).optional(),
     humanize: z.enum(HUMANIZE_FEELS).default("natural"),
+    /** A mined genre groove (Groove MIDI Dataset): the drums take its timing and accents. 4/4 songs. */
+    groove: z.enum(GROOVE_NAMES).optional(),
+    /** Swing: every second 16th (or 8th, swingUnit) is delayed — 50 straight, 58 light, 66 triplet feel, 75 hard. */
+    swing: z.number().min(50).max(75).optional(),
+    swingUnit: z.enum(["16th", "8th"]).default("16th"),
     sections: z.array(Section).min(1),
     tracks: z.array(Track).min(1),
   })

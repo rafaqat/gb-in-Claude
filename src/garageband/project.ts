@@ -69,6 +69,8 @@ export type GbProjectDeps = {
   sleep?: (ms: number) => Promise<void>;
   pollMs?: number;
   timeoutMs?: number;
+  /** extra wait for a late save prompt of a project backed up in the same call (default 60 s) */
+  promptGraceMs?: number;
 };
 
 const MAIN: RootSpec = { kind: "main_window" };
@@ -93,6 +95,7 @@ export function createGbProject(deps: GbProjectDeps) {
   const sleep = deps.sleep ?? realSleep;
   const pollMs = deps.pollMs ?? 500;
   const timeoutMs = deps.timeoutMs ?? 60_000;
+  const promptGraceMs = deps.promptGraceMs ?? 60_000;
 
   const appState = () => callOp(deps.helper, "app.state", {}, AppStateResult, { deadlineMs: 4_000 });
   const find = async (root: RootSpec, selector: Selector) => {
@@ -190,7 +193,13 @@ export function createGbProject(deps: GbProjectDeps) {
    * each time no dialog is up. null = the deadline passed and `ready` never answered.
    */
   async function awaitOpen(op: string, backedUp: ReadonlySet<string>, ready: () => Promise<Envelope | null>): Promise<Envelope | null> {
-    for (let i = 0; i < Math.max(1, Math.ceil(timeoutMs / pollMs)); i++) {
+    // A project backed up in this call still owes its save prompt; GarageBand can show it more than a minute late
+    //. While one is owed, wait up to promptGraceMs longer — same call, same rule.
+    const owed = new Set(backedUp);
+    const base = Math.max(1, Math.ceil(timeoutMs / pollMs));
+    const grace = Math.ceil(promptGraceMs / pollMs);
+    let limit = base; // the song's own wait; restarts after a late dismissal, so the new song gets its full time
+    for (let i = 0; i < limit || (owed.size > 0 && i < base + grace); i++) {
       const d = await classifyDialogs(deps.helper);
       if (d.kind === "save_prompt") {
         if (!backedUp.has(d.document)) {
@@ -201,6 +210,8 @@ export function createGbProject(deps: GbProjectDeps) {
         }
         const dismissed = await core.press(op, { root: DIALOG, selector: { role: "AXButton", title: "Don’t Save" }, kind: "button" });
         if (dismissed.status === "failed") return dismissed;
+        owed.delete(d.document);
+        limit = Math.max(limit, i + base);
       } else if (d.kind === "other") {
         return failed(op, "DIALOG_UNEXPECTED", "an unexpected dialog appeared; nothing pressed", {
           write_attempted: true, safe_to_retry: false, hint: "answer the dialog in GarageBand yourself", context: { dialog: d.texts.map((t) => cleanText(t)), buttons: d.buttons },

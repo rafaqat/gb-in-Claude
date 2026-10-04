@@ -1,0 +1,160 @@
+{
+  "id": "07-pop",
+  "genre": "pop",
+  "bpm": 105,
+  "key": "C major",
+  "meter": "4/4",
+  "form": "verse 8 \u00b7 pre 4 \u00b7 chorus 8 \u00b7 bridge 4 \u00b7 chorus2 8",
+  "description": "Modern pop: four-chord progression, piano and synth, a hooky top line in the chorus.",
+  "song": {
+    "title": "eval pop",
+    "tempo": 105,
+    "key": "C major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "pre",
+        "bars": 4
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "bridge",
+        "bars": 4
+      },
+      {
+        "name": "chorus2",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x.x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.......x.x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "chorus2": {
+            "grid": {
+              "kick": "x.......x.x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "pre": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "....x.......x..."
+            }
+          }
+        }
+      },
+      {
+        "name": "Piano",
+        "role": "pad",
+        "parts": {
+          "verse": {
+            "chords": "C | G | Am | F",
+            "style": "stabs"
+          },
+          "pre": {
+            "chords": "C | G | Am | F",
+            "style": "stabs"
+          },
+          "chorus": {
+            "chords": "C | G | Am | F",
+            "style": "stabs"
+          },
+          "bridge": {
+            "chords": "C | G | Am | F",
+            "style": "stabs"
+          },
+          "chorus2": {
+            "chords": "C | G | Am | F",
+            "style": "stabs"
+          }
+        },
+        "program": 0
+      },
+      {
+        "name": "Synth",
+        "role": "pad",
+        "parts": {
+          "chorus": {
+            "chords": "C | G | Am | F",
+            "style": "sustain"
+          },
+          "chorus2": {
+            "chords": "C | G | Am | F",
+            "style": "sustain"
+          }
+        },
+        "program": 89,
+        "level": -6
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "verse": {
+            "chords": "C | G | Am | F",
+            "style": "offbeat"
+          },
+          "pre": {
+            "chords": "C | G | Am | F",
+            "style": "offbeat"
+          },
+          "chorus": {
+            "chords": "C | G | Am | F",
+            "style": "offbeat"
+          },
+          "bridge": {
+            "chords": "C | G | Am | F",
+            "style": "offbeat"
+          },
+          "chorus2": {
+            "chords": "C | G | Am | F",
+            "style": "offbeat"
+          }
+        },
+        "program": 33
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "parts": {
+          "chorus": {
+            "notes": "e5 g5 g5 a5 | g5@2 e5 d5 | c5 d5 e5 g5 | a5@2 g5@2"
+          },
+          "chorus2": {
+            "notes": "e5 g5 g5 a5 | g5@2 e5 d5 | c5 d5 e5 g5 | a5@2 g5@2"
+          }
+        },
+        "program": 80
+      }
+    ]
+  }
+}

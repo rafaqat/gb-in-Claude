@@ -1,0 +1,113 @@
+{
+  "id": "19-levantine-strings",
+  "genre": "Levantine ethereal strings (Fairuz style)",
+  "bpm": 84,
+  "key": "D minor",
+  "meter": "3/4",
+  "form": "intro 8 \u00b7 verse 8 \u00b7 refrain 8 \u00b7 coda 4",
+  "description": "Fairuz-style ethereal strings in a gentle 3/4: oud-like plucks, flowing violins, nothing percussive or plinky.",
+  "song": {
+    "title": "eval levantine-strings",
+    "tempo": 84,
+    "key": "D minor",
+    "timeSignature": [
+      3,
+      4
+    ],
+    "seed": 1,
+    "humanize": "loose",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 8
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "refrain",
+        "bars": 8
+      },
+      {
+        "name": "coda",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Strings",
+        "role": "pad",
+        "parts": {
+          "intro": {
+            "chords": "Dm | Gm | A | Dm",
+            "style": "sustain"
+          },
+          "verse": {
+            "chords": "Dm | Gm | A | Dm",
+            "style": "sustain"
+          },
+          "refrain": {
+            "chords": "Dm | Gm | A | Dm",
+            "style": "sustain"
+          },
+          "coda": {
+            "chords": "Dm | Gm | A | Dm",
+            "style": "sustain"
+          }
+        },
+        "program": 48
+      },
+      {
+        "name": "Violin",
+        "role": "lead-high",
+        "parts": {
+          "verse": {
+            "notes": "a5 bb5 a5 | g5 f5 e5 | f5 e5 d5 | e5@3"
+          },
+          "refrain": {
+            "notes": "d6 c6 bb5 | a5@2 g5 | f5 g5 a5 | d5@3"
+          }
+        },
+        "program": 40
+      },
+      {
+        "name": "Oud",
+        "role": "arp",
+        "parts": {
+          "verse": {
+            "chords": "Dm | Gm | A | Dm",
+            "style": "broken"
+          },
+          "refrain": {
+            "chords": "Dm | Gm | A | Dm",
+            "style": "broken"
+          }
+        },
+        "program": 24,
+        "level": -6
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "verse": {
+            "chords": "Dm | Gm | A | Dm",
+            "style": "sustain"
+          },
+          "refrain": {
+            "chords": "Dm | Gm | A | Dm",
+            "style": "sustain"
+          },
+          "coda": {
+            "chords": "Dm | Gm | A | Dm",
+            "style": "sustain"
+          }
+        },
+        "program": 43,
+        "level": -3
+      }
+    ],
+    "style": "acoustic"
+  }
+}

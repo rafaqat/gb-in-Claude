@@ -135,3 +135,45 @@ describe("gb_analyze: strict commands", () => {
     expect(r).toMatchObject({ status: "failed", error: "INPUT_INVALID" });
   });
 });
+
+describe("gb_analyze: model listening through the sidecar (M8, field ml)", () => {
+  const listener = (reply: (model: string, inputs: Record<string, unknown>) => unknown, calls: unknown[] = []) => ({
+    calls,
+    async run(model: string, inputs: Record<string, unknown>) { calls.push({ model, inputs }); return reply(model, inputs) as never; },
+    close() {},
+  });
+  const heard = { beats: { count: 64, downbeats: 16, bpm: 132 }, key: { key: "F minor" }, genre: { ranking: [{ genre: "techno", similarity: 0.3 }] } };
+
+  it("adds ml (beats, key, genre ranking) from one sidecar request", async () => {
+    const l = listener(() => ({ ok: true, value: heard }));
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: l })({ command: "audio", path: "exports/mix.wav", spectrogram: false });
+    expect(r).toMatchObject({ status: "verified", data: { ml: heard } });
+    expect(l.calls).toEqual([{ model: "listen", inputs: { wav: join(ws, "exports", "mix.wav") } }]);
+  });
+
+  it("against_song passes the song's tempo and key, so the sidecar adds the grid check and the key match", async () => {
+    const l = listener(() => ({ ok: true, value: heard }));
+    await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: l })({ command: "against_song", path: "exports/mix.wav", song, spectrogram: false });
+    expect(l.calls).toEqual([{ model: "listen", inputs: { wav: join(ws, "exports", "mix.wav"), bpm: 132, key: "F minor" } }]);
+  });
+
+  it("passes the song's swing, so the grid check expects swung off-beats", async () => {
+    const l = listener(() => ({ ok: true, value: heard }));
+    await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: l })({ command: "against_song", path: "exports/mix.wav", song: { ...song, swing: 64, swingUnit: "8th" }, spectrogram: false });
+    expect(l.calls).toEqual([{ model: "listen", inputs: { wav: join(ws, "exports", "mix.wav"), bpm: 132, key: "F minor", swing: 64, swing_unit: "8th" } }]);
+  });
+
+  it("a failing or missing sidecar never fails the analysis: ml says why", async () => {
+    const l = listener(() => ({ ok: false, error: { code: "SIDECAR_UNAVAILABLE", message: "cannot start the sidecar (ENOENT)" } }));
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: l })({ command: "audio", path: "exports/mix.wav", spectrogram: false });
+    expect(r).toMatchObject({ status: "verified", data: { ml: { unavailable: "SIDECAR_UNAVAILABLE" }, loudness: expect.any(Object) } });
+    const none = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())) })({ command: "audio", path: "exports/mix.wav", spectrogram: false });
+    expect(none).toMatchObject({ status: "verified", data: { ml: { unavailable: "NOT_CONFIGURED" } } });
+  });
+
+  it("asks the sidecar nothing when ml is not among the requested fields", async () => {
+    const l = listener(() => ({ ok: true, value: heard }));
+    await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: l })({ command: "audio", path: "exports/mix.wav", spectrogram: false, fields: ["loudness"] });
+    expect(l.calls).toEqual([]);
+  });
+});

@@ -8,6 +8,8 @@
 #   ./scripts/install.sh               install everything (MCP registered for your user)
 #   ./scripts/install.sh --dry-run     print what would happen, change nothing
 #   ./scripts/install.sh --no-register skip `claude mcp add`        --no-skills  skip installing the skills
+#   ./scripts/install.sh --with-models also the optional AI models (Apple Silicon; ~2 GB of packages, ~4 GB of
+#                                      weights downloaded on first use): beats/key/genre in gb_analyze, gb_song infill
 #
 # Environment: GB_MCP_WORKSPACE (default ~/Music/gb-mcp) — where songs, MIDI files and exports go.
 #              GB_MCP_SCOPE (default user) — Claude Code scope for the MCP server: user, project or local.
@@ -17,12 +19,13 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 WORKSPACE="${GB_MCP_WORKSPACE:-$HOME/Music/gb-mcp}"
 SCOPE="${GB_MCP_SCOPE:-user}"
 SKILLS_DIR="$HOME/.claude/skills"
-DRY=0; REGISTER=1; SKILLS=1
+DRY=0; REGISTER=1; SKILLS=1; MODELS=0
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY=1 ;;
     --no-register) REGISTER=0 ;;
     --no-skills) SKILLS=0 ;;
+    --with-models) MODELS=1 ;;
     -h|--help) sed -n '5,14p' "$0"; exit 0 ;;
     *) echo "unknown option: $arg (see --help)" >&2; exit 2 ;;
   esac
@@ -57,6 +60,19 @@ bold "Creating the audio-analysis environment (.venv)"
 [ -x "$REPO/.venv/bin/python3" ] || run python3 -m venv "$REPO/.venv"
 run "$REPO/.venv/bin/python3" -m pip install --quiet --disable-pip-version-check -r "$REPO/analysis/requirements.txt"
 ok "numpy, scipy, soundfile and matplotlib in $REPO/.venv"
+
+if [ "$MODELS" = 1 ]; then
+  bold "Creating the optional model environment (models/.venv, Python 3.12)"
+  [ "$(uname -m)" = "arm64" ] || die "the model sidecar needs Apple Silicon (Metal / MLX)."
+  if [ ! -x "$REPO/models/.venv/bin/python" ]; then
+    if command -v uv >/dev/null 2>&1; then run uv venv --python 3.12 "$REPO/models/.venv"
+    elif command -v python3.12 >/dev/null 2>&1; then run python3.12 -m venv "$REPO/models/.venv"
+    else die "Python 3.12 is needed for the models: install uv (brew install uv) or python@3.12."; fi
+  fi
+  if command -v uv >/dev/null 2>&1; then run uv pip install --python "$REPO/models/.venv/bin/python" -r "$REPO/models/requirements.txt"
+  else run "$REPO/models/.venv/bin/python" -m pip install --quiet --disable-pip-version-check -r "$REPO/models/requirements.txt"; fi
+  ok "PyTorch (Metal), MLX and the model libraries in $REPO/models/.venv — weights download from Hugging Face on first use"
+fi
 
 bold "Creating the workspace"
 run mkdir -p "$WORKSPACE/exports"

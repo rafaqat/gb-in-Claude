@@ -3,10 +3,13 @@
 import type { SmfController, SmfNote, SmfTrack } from "../midi/smf.js";
 import type { Role } from "./schema.js";
 import { HUMANIZE_FEELS } from "./schema.js";
+import type { GrooveFeel } from "./grooves.js";
 
 export type Feel = (typeof HUMANIZE_FEELS)[number];
-export type RoleTrack = SmfTrack & { role: Role };
-export type HumanizeOptions = { feel: Feel; seed: number; tempoBpm: number; ppq: number };
+/** glide: notes run legato into the next (mono synths slide, e.g. a trap 808); leads always do. */
+export type RoleTrack = SmfTrack & { role: Role; glide?: boolean };
+/** groove: a mined genre groove (grooves.ts) — the drums it covers take its timing and accents (4/4, 16 steps). */
+export type HumanizeOptions = { feel: Feel; seed: number; tempoBpm: number; ppq: number; groove?: GrooveFeel };
 
 /**
  * Per-role feel, tuned by ear.
@@ -88,8 +91,14 @@ function humanizeTrack(track: RoleTrack, opts: HumanizeOptions, scale: number, r
       walk = WALK_MEMORY * walk + random.gauss(feel.walk * scale); // chords move together
       lastStart = n.startTick;
     }
+    const sixteenth = opts.ppq / 4;
+    const grooved = track.role === "drums" ? opts.groove?.get(n.pitch) : undefined;
+    const step = Math.round(n.startTick / sixteenth) % 16;
     let shiftMs: number;
-    if (track.role === "drums" && KICKS.has(n.pitch)) {
+    if (grooved) {
+      // the style's measured timing for this voice and step, plus a little of the drummer's own variation
+      shiftMs = grooved.offset[step]! * (sixteenth / ticksPerMs) * scale + random.gauss(1.0 * scale);
+    } else if (track.role === "drums" && KICKS.has(n.pitch)) {
       shiftMs = random.gauss(0.8 * scale); // the kick is the anchor
     } else {
       const pocket = track.role === "drums" ? (DRUM_POCKET[n.pitch] ?? 0) : feel.pocket;
@@ -105,7 +114,8 @@ function humanizeTrack(track: RoleTrack, opts: HumanizeOptions, scale: number, r
     const arc = Math.sin(phrasePos * Math.PI) * feel.arc * scale - (feel.arc * scale) / 2;
     const accentScale = track.role === "drums" && KICKS.has(n.pitch) ? 0.3 : 1;
     const accent = (metricStrength(n.startTick, opts.ppq) - 0.5) * feel.accent * accentScale;
-    const velocity = Math.round(clamp(n.velocity + accent + arc + random.gauss(3 * scale), 1, 127));
+    const base = grooved ? n.velocity * grooved.accent[step]! : n.velocity + accent; // the style's accents replace the generic ones
+    const velocity = Math.round(clamp(base + arc + random.gauss(3 * scale), 1, 127));
 
     let durationTicks = n.durationTicks;
     if (feel.gate) {
@@ -114,7 +124,7 @@ function humanizeTrack(track: RoleTrack, opts: HumanizeOptions, scale: number, r
     }
     return { pitch: n.pitch, velocity, durationTicks, startTick: Math.max(0, n.startTick + Math.round(shiftMs * ticksPerMs)) };
   });
-  if (LEAD_ROLES.has(track.role)) addGlide(out, opts.ppq, Math.round(GLIDE_OVERLAP_MS * ticksPerMs));
+  if (LEAD_ROLES.has(track.role) || track.glide) addGlide(out, opts.ppq, Math.round(GLIDE_OVERLAP_MS * ticksPerMs));
   const notes = removeSamePitchOverlaps(out).sort((a, b) => a.startTick - b.startTick || a.pitch - b.pitch);
   const controllers = LEAD_ROLES.has(track.role) ? delayedVibrato(notes, opts.ppq, track.controllers ?? []) : track.controllers;
   return { ...track, notes, ...(controllers ? { controllers } : {}) };

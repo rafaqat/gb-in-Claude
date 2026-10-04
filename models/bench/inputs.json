@@ -1,0 +1,35 @@
+{
+  "amt": {
+    "midi": "bench/inputs/lofi-4track.mid",
+    "start_s": 22.588,
+    "end_s": 45.176,
+    "seed": 1
+  },
+  "foundation1": {
+    "prompt": "Synth Lead, Warm, Wide, Chord progression, Low Reverb, F minor, 8 Bars, 120 BPM",
+    "bpm": 120,
+    "bars": 8,
+    "seed": 1,
+    "out": "bench/foundation1-loop.wav"
+  },
+  "beat_this": {
+    "wav": "bench/inputs/ascent-orbit-60s.wav"
+  },
+  "clap": {
+    "wav": "bench/inputs/ascent-orbit-60s.wav",
+    "prompts": [
+      "ambient trance",
+      "deep house",
+      "drum and bass"
+    ]
+  },
+  "skey": {
+    "wav": "bench/inputs/ascent-orbit-60s.wav"
+  },
+  "amt_patched": {
+    "midi": "bench/inputs/lofi-4track.mid",
+    "start_s": 22.588,
+    "end_s": 45.176,
+    "seed": 1
+  }
+}

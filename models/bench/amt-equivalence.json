@@ -1,0 +1,1 @@
+{"device": "mps", "tokens": 200, "identical": true, "first_difference_at": null, "shipped_s": 159.64, "patched_s": 9.45, "speedup": 16.9, "cache_hits": 200, "cache_misses": 1}

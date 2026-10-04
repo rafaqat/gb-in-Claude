@@ -1,0 +1,135 @@
+{
+  "id": "18-ambient-trance",
+  "genre": "ambient trance (William Orbit style)",
+  "bpm": 132,
+  "key": "F minor",
+  "meter": "4/4",
+  "form": "intro 8 \u00b7 build 8 \u00b7 drop 8 \u00b7 outro 8",
+  "description": "William Orbit\u2013style ambient trance: shimmering arpeggios, wide pads, drums sitting back in the mix.",
+  "song": {
+    "title": "eval ambient-trance",
+    "tempo": 132,
+    "key": "F minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 8
+      },
+      {
+        "name": "build",
+        "bars": 8
+      },
+      {
+        "name": "drop",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "build": {
+            "grid": {
+              "kick": "x...x...x...x..."
+            },
+            "levels": {
+              "kick": -6
+            }
+          },
+          "drop": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "open-hat": "..x...x...x...x.",
+              "clap": "....x.......x..."
+            },
+            "levels": {
+              "kick": -4,
+              "clap": -6
+            }
+          }
+        }
+      },
+      {
+        "name": "Pad",
+        "role": "pad",
+        "parts": {
+          "intro": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "sustain"
+          },
+          "build": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "sustain"
+          },
+          "drop": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "sustain"
+          }
+        },
+        "program": 89
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "parts": {
+          "build": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "updown"
+          },
+          "drop": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "updown"
+          },
+          "outro": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "updown"
+          }
+        },
+        "program": 81,
+        "level": -3
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "drop": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "offbeat"
+          },
+          "outro": {
+            "chords": "Fm | Db | Ab | Eb",
+            "style": "offbeat"
+          }
+        },
+        "program": 38
+      },
+      {
+        "name": "Lead",
+        "role": "lead",
+        "parts": {
+          "drop": {
+            "notes": "c6@2 ab5 f5 | db6@4 | c6 bb5 ab5 g5 | f5@4"
+          }
+        },
+        "program": 82,
+        "level": -3
+      }
+    ],
+    "style": "orbit-ambient"
+  }
+}

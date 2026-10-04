@@ -1,0 +1,128 @@
+{
+  "id": "05-reggaeton",
+  "genre": "reggaeton",
+  "bpm": 95,
+  "key": "A minor",
+  "meter": "4/4",
+  "form": "intro 4 \u00b7 verse 8 \u00b7 chorus 8 \u00b7 outro 4",
+  "description": "Reggaeton: the dembow rhythm, minor synth plucks and a punchy 808-style bass.",
+  "song": {
+    "title": "eval reggaeton",
+    "tempo": 95,
+    "key": "A minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "...x..x....x..x.",
+              "hat": "x.x.x.x.x.x.x.x."
+            },
+            "levels": {
+              "hat": -6
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "...x..x....x..x.",
+              "hat": "x.x.x.x.x.x.x.x."
+            },
+            "levels": {
+              "hat": -6
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "...x..x....x..x.",
+              "hat": "x.x.x.x.x.x.x.x."
+            },
+            "levels": {
+              "hat": -6
+            }
+          }
+        }
+      },
+      {
+        "name": "Pluck",
+        "role": "arp",
+        "parts": {
+          "intro": {
+            "chords": "Am | F | C | G",
+            "style": "broken"
+          },
+          "verse": {
+            "chords": "Am | F | C | G",
+            "style": "broken"
+          },
+          "chorus": {
+            "chords": "Am | F | C | G",
+            "style": "broken"
+          },
+          "outro": {
+            "chords": "Am | F | C | G",
+            "style": "broken"
+          }
+        },
+        "program": 84
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "verse": {
+            "chords": "Am | F | C | G",
+            "style": "octave"
+          },
+          "chorus": {
+            "chords": "Am | F | C | G",
+            "style": "octave"
+          },
+          "outro": {
+            "chords": "Am | F | C | G",
+            "style": "octave"
+          }
+        },
+        "program": 38
+      },
+      {
+        "name": "Lead",
+        "role": "lead",
+        "parts": {
+          "chorus": {
+            "notes": "e5 e5 d5 c5 | a4@2 c5 d5 | e5 g5 e5 d5 | c5@4"
+          }
+        },
+        "program": 80
+      }
+    ]
+  }
+}

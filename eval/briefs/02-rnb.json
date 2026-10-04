@@ -1,0 +1,119 @@
+{
+  "id": "02-rnb",
+  "genre": "R&B",
+  "bpm": 75,
+  "key": "Eb major",
+  "meter": "4/4",
+  "form": "intro 4 \u00b7 verse 8 \u00b7 chorus 8 \u00b7 outro 4",
+  "description": "Slow-jam R&B: lush extended chords, deep sub bass and a sparse snap-and-clap groove.",
+  "song": {
+    "title": "eval rnb",
+    "tempo": 75,
+    "key": "Eb major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "clap": "....x.......x...",
+              "hat": "x.xxx.x.x.xxx.x."
+            },
+            "levels": {
+              "hat": -8
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.....x...x..x..",
+              "clap": "....x.......x...",
+              "hat": "xxxxxxxxxxxxxxxx"
+            },
+            "levels": {
+              "hat": -10
+            }
+          }
+        }
+      },
+      {
+        "name": "Keys",
+        "role": "pad",
+        "parts": {
+          "intro": {
+            "chords": "Ebmaj7 | Cm9 | Abmaj7 | Bb7",
+            "style": "sustain"
+          },
+          "verse": {
+            "chords": "Ebmaj7 | Cm9 | Abmaj7 | Bb7",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Ebmaj7 | Cm9 | Abmaj7 | Bb7",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "Ebmaj7 | Cm9 | Abmaj7 | Bb7",
+            "style": "sustain"
+          }
+        },
+        "program": 4
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "verse": {
+            "chords": "Ebmaj7 | Cm9 | Abmaj7 | Bb7",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Ebmaj7 | Cm9 | Abmaj7 | Bb7",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "Ebmaj7 | Cm9 | Abmaj7 | Bb7",
+            "style": "sustain"
+          }
+        },
+        "program": 38
+      },
+      {
+        "name": "Lead",
+        "role": "lead",
+        "parts": {
+          "chorus": {
+            "notes": "g5@2 f5 eb5 | c5@3 bb4 | ab4 c5 eb5 f5 | g5@4"
+          }
+        },
+        "program": 81,
+        "level": -3
+      }
+    ]
+  }
+}

@@ -11,6 +11,8 @@ import { createAppleScripts, openInGarageBand } from "./garageband/applescript.j
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createServer, SERVER_VERSION } from "./mcp/server.js";
 import { mutationGate } from "./garageband/gate.js";
+import { existsSync } from "node:fs";
+import { createModelSidecar } from "./models/sidecar.js";
 
 const workspaceDir = resolve(process.env.GB_MCP_WORKSPACE ?? resolve(homedir(), "Music", "gb-mcp"));
 // One GarageBand mutation at a time across every gb-mcp process of this user (two Claude sessions, any workspace).
@@ -20,6 +22,12 @@ console.log = (...args: unknown[]) => console.error(...args); // belt and braces
 const packageRoot = resolve(import.meta.dirname, "..");
 const python = process.env.GB_MCP_PYTHON ?? "python3";
 const system = createDefaultSystemDeps({ workspaceDir, python });
+// M8 model sidecar (beats/grid, key, genre ranking for gb_analyze): only when its environment exists
+const modelsDir = resolve(packageRoot, "models");
+const modelsPython = resolve(modelsDir, ".venv", "bin", "python");
+const listener = existsSync(modelsPython)
+  ? createModelSidecar({ command: modelsPython, args: ["-m", "gbmodels.server"], cwd: modelsDir, timeoutMs: 120_000, startTimeoutMs: 120_000 })
+  : undefined;
 const server = createServer({
   system,
   garageband: {
@@ -32,10 +40,12 @@ const server = createServer({
   workspaceDir,
   analyzer: createPythonAnalyzer({ python, analysisDir: resolve(packageRoot, "analysis"), timeoutMs: 180_000 }),
   gmRenderer: createGmRenderer({ binary: resolve(packageRoot, "native/bin/gm-render"), timeoutMs: 300_000 }),
+  ...(listener ? { listener } : {}),
 });
 const shutdown = () => {
   const exit = () => process.exit(0);
   setTimeout(exit, 1000).unref(); // never hang on a stuck helper
+  listener?.close();
   system.helper.close().then(exit, exit);
 };
 process.on("SIGINT", shutdown);

@@ -1,0 +1,1 @@
+{"device": "mps", "dtype": "float16", "tokens": 200, "agreement": 1.0, "identical": true, "first_difference_at": null, "shipped_s": 133.73, "patched_s": 4.67, "speedup": 28.61, "cache_hits": 200, "cache_misses": 1}

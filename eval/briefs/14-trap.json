@@ -1,0 +1,116 @@
+{
+  "id": "14-trap",
+  "genre": "trap",
+  "bpm": 140,
+  "key": "G minor",
+  "meter": "4/4",
+  "form": "intro 4 \u00b7 verse 8 \u00b7 hook 8 \u00b7 outro 4",
+  "description": "Trap at 140 in half-time: snare on beat 3, rolling hi-hats, long 808 bass and a dark bell melody.",
+  "song": {
+    "title": "eval trap",
+    "tempo": 140,
+    "key": "G minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "hook",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x......x..x.....",
+              "snare": "........x.......",
+              "hat": "x.x.x.x.x.xxx.x.xxxxx.x.x.x.x.x."
+            },
+            "levels": {
+              "hat": -6
+            }
+          },
+          "hook": {
+            "grid": {
+              "kick": "x......x..x.....",
+              "snare": "........x.......",
+              "hat": "x.x.x.x.x.xxx.x.xxxxx.x.x.x.x.x."
+            },
+            "levels": {
+              "hat": -6
+            }
+          }
+        }
+      },
+      {
+        "name": "Bells",
+        "role": "lead-high",
+        "parts": {
+          "intro": {
+            "notes": "g5 bb5 d6 bb5 | a5 g5 f5 d5 | g5 bb5 d6 f6 | d6@4"
+          },
+          "verse": {
+            "notes": "g5 bb5 d6 bb5 | a5 g5 f5 d5 | g5 bb5 d6 f6 | d6@4"
+          },
+          "hook": {
+            "notes": "g5 bb5 d6 bb5 | a5 g5 f5 d5 | g5 bb5 d6 f6 | d6@4"
+          },
+          "outro": {
+            "notes": "g5 bb5 d6 bb5 | a5 g5 f5 d5 | g5 bb5 d6 f6 | d6@4"
+          }
+        },
+        "program": 14
+      },
+      {
+        "name": "808",
+        "role": "bass",
+        "parts": {
+          "verse": {
+            "chords": "Gm | Eb | Cm | D",
+            "style": "sustain"
+          },
+          "hook": {
+            "chords": "Gm | Eb | Cm | D",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "Gm | Eb | Cm | D",
+            "style": "sustain"
+          }
+        },
+        "program": 38
+      },
+      {
+        "name": "Pad",
+        "role": "pad",
+        "parts": {
+          "hook": {
+            "chords": "Gm | Eb | Cm | D",
+            "style": "sustain"
+          }
+        },
+        "program": 91,
+        "level": -6
+      }
+    ]
+  }
+}

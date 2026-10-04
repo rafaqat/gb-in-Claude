@@ -1,0 +1,1 @@
+{"model": "amt", "device": "cpu", "ok": false, "runs_requested": 2, "stopped_after_s": 1980, "note": "diagnostic stopped by hand: no run finished in 33 min (> 16 min per run on CPU vs 374–451 s on MPS)"}

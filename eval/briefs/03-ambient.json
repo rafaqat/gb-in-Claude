@@ -1,0 +1,94 @@
+{
+  "id": "03-ambient",
+  "genre": "ambient",
+  "bpm": 70,
+  "key": "A major",
+  "meter": "4/4",
+  "form": "drift 8 \u00b7 bloom 8 \u00b7 fade 8",
+  "description": "Beatless ambient: slow evolving pads, a gentle arpeggio and long sustained notes.",
+  "song": {
+    "title": "eval ambient",
+    "tempo": 70,
+    "key": "A major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "loose",
+    "sections": [
+      {
+        "name": "drift",
+        "bars": 8
+      },
+      {
+        "name": "bloom",
+        "bars": 8
+      },
+      {
+        "name": "fade",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Pad",
+        "role": "pad",
+        "parts": {
+          "drift": {
+            "chords": "A | F#m | D | E",
+            "style": "sustain"
+          },
+          "bloom": {
+            "chords": "A | F#m | D | E",
+            "style": "sustain"
+          },
+          "fade": {
+            "chords": "A | F#m | D | E",
+            "style": "sustain"
+          }
+        },
+        "program": 89
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "parts": {
+          "bloom": {
+            "chords": "A | F#m | D | E",
+            "style": "updown"
+          }
+        },
+        "program": 98,
+        "level": -6
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "bloom": {
+            "chords": "A | F#m | D | E",
+            "style": "sustain"
+          },
+          "fade": {
+            "chords": "A | F#m | D | E",
+            "style": "sustain"
+          }
+        },
+        "program": 38,
+        "level": -6
+      },
+      {
+        "name": "Lead",
+        "role": "lead-high",
+        "parts": {
+          "fade": {
+            "notes": "e6@4 | c#6@4 | a5@4 | b5@4"
+          }
+        },
+        "program": 92,
+        "level": -6
+      }
+    ]
+  }
+}

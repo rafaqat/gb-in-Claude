@@ -16,6 +16,13 @@ returned path with your file-reading tool). Compare versions instead of trusting
 For a quick structure check without GarageBand: gb_song render_draft (macOS GM synth; not for tone).
 Waiting for the user: if a GarageBand call returns SCREEN_LOCKED, ask them to unlock the Mac.
 
+## Model listening (field ml, M8)
+ml.beats: beats, downbeats and BPM (beat_this); with a song, grid.pass_rate = share of beats within 70 ms of its grid
+  (grid_multiple 2 or 0.5 = the tracker counted double or half time: recorded, not a failure)
+ml.key: the key (S-KEY); with a song, vs_song = exact | relative (major↔minor) | other
+ml.genre.ranking: the closest of gb-mcp's 20 genres (LAION CLAP). A ranking, never a grade: use it to compare
+  versions or candidates, not as a pass mark. ml.unavailable = the model sidecar is not running (the rest still works).
+
 ## Metrics
 loudness.integrated_lufs — BS.1770 (matches ffmpeg ebur128). Club masters ≈ -9…-7, streaming ≈ -14, drafts lower.
 loudness.levels.true_peak_dbtp — keep ≤ -1. clip_runs > 0 = audible clipping.

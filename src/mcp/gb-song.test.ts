@@ -167,3 +167,67 @@ describe("gb_song band_plan (M7: audio clips → gb_band build)", () => {
     expect(await gbSong({ command: "band_plan", song })).toMatchObject({ status: "failed", error: "NOT_SUPPORTED" });
   });
 });
+
+describe("gb_song template (M9: genre knowledge as rules)", () => {
+  it("returns a complete, valid Song JSON draft for a genre in a key and tempo, and writes nothing", async () => {
+    const r = await gbSong({ command: "template", genre: "deep house", key: "F minor", bpm: 122 });
+    expect(r).toMatchObject({ status: "verified", op: "gb_song.template", data: { song: { tempo: 122, key: "F minor", groove: "dance" } } });
+    const v = await gbSong({ command: "validate", song: (r as { data: { song: unknown } }).data.song });
+    expect(v).toMatchObject({ status: "verified" });
+    expect(readdirSync(workspace)).toEqual([]);
+  });
+
+  it("refuses an unknown genre with the known ones in the hint", async () => {
+    const r = await gbSong({ command: "template", genre: "polka", key: "C major" });
+    expect(r).toMatchObject({ status: "failed", error: "INPUT_INVALID" });
+    expect(JSON.stringify(r)).toContain("drum and bass");
+  });
+});
+
+describe("gb_song infill (M10): AMT rewrites chosen tracks of one section", () => {
+  const two = {
+    title: "Infill", tempo: 120, key: "C major",
+    sections: [{ name: "a", bars: 2 }, { name: "b", bars: 2 }],
+    tracks: [
+      { name: "Drums", role: "drums", parts: { a: { grid: { kick: "x...x...x...x..." } }, b: { grid: { kick: "x...x...x...x..." } } } },
+      { name: "Keys", role: "pad", program: 4, parts: { a: { chords: "C | G", style: "sustain" }, b: { chords: "Am | F", style: "sustain" } } },
+      { name: "Bass", role: "bass", program: 33, parts: { a: { chords: "C | G", style: "sustain" }, b: { chords: "Am | F", style: "sustain" } } },
+    ],
+  };
+  const sidecar = (notes: unknown[], calls: unknown[] = []) => ({
+    calls, async run(model: string, inputs: Record<string, unknown>) { calls.push({ model, inputs }); return { ok: true as const, value: { notes, mode: inputs.mode } }; }, close() {},
+  });
+
+  it("asks the sidecar for the section's span and the tracks' instruments, and returns the song with those parts rewritten", async () => {
+    const s = sidecar([{ instrument: 4, pitch: 69, start_s: 4.0, dur_s: 1.0 }, { instrument: 4, pitch: 65, start_s: 6.0, dur_s: 2.0 }]);
+    const r = await createGbSong({ workspaceDir: workspace, models: s })({ command: "infill", song: two, section: "b", tracks: ["Keys"] });
+    expect(s.calls).toEqual([{ model: "infill", inputs: expect.objectContaining({ start_s: 4, end_s: 8, instruments: [4], mode: "exact", seed: 1 }) }]);
+    expect(r).toMatchObject({ status: "verified", op: "gb_song.infill", data: { changed: [{ track: "Keys", section: "b" }] } });
+    const song = (r as { data: { song: typeof two } }).data.song;
+    expect(song.tracks[1]!.parts.b).toEqual({ notes: "a4@8 ~ ~ ~ ~ ~ ~ ~ ~ | f4@16" });
+    expect(song.tracks[1]!.parts.a).toEqual(two.tracks[1]!.parts.a); // the other section is untouched
+    expect(song.tracks[2]).toEqual(two.tracks[2]);                   // and so are the other tracks
+    expect((await gbSong({ command: "validate", song })).status).toBe("verified");
+    expect(readdirSync(workspace)).toEqual([]);
+  });
+
+  it.each([
+    ["a drums track", { section: "b", tracks: ["Drums"] }, "INPUT_INVALID"],
+    ["an unknown section", { section: "z", tracks: ["Keys"] }, "INPUT_INVALID"],
+    ["an unknown track", { section: "b", tracks: ["Lead"] }, "INPUT_INVALID"],
+  ])("refuses %s", async (_why, args, code) => {
+    const r = await createGbSong({ workspaceDir: workspace, models: sidecar([]) })({ command: "infill", song: two, ...args });
+    expect(r).toMatchObject({ status: "failed", error: code });
+  });
+
+  it("refuses two tracks on the same instrument (the model could not tell them apart)", async () => {
+    const same = { ...two, tracks: [...two.tracks, { name: "Keys2", role: "pad", program: 4, parts: { b: { chords: "Am", style: "stabs" } } }] };
+    const r = await createGbSong({ workspaceDir: workspace, models: sidecar([]) })({ command: "infill", song: same, section: "b", tracks: ["Keys", "Keys2"] });
+    expect(r).toMatchObject({ status: "failed", error: "INPUT_INVALID" });
+  });
+
+  it("without the model sidecar: DEPENDENCY_MISSING", async () => {
+    const r = await gbSong({ command: "infill", song: two, section: "b", tracks: ["Keys"] });
+    expect(r).toMatchObject({ status: "failed", error: "DEPENDENCY_MISSING" });
+  });
+});

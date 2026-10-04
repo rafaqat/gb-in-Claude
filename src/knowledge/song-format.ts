@@ -29,6 +29,26 @@ bass/pad/arp — chords: "Fm | Db | Ab | Eb", style, octave?   (chords in one ba
 any non-drum role — notes: "f5 ab5 c6 ~ | eb6@2 c6 ~"
   tokens share a bar equally · ~ rest · @n = n shares · [c4,e4,g4] chord · | bar
 
+## Genre drafts and grooves (M9)
+gb_song template {genre, key, bpm?, meter?} → a complete Song JSON draft for the genre: form, progressions, the
+genre's GarageBand drum kit and instruments, bass style, a hook, and drums. Start from it, then make it yours.
+  genres: lo-fi hip-hop · R&B · ambient · jazz ballad · reggaeton · synthwave · pop · afrobeats · funk · indie rock ·
+  deep house · techno · UK garage · trap · drum and bass · EDM (big room) · classical/pop crossover ·
+  ambient trance (William Orbit style) · Levantine ethereal strings (Fairuz style) · epic orchestral (Hans Zimmer style)
+swing?: 50 (straight) … 58 light · 66 triplet feel · 75 hard; swingUnit "16th" (default) or "8th" (jazz). Every second
+  16th/8th of every track is delayed. UK garage ≈ 64, lo-fi ≈ 57, jazz ≈ 64 on 8ths.
+tracks[].glide?: notes run legato into the next so a mono synth slides — a trap 808 line (leads always glide).
+groove?: a style mined from real drummers (Groove MIDI Dataset): the drums take its timing and accents (4/4).
+  afrobeat · afrocuban · blues · country · dance · funk · gospel · highlife · hiphop · jazz · latin · middleeastern ·
+  neworleans · pop · punk · reggae · rock · soul
+
+## AI infill (M10, needs the model sidecar)
+gb_song infill {song, section, tracks: ["Keys"], mode?: "exact" | "fast", seed?} → the same Song JSON with those
+melodic tracks' parts in that section rewritten by the Anticipatory Music Transformer (as "notes", 16th grid), on the
+song's own instruments. The model hears the song before and after the section (not the other tracks inside it).
+exact ≈ 1–1.5 min per 8 bars, fast ≈ 20 s (shorter context: listen before trusting it). Another seed = another take.
+Drums are never infilled. Two tracks on the same instrument cannot be infilled together.
+
 ## Audio clips (WAVs: stems, vocals, samples) — built by gb_band, not by render_midi
 a track may hold audio: { donorTrack: n, audio: [{ wav, section, bar?, beat? }] }
   wav: a 16/24-bit PCM WAV inside the workspace · bar/beat: 1-based, relative to the section start

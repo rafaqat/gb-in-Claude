@@ -7,12 +7,13 @@ import { parseSong } from "../song/schema.js";
 import { resolveWorkspaceFile } from "../workspace/paths.js";
 import { compareAnalyses } from "../analysis/compare.js";
 import type { AnalysisResult, AnalyzerError, AnalyzerPort } from "../analysis/analyzer.js";
+import type { ModelSidecar } from "../models/sidecar.js";
 import { verified, failed, type Envelope } from "./envelope.js";
 
 export const AUDIO_EXTENSIONS = [".wav", ".aif", ".aiff", ".flac"] as const;
 export const ANALYSIS_FIELDS = [
   "file", "loudness", "tonal_balance", "stereo_width", "rhythm", "drums", "key", "sections", "missing_sections",
-  "section_contrast", "thresholds", "flags", "suggestions", "spectrogram",
+  "section_contrast", "thresholds", "flags", "suggestions", "spectrogram", "ml",
 ] as const;
 type Field = (typeof ANALYSIS_FIELDS)[number];
 /** thresholds are static (gb://knowledge/analysis) — left out unless asked for. */
@@ -27,9 +28,10 @@ export const GbAnalyzeInput = z.discriminatedUnion("command", [
 ]);
 export const GB_ANALYZE_COMMANDS = ["audio", "against_song", "compare"] as const;
 
-export type GbAnalyzeDeps = { workspaceDir: string; analyzer: AnalyzerPort };
+/** listener: the M8 model sidecar (beats/grid, key, genre ranking); optional — without it `ml` says so. */
+export type GbAnalyzeDeps = { workspaceDir: string; analyzer: AnalyzerPort; listener?: ModelSidecar };
 
-function project(result: AnalysisResult, fields: readonly Field[]) {
+function project(result: AnalysisResult & { ml?: unknown }, fields: readonly Field[]) {
   return Object.fromEntries(fields.map((f) => [f, result[f]]));
 }
 
@@ -62,6 +64,17 @@ export function createGbAnalyze(deps: GbAnalyzeDeps) {
     return r.ok ? r : { ok: false as const, envelope: failed(op, r.error.code, r.error.message, { hint: "paths are relative to the workspace (gb-mcp's out/ folder)" }) };
   };
 
+  /** Model listening for one recording; a missing or failing sidecar is reported in `ml`, never as a failed analysis. */
+  const listen = async (wav: string, context?: Record<string, unknown>) => {
+    if (!deps.listener) return { unavailable: "NOT_CONFIGURED", message: "the model sidecar is not set up (models/.venv)" };
+    const inputs: Record<string, unknown> = { wav };
+    if (context?.tempo) inputs.bpm = context.tempo;
+    if (context?.key) inputs.key = context.key;
+    if (context?.swing) { inputs.swing = context.swing; inputs.swing_unit = context.swing_unit; }
+    const heard = await deps.listener.run("listen", inputs);
+    return heard.ok ? heard.value : { unavailable: heard.error.code, message: heard.error.message };
+  };
+
   return async function gbAnalyze(input: unknown): Promise<Envelope> {
     const parsed = GbAnalyzeInput.safeParse(input);
     if (!parsed.success) {
@@ -79,6 +92,7 @@ export function createGbAnalyze(deps: GbAnalyzeDeps) {
       if (!s.ok) return failed(op, "SONG_INVALID", `${s.error.path}: ${s.error.message}`);
       context = {
         title: s.value.title, tempo: s.value.tempo, beats_per_bar: s.value.timeSignature[0], key: s.value.key ?? null,
+        ...(s.value.swing ? { swing: s.value.swing, swing_unit: s.value.swingUnit } : {}),
         style: s.value.style ?? null, sections: s.value.sections, tracks: s.value.tracks.map((t) => ({ name: t.name, role: t.role, sections: Object.keys(t.parts) })),
       };
     }
@@ -101,10 +115,13 @@ export function createGbAnalyze(deps: GbAnalyzeDeps) {
     const wantImage = cmd.spectrogram ?? true;
     const spectrogramPath = wantImage ? spectrogramPathFor(deps.workspaceDir, audio.value) : null;
     if (wantImage && !spectrogramPath) return failed(op, "FILE_EXISTS", "too many spectrograms for this file name in analysis/");
-    const r = await deps.analyzer.analyze({
-      path: audio.value, ...(context ? { context } : {}), ...(spectrogramPath ? { spectrogramPath } : {}),
-    });
+    const fields = cmd.fields ?? DEFAULT_FIELDS;
+    // librosa (CPU, its own process) and the model sidecar (mostly Metal) run side by side
+    const [r, ml] = await Promise.all([
+      deps.analyzer.analyze({ path: audio.value, ...(context ? { context } : {}), ...(spectrogramPath ? { spectrogramPath } : {}) }),
+      fields.includes("ml") ? listen(audio.value, context) : Promise.resolve(undefined),
+    ]);
     if (!r.ok) return analyzerFailure(op, r.error);
-    return verified(op, project(r.value, cmd.fields ?? DEFAULT_FIELDS));
+    return verified(op, project({ ...r.value, ml }, fields));
   };
 }

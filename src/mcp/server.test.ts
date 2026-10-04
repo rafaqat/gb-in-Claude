@@ -40,6 +40,17 @@ describe("gb-mcp server", () => {
     for (const command of GB_SONG_COMMANDS) expect(tool.description, command).toContain(`${command}:`);
   });
 
+  it("gb_song template is reachable through MCP (its parameters are in the tool's input schema)", async () => {
+    const r = await client.callTool({ name: "gb_song", arguments: { command: "template", genre: "techno", key: "A minor", bpm: 130 } });
+    expect(r.isError).toBeFalsy();
+    expect(r.structuredContent).toMatchObject({ status: "verified", op: "gb_song.template", data: { song: { tempo: 130 } } });
+  });
+
+  it("gb_song infill is reachable through MCP (without a sidecar it says DEPENDENCY_MISSING, not a schema error)", async () => {
+    const r = await client.callTool({ name: "gb_song", arguments: { command: "infill", song, section: "a", tracks: ["Lead"], mode: "fast", seed: 2 } });
+    expect(r.structuredContent).toMatchObject({ status: "failed", op: "gb_song.infill", error: "DEPENDENCY_MISSING" });
+  });
+
   it("returns the envelope as structuredContent and compact JSON text", async () => {
     const r = await client.callTool({ name: "gb_song", arguments: { command: "validate", song } });
     expect(r.isError).toBeFalsy();

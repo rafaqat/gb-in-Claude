@@ -8,12 +8,18 @@ import { validateSong } from "../song/validate.js";
 import { previewSong } from "../song/preview.js";
 import { renderSong, PPQ } from "../song/render.js";
 import { humanize } from "../song/humanize.js";
+import { grooveFeel } from "../song/grooves.js";
+import { applySwing } from "../song/swing.js";
 import { writeSmf, type SmfSong } from "../midi/smf.js";
 import { smfSongToEvents } from "../render/gm-events.js";
 import type { GmRendererPort } from "../render/gm-renderer.js";
 import { applyTrackLevels } from "../song/levels.js";
 import { patchFor } from "../knowledge/gm-patch-map.js";
 import { bandPlan } from "../song/band-plan.js";
+import { GENRE_TEMPLATES, templateSong } from "../song/genres.js";
+import { notesToPart, type InfillNote } from "../song/infill.js";
+import type { ModelSidecar } from "../models/sidecar.js";
+import { tmpdir } from "node:os";
 import { verified, failed, type Envelope } from "./envelope.js";
 
 /** Safe output names: no paths, no encodings, no hidden files, .mid only. */
@@ -28,23 +34,37 @@ export const GbSongInput = z.discriminatedUnion("command", [
   z.object({ command: z.literal("render_midi"), song: z.unknown(), filename: z.string(), dry_run: z.boolean().optional() }).strict(),
   z.object({ command: z.literal("render_draft"), song: z.unknown(), filename: z.string(), dry_run: z.boolean().optional() }).strict(),
   z.object({ command: z.literal("band_plan"), song: z.unknown() }).strict(),
+  z.object({
+    command: z.literal("template"), genre: z.string().min(1).describe("one of gb-mcp's genres (an unknown one lists them)"),
+    key: z.string().regex(/^[A-G][#b]? (major|minor)$/, 'like "F minor" or "Ab major"'),
+    bpm: z.number().min(20).max(300).optional(), meter: z.number().int().min(2).max(7).optional(), title: z.string().min(1).max(80).optional(),
+  }).strict(),
+  z.object({
+    command: z.literal("infill"), song: z.unknown(), section: z.string().min(1),
+    tracks: z.array(z.string().min(1)).min(1).max(8).describe("melodic tracks to rewrite in that section (not drums)"),
+    mode: z.enum(["exact", "fast"]).default("exact").describe("exact ≈ 1 min per 8 bars; fast ≈ 15 s (shorter context)"),
+    seed: z.number().int().optional(),
+  }).strict(),
 ]);
 export type GbSongInput = z.infer<typeof GbSongInput>;
-export const GB_SONG_COMMANDS = ["validate", "preview", "render_midi", "render_draft", "band_plan"] as const;
+export const GB_SONG_COMMANDS = ["validate", "preview", "render_midi", "render_draft", "band_plan", "template", "infill"] as const;
 
 /** Song JSON audio clips are built by gb_band; the MIDI file and the GM draft leave them out. */
 const AUDIO_LEFT_OUT = "AUDIO_LEFT_OUT: MIDI cannot carry the audio clips; gb_song band_plan + gb_band build place them";
 
-export type GbSongDeps = { workspaceDir: string; gmRenderer?: GmRendererPort };
+/** models: the M8 model sidecar (gb_song infill); optional — without it infill is DEPENDENCY_MISSING */
+export type GbSongDeps = { workspaceDir: string; gmRenderer?: GmRendererPort; models?: ModelSidecar };
 
 /** Render + humanize: the performance that both the MIDI file and the draft audio are made from. */
 function perform(song: Song): { ok: true; smf: SmfSong } | { ok: false; message: string } {
   const rendered = renderSong(song);
   if (!rendered.ok) return { ok: false, message: `${rendered.error.path}: ${rendered.error.message}` };
-  const roleTracks = rendered.value.tracks.map((t, i) => ({ ...t, role: song.tracks[i]!.role }));
-  const performed = humanize(roleTracks, { feel: song.humanize, seed: song.seed, tempoBpm: song.tempo, ppq: PPQ });
+  const placed = rendered.value.tracks.map((t, i) => ({ ...t, role: song.tracks[i]!.role, ...(song.tracks[i]!.glide ? { glide: true } : {}) }));
+  const roleTracks = song.swing ? applySwing(placed, { percent: song.swing, unit: song.swingUnit, ppq: PPQ }) : placed;
+  const groove = song.groove && song.timeSignature[0] === 4 ? { groove: grooveFeel(song.groove) } : {};
+  const performed = humanize(roleTracks, { feel: song.humanize, seed: song.seed, tempoBpm: song.tempo, ppq: PPQ, ...groove });
   const levels = Object.fromEntries(song.tracks.filter((t) => t.level !== undefined).map((t) => [t.name, t.level!]));
-  const leveled = applyTrackLevels(performed.map(({ role: _role, ...t }) => t), levels);
+  const leveled = applyTrackLevels(performed.map(({ role: _role, glide: _glide, ...t }) => t), levels);
   return { ok: true, smf: { ...rendered.value, tracks: leveled } };
 }
 
@@ -71,6 +91,12 @@ export function createGbSong(deps: GbSongDeps) {
     const cmd = parsedInput.data;
     const op = `gb_song.${cmd.command}`;
 
+    if (cmd.command === "template") {
+      const draft = templateSong({ genre: cmd.genre, key: cmd.key, ...(cmd.bpm ? { bpm: cmd.bpm } : {}), ...(cmd.meter ? { meter: cmd.meter } : {}), ...(cmd.title ? { title: cmd.title } : {}) });
+      if (!draft.ok) return failed(op, "INPUT_INVALID", `genre: not a known genre`, { hint: `genres: ${Object.keys(GENRE_TEMPLATES).join(", ")}` });
+      return verified(op, { song: draft.value, note: "a genre draft to develop: change the hook, add sections, vary parts — then validate and render" });
+    }
+
     const parsed = parseSong(cmd.song);
     if (!parsed.ok) {
       return failed(op, "SONG_INVALID", `${parsed.error.path}: ${parsed.error.message}`,
@@ -91,6 +117,42 @@ export function createGbSong(deps: GbSongDeps) {
           });
         }
         return verified(op, plan.value);
+      }
+
+      case "infill": {
+        if (!deps.models) return failed(op, "DEPENDENCY_MISSING", "the model sidecar is not set up", { hint: "install the models (models/.venv) to use infill" });
+        const sectionIndex = song.sections.findIndex((s) => s.name === cmd.section);
+        if (sectionIndex < 0) return failed(op, "INPUT_INVALID", "section: not in the song", { hint: `sections: ${song.sections.map((s) => s.name).join(", ")}` });
+        const targets = cmd.tracks.map((name) => song.tracks.findIndex((t) => t.name === name));
+        if (targets.some((i) => i < 0)) return failed(op, "INPUT_INVALID", "tracks: a name is not in the song", { hint: `tracks: ${song.tracks.map((t) => t.name).join(", ")}` });
+        if (targets.some((i) => song.tracks[i]!.role === "drums")) return failed(op, "INPUT_INVALID", "tracks: drums cannot be infilled (melodic tracks only)");
+        const rendered = renderSong({ ...song, humanize: "off" });
+        if (!rendered.ok) return failed(op, "RENDER_FAILED", `${rendered.error.path}: ${rendered.error.message}`);
+        const programs = targets.map((i) => rendered.value.tracks[i]!.program ?? 0);
+        if (new Set(programs).size < programs.length) {
+          return failed(op, "INPUT_INVALID", "tracks: two of them use the same instrument, so the model cannot tell their notes apart", { hint: "give each a different program, or infill them one at a time" });
+        }
+        const smf = writeSmf(rendered.value);
+        if (!smf.ok) return failed(op, "RENDER_FAILED", smf.error.message);
+        const midi = join(tmpdir(), `gb-mcp-infill-${process.pid}-${Date.now()}.mid`); // the model reads a file; not the workspace
+        writeFileSync(midi, smf.value, { flag: "wx" });
+        const beats = song.timeSignature[0];
+        const barS = (beats * 60) / song.tempo;
+        const startS = song.sections.slice(0, sectionIndex).reduce((sum, s) => sum + s.bars, 0) * barS;
+        const bars = song.sections[sectionIndex]!.bars;
+        const heard = await deps.models.run("infill", { midi, start_s: startS, end_s: startS + bars * barS, instruments: programs, mode: cmd.mode, seed: cmd.seed ?? song.seed });
+        if (!heard.ok) return failed(op, heard.error.code === "SIDECAR_UNAVAILABLE" ? "DEPENDENCY_MISSING" : "RENDER_FAILED", heard.error.message);
+        const notes = (heard.value as { notes: (InfillNote & { instrument: number })[] }).notes;
+        const tracks = song.tracks.map((t) => ({ ...t }));
+        const changed = targets.map((i, k) => {
+          const part = notesToPart(notes.filter((n) => n.instrument === programs[k]), { startS, bpm: song.tempo, beatsPerBar: beats, bars });
+          tracks[i] = { ...tracks[i]!, parts: { ...tracks[i]!.parts, [cmd.section]: { notes: part } } };
+          return { track: song.tracks[i]!.name, section: cmd.section, notes: notes.filter((n) => n.instrument === programs[k]).length };
+        });
+        const raw = cmd.song as { tracks: unknown[] };
+        // return the caller's own Song JSON with only those parts replaced (no defaults filled in)
+        const out = { ...(cmd.song as object), tracks: raw.tracks.map((t, i) => (targets.includes(i) ? { ...(t as object), parts: { ...((t as { parts: object }).parts), [cmd.section]: tracks[i]!.parts[cmd.section] } } : t)) };
+        return verified(op, { song: out, changed, mode: cmd.mode, note: "validate, render and listen; infill again with another seed for a different take" });
       }
 
       case "preview":

@@ -1,0 +1,122 @@
+{
+  "id": "12-techno",
+  "genre": "techno",
+  "bpm": 130,
+  "key": "A minor",
+  "meter": "4/4",
+  "form": "intro 8 \u00b7 build 8 \u00b7 peak 8 \u00b7 outro 8",
+  "description": "Peak-time techno: relentless kick, hypnotic one-note synth riff, rising tension and minimal harmony.",
+  "song": {
+    "title": "eval techno",
+    "tempo": 130,
+    "key": "A minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 8
+      },
+      {
+        "name": "build",
+        "bars": 8
+      },
+      {
+        "name": "peak",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "intro": {
+            "grid": {
+              "kick": "x...x...x...x..."
+            }
+          },
+          "build": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "open-hat": "..x...x...x...x.",
+              "clap": "....x.......x...",
+              "rim": "...x..x...x..x.."
+            },
+            "levels": {
+              "rim": -6
+            }
+          },
+          "peak": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "open-hat": "..x...x...x...x.",
+              "clap": "....x.......x...",
+              "rim": "...x..x...x..x.."
+            },
+            "levels": {
+              "rim": -6
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "open-hat": "..x...x...x...x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Riff",
+        "role": "arp",
+        "parts": {
+          "build": {
+            "notes": "a3 a3 ~ a3 c4 a3 ~ e4 | a3 a3 ~ a3 c4 a3 ~ g3"
+          },
+          "peak": {
+            "notes": "a3 a3 ~ a3 c4 a3 ~ e4 | a3 a3 ~ a3 c4 a3 ~ g3"
+          },
+          "outro": {
+            "notes": "a3 a3 ~ a3 c4 a3 ~ e4 | a3 a3 ~ a3 c4 a3 ~ g3"
+          }
+        },
+        "program": 81
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "build": {
+            "chords": "Am",
+            "style": "offbeat"
+          },
+          "peak": {
+            "chords": "Am",
+            "style": "offbeat"
+          }
+        },
+        "program": 38
+      },
+      {
+        "name": "Pad",
+        "role": "pad",
+        "parts": {
+          "peak": {
+            "chords": "Am | Am | F | G",
+            "style": "sustain"
+          }
+        },
+        "program": 95,
+        "level": -6
+      }
+    ]
+  }
+}

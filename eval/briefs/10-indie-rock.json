@@ -1,0 +1,121 @@
+{
+  "id": "10-indie-rock",
+  "genre": "indie rock",
+  "bpm": 120,
+  "key": "D major",
+  "meter": "4/4",
+  "form": "intro 4 \u00b7 verse 8 \u00b7 chorus 8 \u00b7 outro 4",
+  "description": "Indie rock: jangly overdriven guitars, driving eighth-note bass and live-feel drums.",
+  "song": {
+    "title": "eval indie-rock",
+    "tempo": 120,
+    "key": "D major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x.x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "....x.......x...",
+              "crash": "x...............",
+              "ride": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x.......x.x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Guitar",
+        "role": "arp",
+        "parts": {
+          "intro": {
+            "chords": "D | A | Bm | G",
+            "style": "broken"
+          },
+          "verse": {
+            "chords": "D | A | Bm | G",
+            "style": "broken"
+          },
+          "chorus": {
+            "chords": "D | A | Bm | G",
+            "style": "broken"
+          },
+          "outro": {
+            "chords": "D | A | Bm | G",
+            "style": "broken"
+          }
+        },
+        "program": 29
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "parts": {
+          "verse": {
+            "chords": "D | A | Bm | G",
+            "style": "rolling"
+          },
+          "chorus": {
+            "chords": "D | A | Bm | G",
+            "style": "rolling"
+          },
+          "outro": {
+            "chords": "D | A | Bm | G",
+            "style": "rolling"
+          }
+        },
+        "program": 34
+      },
+      {
+        "name": "Lead",
+        "role": "lead",
+        "parts": {
+          "chorus": {
+            "notes": "f#5@2 e5 d5 | e5@4 | f#5 a5 f#5 e5 | d5@4"
+          }
+        },
+        "program": 30,
+        "level": -3
+      }
+    ]
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "id": "17-classical-pop",
+  "genre": "classical/pop crossover",
+  "bpm": 90,
+  "key": "Bb major",
+  "meter": "4/4",
+  "form": "intro 4 \u00b7 verse 8 \u00b7 chorus 8 \u00b7 coda 4",
+  "description": "Classical-pop crossover ballad: piano and string quartet carry a pop chord progression with a lyrical cello line.",
+  "song": {
+    "title": "eval classical-pop",
+    "tempo": 90,
+    "key": "Bb major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "coda",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "parts": {
+          "chorus": {
+            "grid": {
+              "kick": "x.......x.......",
+              "snare": "....x.......x..."
+            },
+            "levels": {
+              "kick": -6,
+              "snare": -6
+            }
+          }
+        }
+      },
+      {
+        "name": "Piano",
+        "role": "arp",
+        "parts": {
+          "intro": {
+            "chords": "Bb | F/A | Gm | Eb",
+            "style": "broken"
+          },
+          "verse": {
+            "chords": "Bb | F/A | Gm | Eb",
+            "style": "broken"
+          },
+          "chorus": {
+            "chords": "Bb | F/A | Gm | Eb",
+            "style": "broken"
+          },
+          "coda": {
+            "chords": "Bb | F/A | Gm | Eb",
+            "style": "broken"
+          }
+        },
+        "program": 0
+      },
+      {
+        "name": "Strings",
+        "role": "pad",
+        "parts": {
+          "verse": {
+            "chords": "Bb | F/A | Gm | Eb",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Bb | F/A | Gm | Eb",
+            "style": "sustain"
+          },
+          "coda": {
+            "chords": "Bb | F/A | Gm | Eb",
+            "style": "sustain"
+          }
+        },
+        "program": 48
+      },
+      {
+        "name": "Cello",
+        "role": "lead",
+        "parts": {
+          "verse": {
+            "notes": "d4@2 c4 bb3 | c4@4 | bb3 c4 d4 f4 | eb4@4"
+          }
+        },
+        "program": 42
+      },
+      {
+        "name": "Violin",
+        "role": "lead-high",
+        "parts": {
+          "chorus": {
+            "notes": "f5@2 d5 c5 | c5@3 a4 | bb4 c5 d5 f5 | g5@4"
+          }
+        },
+        "program": 40
+      }
+    ],
+    "style": "acoustic"
+  }
+}

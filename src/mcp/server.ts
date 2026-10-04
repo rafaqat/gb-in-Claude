@@ -6,6 +6,7 @@ import type { ZodTypeAny } from "zod";
 import { createGbSong, GB_SONG_COMMANDS, GbSongInput } from "./gb-song.js";
 import { createGbAnalyze, GB_ANALYZE_COMMANDS, ANALYSIS_FIELDS, GbAnalyzeInput } from "./gb-analyze.js";
 import type { AnalyzerPort } from "../analysis/analyzer.js";
+import type { ModelSidecar } from "../models/sidecar.js";
 import type { GmRendererPort } from "../render/gm-renderer.js";
 import { ANALYSIS_GUIDE } from "../knowledge/analysis-guide.js";
 import { registerSoundTools, GB_SOUND_COMMANDS, GbSoundInput, createPatchCatalog, type PatchCatalog } from "./gb-sound.js";
@@ -25,7 +26,7 @@ import { guarded } from "./tool-result.js";
 import type { Result } from "../result.js";
 import { createGbBand, GB_BAND_COMMANDS, GbBandInput, BandAudioItem, BandMidiItem } from "./gb-band.js";
 
-export const SERVER_VERSION = "0.2.0";
+export const SERVER_VERSION = "0.3.0";
 
 const json = (uri: string, value: unknown) => ({ contents: [{ uri, mimeType: "application/json", text: JSON.stringify(value) }] });
 
@@ -36,6 +37,8 @@ export type GarageBandOptions = {
 };
 export type ServerOptions = {
   workspaceDir: string; analyzer?: AnalyzerPort; gmRenderer?: GmRendererPort; system?: GbSystemDeps; garageband?: GarageBandOptions;
+  /** M8 model sidecar for gb_analyze's `ml` field (optional). */
+  listener?: ModelSidecar;
   /** The installed patch catalog shared by gb_sound and gb_tracks set_instrument (default: scan this Mac). */
   patchCatalog?: PatchCatalog;
 };
@@ -44,7 +47,7 @@ export function createServer(opts: ServerOptions): McpServer {
   const server = new McpServer({ name: "gb-mcp", version: SERVER_VERSION });
   const patchCatalog = opts.patchCatalog ?? createPatchCatalog();
   const live = Boolean(opts.system && opts.garageband);
-  const gbSong = createGbSong({ workspaceDir: opts.workspaceDir, ...(opts.gmRenderer ? { gmRenderer: opts.gmRenderer } : {}) });
+  const gbSong = createGbSong({ workspaceDir: opts.workspaceDir, ...(opts.gmRenderer ? { gmRenderer: opts.gmRenderer } : {}), ...(opts.listener ? { models: opts.listener } : {}) });
 
   server.registerTool(
     "gb_song",
@@ -55,7 +58,9 @@ export function createServer(opts: ServerOptions): McpServer {
         "track gets. preview: ASCII 16th-note grid of one section. render_midi: humanize and write a Type-1 MIDI file " +
         "into the workspace (never overwrites; dry_run writes nothing). render_draft: quick WAV via the macOS GM synth " +
         "(structure checks only, not tone). band_plan: the song's audio clips as gb_band build's audio list (absolute " +
-        "bar and beat; writes nothing). Read gb://knowledge/song-format first.",
+        "bar and beat; writes nothing). template: a complete Song JSON draft for a genre in a key and tempo (genre " +
+        "grooves, progressions, instruments; writes nothing). infill: the AMT model rewrites chosen melodic tracks of one " +
+        "section, keeping the rest (needs the model sidecar; writes nothing). Read gb://knowledge/song-format first.",
       inputSchema: z.object({
         command: z.enum(GB_SONG_COMMANDS),
         song: z.any().describe("Song JSON — see gb://knowledge/song-format"),
@@ -63,6 +68,14 @@ export function createServer(opts: ServerOptions): McpServer {
         maxBars: z.number().int().optional().describe("preview: limit bars shown"),
         filename: z.string().optional().describe("render_midi: e.g. ascent-v2.mid · render_draft: e.g. ascent-draft.wav (no paths)"),
         dry_run: z.boolean().optional().describe("render_midi / render_draft: validate and plan without writing"),
+        genre: z.string().optional().describe("template: e.g. deep house, trap, jazz ballad (an unknown one lists them)"),
+        key: z.string().optional().describe('template: e.g. "F minor"'),
+        bpm: z.number().optional().describe("template: tempo (default: the genre's)"),
+        meter: z.number().int().optional().describe("template: beats per bar (default 4)"),
+        title: z.string().optional().describe("template: the draft's title"),
+        tracks: z.array(z.string()).optional().describe("infill: melodic track names to rewrite in `section`"),
+        mode: z.enum(["exact", "fast"]).optional().describe("infill: exact (≈1 min / 8 bars) or fast (≈15 s, shorter context)"),
+        seed: z.number().int().optional().describe("infill: another seed gives another take"),
       }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
@@ -95,7 +108,7 @@ export function createServer(opts: ServerOptions): McpServer {
   );
 
   if (opts.analyzer) {
-    const gbAnalyze = createGbAnalyze({ workspaceDir: opts.workspaceDir, analyzer: opts.analyzer });
+    const gbAnalyze = createGbAnalyze({ workspaceDir: opts.workspaceDir, analyzer: opts.analyzer, ...(opts.listener ? { listener: opts.listener } : {}) });
     server.registerTool(
       "gb_analyze",
       {
