@@ -25,7 +25,7 @@ GitHub starts each player muted: turn the sound on in the player.
 
 Celesta and harp magic, a brass fanfare, a march, then a jump up to E♭ for the finale.
 
-https://github.com/user-attachments/assets/d107da04-9f4e-4070-b4e9-2e7cbf7f777e
+https://github.com/user-attachments/assets/bd76db5a-bce2-4683-864b-7b516084aec5
 
 [▶ Listen (MP3)](media/twinkle-williams.mp3) · [Song JSON](examples/twinkle-williams.song.json)
 
@@ -33,7 +33,7 @@ https://github.com/user-attachments/assets/d107da04-9f4e-4070-b4e9-2e7cbf7f777e
 
 A ticking ostinato, brass "braams", and a storm in D minor that breaks into D major.
 
-https://github.com/user-attachments/assets/e0a83c1a-7a3b-4ddb-8b00-7ad3cdd7d278
+https://github.com/user-attachments/assets/0f1adb5a-aa1d-4645-8ae6-9de8a9cd78f1
 
 [▶ Listen (MP3)](media/twinkle-zimmer.mp3) · [Song JSON](examples/twinkle-zimmer.song.json)
 
@@ -41,7 +41,7 @@ https://github.com/user-attachments/assets/e0a83c1a-7a3b-4ddb-8b00-7ad3cdd7d278
 
 A toccata flourish, then a three-voice fugue on the tune for pipe organ, ending on a D-major chord.
 
-https://github.com/user-attachments/assets/adfaedee-443c-4025-8bd7-0666fc511b71
+https://github.com/user-attachments/assets/4b70c3b3-0a6a-4c90-86cb-a91b52e067ef
 
 [▶ Listen (MP3)](media/twinkle-bach.mp3) · [Song JSON](examples/twinkle-bach.song.json)
 
@@ -277,25 +277,6 @@ GarageBand's interface differs between versions; the element locators live in `s
 ## License
 
 [MIT](LICENSE)
-
-
-
-
-
-https://github.com/user-attachments/assets/bd76db5a-bce2-4683-864b-7b516084aec5
-
-
-
-https://github.com/user-attachments/assets/0f1adb5a-aa1d-4645-8ae6-9de8a9cd78f1
-
-
-
-https://github.com/user-attachments/assets/4b70c3b3-0a6a-4c90-86cb-a91b52e067ef
-
-
-
-
-
 
 ### Credits
 
