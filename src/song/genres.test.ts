@@ -26,6 +26,18 @@ describe("genre templates (M9): a full Song JSON draft for every genre gb-mcp kn
     expect(validateSong(parsed.value).filter((i) => i.severity === "error")).toEqual([]);
   });
 
+  // Live GarageBand renders: the "Classic Analog Pad" patch (program 89) and an outro with drums but no bass moved the
+  // beat tracker half a beat off (afrobeats grid recall 0.56); string pad + outro bass: recall 0.97
+  it("afrobeats: every section with drums has bass, and the pad is not program 89", () => {
+    const r = templateSong({ genre: "afrobeats", key: "A minor", bpm: 108 });
+    if (!r.ok) throw new Error(r.error);
+    const song = r.value as { tracks: { role: string; program?: number; parts: Record<string, unknown> }[] };
+    const drums = Object.keys(song.tracks.find((t) => t.role === "drums")!.parts);
+    const bass = Object.keys(song.tracks.find((t) => t.role === "bass")!.parts);
+    for (const section of drums) expect(bass, section).toContain(section);
+    expect(song.tracks.find((t) => t.role === "pad")!.program).not.toBe(89);
+  });
+
   it("refuses an unknown genre with the list of known ones", () => {
     const r = templateSong({ genre: "polka", key: "C major", bpm: 120 });
     expect(r).toMatchObject({ ok: false });

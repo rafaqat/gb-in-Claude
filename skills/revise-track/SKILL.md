@@ -1,7 +1,7 @@
 ---
 name: revise-track
 description: Use when the user gives feedback on a gb-mcp track ("drums too forward", "tinny", "drop is weak", "too busy", "robotic", "boring") — maps it to Song JSON changes, re-renders, exports, analyzes and compares before/after honestly.
-version: 0.3.1
+version: 0.3.2
 ---
 
 # Revise a track from feedback (gb-mcp)

@@ -65,3 +65,18 @@ class SwingAwareGrid(unittest.TestCase):
     def test_swing_does_not_change_a_straight_on_beat_reading(self):
         beats = [0.3 + i * 0.75 for i in range(30)]  # quarter notes at 80 BPM: swing only moves off-beats
         self.assertEqual(run.grid_score(beats, 80, swing=64, swing_unit="8th")["pass_rate"], 1.0)
+
+
+class GridRecall(unittest.TestCase):
+    def test_extra_beats_on_triplets_do_not_hide_that_every_real_beat_is_there(self):
+        on = [0.3 + i * 0.75 for i in range(32)]                       # every beat of an 80 BPM song
+        extra = [b + 0.25 for b in on[::2]] + [b + 0.5 for b in on[1::3]]  # a tracker also marking triplet subdivisions
+        g = run.grid_score(sorted(on + extra), 80)
+        self.assertEqual(g["recall"], 1.0)        # all of the song's beats were found
+        self.assertLess(g["precision"], 0.75)     # but many detections sit between them
+        self.assertEqual(g["pass_rate"], g["precision"])  # the old number keeps its meaning
+
+    def test_a_missing_half_of_the_beats_lowers_recall(self):
+        on = [0.3 + i * 0.75 for i in range(32)]
+        g = run.grid_score(on[:16], 80, span=(0.3, 0.3 + 31 * 0.75))
+        self.assertLess(g["recall"], 0.6)

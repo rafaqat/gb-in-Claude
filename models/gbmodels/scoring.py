@@ -9,7 +9,26 @@ PITCH = {"C": 0, "C#": 1, "Db": 1, "D": 2, "D#": 3, "Eb": 3, "E": 4, "F": 5, "F#
 GRID_MULTIPLES = (0.5, 1, 2)  # a tracker may count half- or double-time: recorded, not failed
 
 
-def grid_score(beats, bpm, swing=None, swing_unit="16th"):
+def _recall(b, period, delay, span):
+    """Share of the grid's own beats (span start..end) that have a detected beat within the tolerance. The phase is the
+    one that matches the most detections (robust to extra beats a tracker puts on subdivisions)."""
+    import numpy as np
+    best = (0.0, 0.0)
+    for ph in b % period:  # each detection proposes a phase; keep the one most detections agree with
+        k = np.round((b - ph - delay / 2) / period)
+        hit = np.abs(b - (ph + k * period + delay * (k % 2))) <= TOLERANCE_S
+        if hit.sum() > best[0]:
+            best = (hit.sum(), ph)
+    ph = best[1]
+    start, end = span
+    k0, k1 = int(np.ceil((start - ph) / period - 1e-9)), int(np.floor((end - ph) / period + 1e-9))
+    grid = np.array([ph + k * period + delay * (k % 2) for k in range(k0, k1 + 1)])
+    if len(grid) == 0:
+        return 0.0
+    return float(np.mean([np.min(np.abs(b - g)) <= TOLERANCE_S for g in grid]))
+
+
+def grid_score(beats, bpm, swing=None, swing_unit="16th", span=None):
     """Share of detected beats within ±70 ms of a grid at the brief's tempo, or at half/double it when the tracker
     counted that way (closest to the detected tempo). GarageBand trims leading silence, so the phase is fitted.
     swing (percent, 50 = straight): when the tracker counts at the swing's own step, every second grid point is
@@ -36,7 +55,13 @@ def grid_score(beats, bpm, swing=None, swing_unit="16th"):
                 resid = b - (ph + k * period + delay * ((k + parity) % 2))
                 ph += float(np.mean(resid))
             rate = max(rate, float(np.mean(np.abs(resid) <= TOLERANCE_S)))
-    out = {"beats": len(beats), "pass_rate": round(rate, 4), "detected_bpm": round(detected, 2),
+    # recall is measured on the song's own beats (a double-time reading still contains them); a half-time reading is a
+    # legitimate coarser count, so its grid is used
+    beat_period = 60.0 / (bpm * min(multiple, 1))
+    recall = _recall(b, beat_period, delay if abs(beat_period - unit) < 1e-9 else 0.0, span or (float(b.min()), float(b.max())))
+    # precision: share of detections on the grid (the original pass_rate); recall: share of the grid's beats detected —
+    # extra beats on subdivisions (a jazz ride's triplets) lower precision but are not wrong
+    out = {"beats": len(beats), "pass_rate": round(rate, 4), "precision": round(rate, 4), "recall": round(recall, 4), "detected_bpm": round(detected, 2),
            "tempo_ratio": round(detected / bpm, 3), "grid_multiple": multiple}
     if delay:
         out["swing"] = swing

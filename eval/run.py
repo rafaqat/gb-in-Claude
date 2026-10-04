@@ -112,6 +112,8 @@ def summary(scores):
         return {"scored": 0}
     return {"scored": len(s), "of": len(scores),
             "grid_pass_rate_median": round(statistics.median(v["grid"]["pass_rate"] for v in s), 4),
+            "grid_recall_median": round(statistics.median(v["grid"].get("recall", 0.0) for v in s), 4),
+            "grid_recall_min": round(min(v["grid"].get("recall", 0.0) for v in s), 4),
             "key_exact": sum(v["key_match"] == "exact" for v in s), "key_relative": sum(v["key_match"] == "relative" for v in s),
             "clap_genre_rank_median": statistics.median(v["clap_genre_rank"] for v in s),
             "clap_genre_top1": sum(v["clap_genre_rank"] == 1 for v in s)}
@@ -119,17 +121,17 @@ def summary(scores):
 
 def markdown(label, scores, summ):
     rows = [f"# Evaluation — {label}", "", "CLAP numbers rank candidates and compare before/after; they are not grades.", "",
-            f"Scored {summ.get('scored', 0)}/{summ.get('of', len(scores))} · grid pass rate (median) {summ.get('grid_pass_rate_median')} · "
+            f"Scored {summ.get('scored', 0)}/{summ.get('of', len(scores))} · grid recall (median / min) {summ.get('grid_recall_median')} / {summ.get('grid_recall_min')} · grid precision (median) {summ.get('grid_pass_rate_median')} · "
             f"key exact {summ.get('key_exact')} + relative {summ.get('key_relative')} · CLAP genre rank median {summ.get('clap_genre_rank_median')} "
             f"(top-1: {summ.get('clap_genre_top1')})", "",
-            "| Brief | Genre | BPM | Grid pass | Detected BPM (ratio) | Key wanted → found | Key | CLAP sim | Genre rank /20 | CLAP's top genre |",
-            "|---|---|---|---|---|---|---|---|---|---|"]
+            "| Brief | Genre | BPM | Grid recall | Grid precision | Detected BPM (ratio) | Key wanted → found | Key | CLAP sim | Genre rank /20 | CLAP's top genre |",
+            "|---|---|---|---|---|---|---|---|---|---|---|"]
     for bid, v in scores.items():
         if not v.get("scored"):
-            rows.append(f"| {bid} | {v['genre']} | – | not rendered | – | – | – | – | – | – |")
+            rows.append(f"| {bid} | {v['genre']} | – | not rendered | – | – | – | – | – | – | – |")
             continue
         g = v["grid"]
-        rows.append(f"| {bid} | {v['genre']} | {v['bpm']} | {g['pass_rate']} | {g.get('detected_bpm')} ({g.get('tempo_ratio')}) | "
+        rows.append(f"| {bid} | {v['genre']} | {v['bpm']} | {g.get('recall')} | {g['pass_rate']} | {g.get('detected_bpm')} ({g.get('tempo_ratio')}) | "
                     f"{v['key']} → {v['key_found']} | {v['key_match']} | {v['clap_similarity']} | {v['clap_genre_rank']} | {v['clap_top_genre']} |")
     return "\n".join(rows) + "\n"
 
@@ -137,14 +139,14 @@ def markdown(label, scores, summ):
 def comparison(base_label, base, label, new):
     """Per brief: grid, key and genre rank before → after (rank: lower is better)."""
     rows = [f"# {label} vs {base_label}", "", f"{base_label}: {json.dumps(base['summary'])}", f"{label}: {json.dumps(new['summary'])}", "",
-            "| Brief | Grid | Key | Genre rank /20 | Rank change |", "|---|---|---|---|---|"]
+            "| Brief | Grid recall | Grid precision | Key | Genre rank /20 | Rank change |", "|---|---|---|---|---|---|"]
     for bid, v in new["scores"].items():
         o = base["scores"].get(bid, {})
         if not (v.get("scored") and o.get("scored")):
-            rows.append(f"| {bid} | – | – | – | not comparable |")
+            rows.append(f"| {bid} | – | – | – | – | not comparable |")
             continue
         d = o["clap_genre_rank"] - v["clap_genre_rank"]
-        rows.append(f"| {bid} | {o['grid']['pass_rate']} → {v['grid']['pass_rate']} | {o['key_match']} → {v['key_match']} | "
+        rows.append(f"| {bid} | {o['grid'].get('recall')} → {v['grid'].get('recall')} | {o['grid']['pass_rate']} → {v['grid']['pass_rate']} | {o['key_match']} → {v['key_match']} | "
                     f"{o['clap_genre_rank']} → {v['clap_genre_rank']} | {'+' if d > 0 else ''}{d if d else '='} |")
     return "\n".join(rows) + "\n"
 

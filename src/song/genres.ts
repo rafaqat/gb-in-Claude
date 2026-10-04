@@ -107,10 +107,12 @@ export const GENRE_TEMPLATES: Record<string, GenreTemplate> = {
   },
   afrobeats: {
     defaultBpm: 108, kit: KIT.roots, humanize: "natural",
-    form: [sec("intro", 4, { arp: true }), sec("verse", 8, { drums: "full", bass: true, arp: true }), sec("hook", 8, { drums: "full", bass: true, arp: true, hook: true, pad: true, prog: "b" }), sec("outro", 4, { drums: "full", arp: true })],
+    form: [sec("intro", 4, { arp: true }), sec("verse", 8, { drums: "full", bass: true, arp: true }), sec("hook", 8, { drums: "full", bass: true, arp: true, hook: true, pad: true, prog: "b" }), sec("outro", 4, { drums: "full", bass: true, arp: true })],
     progression: { minor: { a: "i | iv | VII | III", b: "VI | VII | i | i" }, major: { a: "I | vi | IV | V", b: "IV | V | I | vi" } },
+    // Live renders: GarageBand's "Classic Analog Pad" (89) and a bassless outro moved the beat tracker half a beat off
+    // (grid recall 0.56); string pad + outro bass: 0.97. The kick was not the cause.
     drums: { groove: "afrobeat", full: { kick: "x.....x...x.....", rim: "..x..x....x..x..", shaker: "xxxxxxxxxxxxxxxx", clap: BACKBEAT }, light: { shaker: "xxxxxxxxxxxxxxxx", rim: "..x..x....x..x.." } },
-    bass: { program: 38, style: "offbeat" }, arp: { program: 27, style: "broken", octave: 3 }, pad: { program: 89, style: "sustain", level: -6 },
+    bass: { program: 38, style: "offbeat" }, arp: { program: 27, style: "broken", octave: 3 }, pad: { program: 50, style: "sustain", level: -6 },
     hook: { program: 73, role: "lead", octave: 5, pattern: "3 5 ~ 3 | 8@2 5 3 | 1 3 5 8 | 5@4" },
   },
   funk: {
@@ -148,8 +150,9 @@ export const GENRE_TEMPLATES: Record<string, GenreTemplate> = {
     defaultBpm: 132, kit: KIT.electro, humanize: "natural", swing: { percent: 64, unit: "16th" },
     form: [sec("intro", 4, { pad: true }), sec("verse", 8, { drums: "full", bass: true, pad: true }), sec("chorus", 8, { drums: "full", bass: true, pad: true, hook: true, prog: "b" }), sec("outro", 4, { drums: "full", pad: true })],
     progression: { minor: { a: "i9 | iv9 | VImaj7 | V7", b: "VImaj7 | VIImaj7 | i9 | i9" }, major: { a: "ii9 | V7 | Imaj7 | vi7", b: "IVmaj7 | V7 | iii7 | vi7" } },
-    // the two-step: kick on 1 and the "and" of 2, snare on 2 and 4, shuffled hats (gb-mcp's grid is straight: swing comes from humanize)
-    drums: { full: { kick: "x.....x...x.....", snare: BACKBEAT, hat: "..x..xx...x..xx.", shaker: "x.xxx.xxx.xxx.xx" } },
+    // the two-step: kick on 1 and the "and" of 2, snare on 2 and 4, shuffled hats (gb-mcp's grid is straight: swing comes from humanize).
+    // No shaker: a swung 16th shaker read as funk (CLAP rank 9 → 5 on GM drafts, every seed; the best of 27 variants)
+    drums: { full: { kick: "x.....x...x.....", snare: BACKBEAT, hat: "..x..xx...x..xx." } },
     bass: { program: 39, style: "offbeat" }, pad: { program: 16, style: "stabs" },
     hook: { program: 85, role: "lead", octave: 5, pattern: "5 ~ 3 5 | 8@2 ~ 5 | 7 5 3 5 | 3@4" },
   },
