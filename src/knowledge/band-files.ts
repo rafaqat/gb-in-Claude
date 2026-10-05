@@ -11,8 +11,20 @@ gb_project open_band finds that problem and reports READBACK_MISMATCH.
 Workflow: gb_band inspect (donor) → gb_band build → gb_project open_band → gb_export song → gb_analyze.
 From Song JSON: gb_song band_plan {song} returns the audio list for gb_band build (clips placed by section).
 
-## Make a donor (once, in GarageBand, by a person)
-gb_band cannot make new tracks. It fills the slots of a donor: a small project that GarageBand saved.
+## Stems next to your MIDI song — no hand-made donor (M11b)
+1. gb_song render_midi → gb_project open_midi: GarageBand makes the MIDI tracks with their patches.
+2. gb_tracks add_audio {count}: empty audio tracks (Track ▸ New Tracks… → Mic or Line, Audio). GarageBand may put
+   them above the MIDI tracks: read the numbers from the next step, never guess.
+3. gb_project save_copy {filename: "my-song-donor.band"} → donors/my-song-donor.band and its tracks
+   [{number, kind: audio | instrument, name}].
+4. gb_stem prepare (or separate) → 24-bit stems at the song tempo in stems/.
+5. gb_band build {donor: "donors/my-song-donor.band", audio: [{wav, bar, track: <an audio track number>}]}: gb_band
+   grafts a region slot for each stem the donor lacks, on that audio track. Instrument tracks are refused.
+6. gb_project open_band → gb_export song. The MIDI tracks stay editable MIDI; the stems are audio regions.
+
+## Make a donor by hand (optional, in GarageBand, by a person)
+gb_band fills the slots of a donor: a small project that GarageBand saved. It grafts audio slots on the donor's
+audio tracks when it needs more, but it cannot make tracks: a donor needs the audio tracks you will use.
 1. In GarageBand, make a new empty project. 4/4 only.
 2. Add one audio track for each sample part. Drag a short WAV onto each audio track.
    Each audio region is one slot. Add more regions to a track for more samples on that track.
@@ -29,7 +41,8 @@ midi [{region, notes, bars}]. Use it on a donor to see its slots. Use it on a bu
 ## build
 { donor, filename: "my-song-v1.band", audio: [...], midi?: [...], dry_run? } → bands/<filename>
 audio item: { wav, bar (1-based), beat? (1–4.999, default 1), track (a donor audio track), name? }
-- The donor must have at least one audio region for each item. gb_band removes the donor regions you do not use.
+- Each item goes on a donor audio track (an empty one is fine). When the donor has fewer audio regions than items,
+  gb_band grafts new slots onto the items' tracks. gb_band removes the donor regions you do not use.
 - The WAV must be 16- or 24-bit integer PCM inside the workspace. gb_band copies it into the project.
 midi item: { region (a donor MIDI region name), notes (Song JSON note syntax), bars, velocity?, program? }
 - Notes use the syntax of gb://knowledge/song-format, for example "d4 f#4 a4 d5 | a4@4".

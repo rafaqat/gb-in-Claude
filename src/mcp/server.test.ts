@@ -86,7 +86,7 @@ describe("gb-mcp server", () => {
 
   it("lists the composition, project-file, analysis, sound-catalog and system tools", async () => {
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(["gb_analyze", "gb_band", "gb_song", "gb_sound", "gb_system"]);
+    expect(tools.map((t) => t.name).sort()).toEqual(["gb_analyze", "gb_band", "gb_song", "gb_sound", "gb_stem", "gb_system"]); // M11b: gb_stem
   });
 
   it("serves agent knowledge resources: song format, styles, GM patch map, analysis guide, production rubric, band files", async () => {

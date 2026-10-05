@@ -3,6 +3,13 @@
 """The models of the M8 sidecar and what is known about them. `license` is recorded, never used to filter. `venv` names the Python environment the model runs in."""
 
 MODELS = {
+    "stems": {
+        "name": "Stem tools: inspect, prepare (tempo / pitch / format), separate (Demucs htdemucs)",
+        "module": "gbmodels.stems", "venv": ".venv", "kind": "torch",
+        "source": "https://github.com/adefossez/demucs (demucs==4.1.0) + Rubber Band (external program) + gbmodels/stems.py",
+        "license": "MIT (Demucs code and weights); Rubber Band is GPL, run as a separate program",
+        "task": "M11b: bring outside audio to a song — measure, align, separate",
+    },
     "amt": {
         "name": "Anticipatory Music Transformer (music-medium-800k)",
         "module": "gbmodels.amt", "venv": ".venv", "kind": "torch",

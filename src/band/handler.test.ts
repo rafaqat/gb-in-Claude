@@ -18,6 +18,7 @@ import { bareWav } from "./testing.js";
 const donor = fileURLToPath(new URL("../../test/fixtures/band/donor-one-region.band", import.meta.url));
 const fiveRegionDonor = fileURLToPath(new URL("../../test/fixtures/band/donor-five-regions.band", import.meta.url));
 const avDonor = fileURLToPath(new URL("../../test/fixtures/band/donor-av.band", import.meta.url));
+const midiPlusAudio = fileURLToPath(new URL("../../test/fixtures/band/midi-plus-empty-audio.band", import.meta.url));
 let dir: string;
 beforeEach(() => {
   dir = realpathSync(mkdtempSync(join(tmpdir(), "gbmcp-band-")));
@@ -72,16 +73,57 @@ describe("BuildBandHandler", () => {
     expect(existsSync(out)).toBe(false);
   });
 
-  it("refuses more regions than the donor holds (identities come from the donor) and writes nothing", async () => {
+  // M11b (requirement changed): a donor with fewer audio regions than asked for gets new slots grafted onto the
+  // requested audio tracks — it is no longer refused with REGION_COUNT
+  it("grafts a slot when the donor holds fewer audio regions than asked for", async () => {
     const a = join(dir, "a.wav"), b = join(dir, "b.wav");
     writeFileSync(a, bareWav(1000));
     writeFileSync(b, bareWav(1000));
     const out = join(dir, "song.band");
     const r = await new BuildBandHandler().execute({ donor, out, regions: [{ wav: a, tick: 0, track: 1 }, { wav: b, tick: 3840, track: 1 }] });
-    expect(r.ok).toBe(false);
-    if (r.ok) return;
-    expect(r.error.code).toBe("REGION_COUNT");
-    expect(existsSync(out)).toBe(false);
+    expect(r.ok).toBe(true);
+    const pd = parseProjectData(new Uint8Array(readFileSync(join(out, "Alternatives", "000", "ProjectData"))));
+    if (!pd.ok) throw new Error(pd.error.message);
+    expect(audioPlacements(pd.value).map(({ tick, track }) => ({ tick, track }))).toEqual([{ tick: 0, track: 1 }, { tick: 3840, track: 1 }]);
+    expect(linkedAudio(pd.value).map((l) => l.filename)).toEqual(["a.wav", "b.wav"]);
+  });
+
+  it("places stems on the empty audio track of a MIDI import (slots grafted) and keeps its MIDI track", async () => {
+    const a = join(dir, "tabla.wav"), b = join(dir, "voice.wav");
+    writeFileSync(a, bareWav(44100));
+    writeFileSync(b, bareWav(44100));
+    const out = join(dir, "song.band");
+    const r = await new BuildBandHandler().execute({ donor: midiPlusAudio, out, regions: [{ wav: a, tick: 0, track: 1 }, { wav: b, tick: 7680, track: 1 }] });
+    expect(r.ok).toBe(true);
+    const pd = parseProjectData(new Uint8Array(readFileSync(join(out, "Alternatives", "000", "ProjectData"))));
+    if (!pd.ok) throw new Error(pd.error.message);
+    expect(audioPlacements(pd.value).map(({ tick, track }) => ({ tick, track }))).toEqual([{ tick: 0, track: 1 }, { tick: 7680, track: 1 }]);
+    expect(midiRegions(pd.value).map((m) => [m.name, m.notes.length])).toEqual([["Keys", 12]]);
+  });
+
+  it("refuses an instrument track, naming the audio tracks", async () => {
+    const wav = join(dir, "kick.wav");
+    writeFileSync(wav, bareWav(1000));
+    const r = await new BuildBandHandler().execute({ donor: midiPlusAudio, out: join(dir, "song.band"), regions: [{ wav, tick: 0, track: 2 }] });
+    expect(!r.ok && r.error.code).toBe("TRACK_NOT_IN_DONOR");
+    expect(!r.ok && r.error.message).toContain("1 (Audio 1)");
+  });
+
+  it("a region placed on another audio track carries that track's channel strip", async () => {
+    const a = join(dir, "a.wav"), b = join(dir, "b.wav");
+    writeFileSync(a, bareWav(1000));
+    writeFileSync(b, bareWav(1000));
+    writeFileSync(join(dir, "vox.wav"), bareWav(1000));
+    const out = join(dir, "swap.band");
+    const r = await new BuildBandHandler().execute({ donor: avDonor, out, regions: [{ wav: a, tick: 0, track: 2 }, { wav: b, tick: 0, track: 1 }] });
+    expect(r.ok).toBe(true);
+    const pd = parseProjectData(new Uint8Array(readFileSync(join(out, "Alternatives", "000", "ProjectData"))));
+    if (!pd.ok) throw new Error(pd.error.message);
+    const strips = audioPlacements(pd.value).map((p) => {
+      const payload = pd.value.records[p.record]!.payload;
+      return [p.track, new DataView(payload.buffer, payload.byteOffset).getUint32(p.offset + 0x10, true)];
+    });
+    expect(strips.sort()).toEqual([[1, 0xac], [2, 0xb8]]);
   });
 
   it("reports a donor without ProjectData as DONOR_INVALID", async () => {

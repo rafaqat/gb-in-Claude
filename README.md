@@ -57,6 +57,7 @@ gives the General MIDI celesta.
 | Node.js | 22.13 or later (`brew install node`) |
 | Swift | Xcode or the Command Line Tools (`xcode-select --install`) — builds two small native helpers |
 | Python | 3.10 or later (`brew install python`) — for audio analysis |
+| Rubber Band | optional — `gb_stem prepare` uses it to stretch tonal stems (`brew install rubberband`) |
 | Claude Code | [installed](https://docs.claude.com/en/docs/claude-code) and signed in |
 
 ## Install
@@ -171,10 +172,11 @@ Talk to Claude Code:
 | `gb_song` | validate · preview · render_midi · render_draft · band_plan · template · infill | no — writes files to the workspace |
 | `gb_band` | inspect · build | no — writes a GarageBand project (.band) with your WAVs and MIDI notes |
 | `gb_analyze` | audio · against_song · compare (+ field `ml` with the optional models) | no — reads audio, writes spectrogram PNGs |
+| `gb_stem` | inspect · prepare · separate | no — reads outside audio, writes placeable stems (needs the optional models) |
 | `gb_sound` | patches · plugins · loops · samples · palette | no — read-only catalog of what this Mac can play |
 | `gb_system` | doctor · describe · ui_snapshot | read-only |
-| `gb_project` | status · open_midi · open_band | opens a song (unsaved projects are backed up first) |
-| `gb_tracks` | list · select · mute · solo · set_instrument | yes |
+| `gb_project` | status · open_midi · open_band · save_copy | opens a song (unsaved projects are backed up first); save_copy writes a donor copy |
+| `gb_tracks` | list · select · mute · solo · set_instrument · add_audio | yes |
 | `gb_transport` | state · play · stop · rewind · set_tempo · set_metronome · set_count_in | yes |
 | `gb_mix` | get · set_volume (raw or dB) · set_pan | yes |
 | `gb_export` | song (WAVE) | yes — exports into the workspace, never overwrites |
@@ -195,6 +197,8 @@ Resources: `gb://knowledge/song-format` (read first), `gb://knowledge/analysis`,
 ├── exports/     WAV exports from GarageBand
 ├── analysis/    spectrogram pictures
 ├── bands/      GarageBand projects written by gb_band (readback/ holds GarageBand's own check copies)
+├── donors/     copies of open projects (gb_project save_copy), used as gb_band donors
+├── stems/      placeable stems from gb_stem (24-bit PCM)
 └── sessions/    automatic backups of unsaved GarageBand projects (.band)
 ```
 
@@ -207,6 +211,19 @@ and beat and writes new MIDI notes; `gb_project open_band` opens the result and 
 saves itself. In Song JSON, a track can carry `donorTrack` and `audio` clips placed per section; `gb_song band_plan`
 turns them into `gb_band build`'s audio list. The details are in `gb://knowledge/band-files`. The project format is
 GarageBand 10.4.14's and is not documented by Apple: a GarageBand update can break `gb_band` until it is re-probed.
+
+**Stems next to your MIDI song — no hand-made donor.** Any audio track of a project now takes stems: `gb_band build`
+adds the region slots it needs. With the optional models:
+
+1. `gb_stem inspect` — format, length, tempo, key, percussive or tonal; `gb_stem separate` — vocals / drums / bass /
+   other (Demucs); `gb_stem prepare {to_bpm, from_bpm?, semitones?}` — a placeable 24-bit stem at the song's tempo
+   (drums re-timed stroke by stroke, tonal parts stretched with Rubber Band), checked by measuring its tempo.
+2. `gb_project open_midi` your song, then `gb_tracks add_audio {count}` — new empty audio tracks.
+3. `gb_project save_copy {filename}` — the project as a donor in `donors/`, with its tracks listed.
+4. `gb_band build {donor, audio: [{wav, bar, track}]}` — the stems on the audio tracks, the MIDI parts kept.
+5. `gb_project open_band` — open it and check GarageBand's own copy; `gb_export song` to hear it.
+
+The format facts behind this are in `eval/m11b/BAND-FORMAT.md`; the live end-to-end check is `eval/m11b`.
 
 Song JSON is described in `gb://knowledge/song-format`; `examples/twinkle-epic.song.json` shows most of it
 (sections, drum grids, chord parts, melodies, levels).
@@ -250,7 +267,10 @@ from Hugging Face on first use (~4 GB). gb-mcp starts one long-lived model proce
   text ("warm neo-soul keys"), CLaMP 3 ranks the takes against that text and the best comes back; a take that runs
   away is stopped early (`capped`) and never chosen.
 
-Without the models everything else works; `ml` says so and `infill` answers `DEPENDENCY_MISSING`. Measured speeds,
+- `gb_stem` (above) separates with Demucs htdemucs, measures tempo (beat_this) and key (S-KEY), and aligns stems to
+  the song; it never overwrites a file.
+
+Without the models everything else works; `ml` says so `infill` and `gb_stem` answer `DEPENDENCY_MISSING`. Measured speeds,
 memory and what each optimisation bought (an exact KV-cache sampler, float16, an MLX port): `models/bench/results.md`.
 `eval/` holds 20 frozen genre briefs and `eval/run.py`, which renders, exports and scores them to compare versions.
 
@@ -304,6 +324,8 @@ GarageBand's interface differs between versions; the element locators live in `s
   repository: [Anticipatory Music Transformer](https://github.com/jthickstun/anticipation) (Apache-2.0),
   [beat_this](https://github.com/CPJKU/beat_this) (MIT), [LAION CLAP](https://github.com/LAION-AI/CLAP),
   [S-KEY](https://huggingface.co/musetric/skey-onnx) (MIT), [CLaMP 3](https://github.com/sanderwood/clamp3) (MIT; its
-  code is cloned on first use). `models/bench` also measured
+  code is cloned on first use), [Demucs](https://github.com/adefossez/demucs) (MIT). `gb_stem prepare` calls
+  [Rubber Band](https://breakfastquay.com/rubberband/) (GPL) as an external program if you install it; it is not part
+  of this repository. `models/bench` also measured
   [Foundation-1](https://huggingface.co/RoyalCities/Foundation-1) (Stability AI Community License), which gb-mcp does
   not use yet.

@@ -238,6 +238,23 @@ describe("gb_project status", () => {
     expect(fake.calls.some((c) => ["ax.press", "ax.set", "ax.menu", "ax.converge"].includes(c.op))).toBe(false);
     expect(readdirSync(ws)).not.toContain("sessions");
   });
+
+  it("pairs each region with its own track when a track has no region (M11b: an empty audio track added to a MIDI import)", async () => {
+    const win = fake.app.windows[0]!;
+    win.children!.find((c) => c.desc === "Tracks header")!.children = [
+      { role: "AXLayoutItem", desc: "Track 1 “Audio 1”" },
+      { role: "AXLayoutItem", desc: "Track 2 “Steinway Grand Piano”" },
+    ];
+    win.children!.find((c) => c.desc === "Tracks contents")!.children = [
+      { role: "AXLayoutArea", desc: "Track 1 “Audio 1”", children: [] },
+      { role: "AXLayoutArea", desc: "Track 2 “Steinway Grand Piano”", children: [{ role: "AXLayoutItem", desc: "Piano" }] },
+    ];
+    const r = await createGbProject(deps())({ command: "status" });
+    expect((r as { data: { tracks: unknown } }).data.tracks).toEqual([
+      { number: 1, name: null, patch: "Audio 1" },
+      { number: 2, name: "Piano", patch: "Steinway Grand Piano" },
+    ]);
+  });
 });
 
 describe("gb_project open_midi dry_run", () => {
@@ -438,4 +455,31 @@ describe("openFailureCode: a refused `open` → the code the agent acts on", () 
     ["The application cannot be opened for an unexpected reason, error=Error Domain=NSOSStatusErrorDomain Code=-10661", "INTERNAL_ERROR"],
     ["", "INTERNAL_ERROR"],
   ])("%j → %s", (reason, code) => expect(openFailureCode(reason)).toBe(code));
+});
+
+describe("gb_project save_copy (M11b): the open project as a donor for gb_band", () => {
+  const fixture = fileURLToPath(new URL("../../test/fixtures/band/midi-plus-empty-audio.band", import.meta.url));
+  const copying = () => scripts({
+    backupDocument: async (name, path) => { backups.push({ name, path }); cpSync(fixture, path, { recursive: true }); return { ok: true, value: undefined }; },
+  });
+  it("saves a copy into donors/ and lists its tracks — audio or instrument — for gb_band build", async () => {
+    const r = await createGbProject(deps({ scripts: copying() }))({ command: "save_copy", filename: "song-donor.band" });
+    expect(r).toMatchObject({ status: "verified", data: { path: join(ws, "donors", "song-donor.band") } });
+    expect((r as { data: { tracks: unknown[] } }).data.tracks).toEqual([
+      { number: 1, kind: "audio", name: "Audio 1" }, { number: 2, kind: "instrument", name: "Steinway Grand Piano" },
+    ]);
+    expect(backups).toHaveLength(1);
+  });
+  it("never overwrites: an existing donors/<name> (or a link there) is FILE_EXISTS and nothing is saved", async () => {
+    mkdirSync(join(ws, "donors", "taken.band"), { recursive: true });
+    const r = await createGbProject(deps({ scripts: copying() }))({ command: "save_copy", filename: "taken.band" });
+    expect(r).toMatchObject({ status: "failed", error: "FILE_EXISTS" });
+    expect(backups).toEqual([]);
+  });
+  it("dry_run plans only; a name with a folder is refused", async () => {
+    const gb = createGbProject(deps({ scripts: copying() }));
+    expect(await gb({ command: "save_copy", filename: "x.band", dry_run: true })).toMatchObject({ status: "verified", data: { dry_run: true } });
+    expect((await gb({ command: "save_copy", filename: "../x.band" })).status).toBe("failed");
+    expect(backups).toEqual([]);
+  });
 });

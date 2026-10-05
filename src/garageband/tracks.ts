@@ -25,8 +25,18 @@ export const GbTracksInput = z.discriminatedUnion("command", [
   z.object({ command: z.literal("mute"), track: TrackRef, enabled: z.boolean(), dry_run: DryRun }).strict(),
   z.object({ command: z.literal("solo"), track: TrackRef, enabled: z.boolean(), dry_run: DryRun }).strict(),
   z.object({ command: z.literal("set_instrument"), track: TrackRef, patch: z.string().min(1).max(120), dry_run: DryRun }).strict(),
+  z.object({ command: z.literal("add_audio"), count: z.number().int().min(1).max(16).default(1).describe("empty audio tracks to add"), dry_run: DryRun }).strict(),
 ]);
-export const GB_TRACKS_COMMANDS = ["list", "select", "mute", "solo", "set_instrument"] as const;
+export const GB_TRACKS_COMMANDS = ["list", "select", "mute", "solo", "set_instrument", "add_audio"] as const;
+
+/** Track ▸ New Tracks… (found live: , GarageBand 10.4.14): a sheet "New Track" with the track kinds as radio buttons. */
+const NEW_TRACKS = ["Track", "New Tracks…"];
+const NEW_TRACK_SHEET = { role: "AXSheet", description: "New Track" } as const;
+const AUDIO_KIND: Target = { root: MAIN, selector: { role: "AXRadioButton", description: "Mic or Line, Audio" }, kind: "radio" };
+const CREATE: Target = { root: MAIN, selector: { role: "AXButton", title: "Create" }, kind: "button" };
+const CANCEL: Target = { root: MAIN, selector: { role: "AXButton", title: "Cancel" }, kind: "button" };
+/** How long a track may take to appear after Create when GarageBand is busy (it answered −25204 live, then made it). */
+const NEW_TRACK_WAIT_MS = 6_000;
 
 export type GbTracksDeps = Omit<SessionDeps, "sleep" | "pollMs"> & {
   helper: HelperPort;
@@ -307,6 +317,65 @@ export function createGbTracks(deps: GbTracksDeps) {
     });
   }
 
+  /**
+   * Empty audio tracks (M11b), one at a time: Track ▸ New Tracks… → "Mic or Line, Audio" (pressed only when not chosen)
+   * → Create; each is proven by the track list growing by one. A press GarageBand is too busy to answer is judged by
+   * the track list, never by the failed step; a sheet left open is cancelled.
+   */
+  async function addAudio(op: string, count: number, dryRun: boolean): Promise<Envelope> {
+    const ready = await ensureReady(op, session);
+    if (!ready.ok) return ready.error;
+    const before = await readTracks(op, deps.helper);
+    if (!before.ok) return before.error;
+    if (dryRun) {
+      return verified(op, { dry_run: true, tracks_before: before.value.length, plan: [
+        `${count} × Track ▸ New Tracks… → "Mic or Line, Audio" → Create`, "after each, read the track list: it must grow by one",
+      ] });
+    }
+    return mutationGate.run(op, async () => {
+      const added: ReturnType<typeof publicTrack>[] = [];
+      const warnings: string[] = [];
+      let known = before.value;
+      const sheetOpen = async () => {
+        const w = await core.wait({ root: MAIN, selector: NEW_TRACK_SHEET, condition: "present", timeoutMs: 300 });
+        return w.ok && w.value.satisfied;
+      };
+      const closeSheet = async () => { if (await sheetOpen()) await core.press(op, CANCEL); };
+      for (let i = 0; i < count; i++) {
+        const opened = await core.menu(op, NEW_TRACKS, { postCondition: { root: MAIN, selector: NEW_TRACK_SHEET, condition: "present", timeoutMs: 5_000 } });
+        if (opened.status !== "verified") { await closeSheet(); return withAdded(opened, added); }
+        const chosenAlready = await core.wait({ root: MAIN, selector: AUDIO_KIND.selector, condition: "value_equals", value: 1, timeoutMs: 200 });
+        if (!(chosenAlready.ok && chosenAlready.value.satisfied)) {
+          const chosen = await core.press(op, AUDIO_KIND);
+          if (chosen.status !== "verified") { await closeSheet(); return withAdded(chosen, added); }
+        }
+        const created = await core.press(op, CREATE);
+        // the evidence decides: the list must grow by one, whatever the press answered
+        let now = await readTracks(op, deps.helper);
+        for (let waited = 0; (!now.ok || now.value.length <= known.length) && waited < NEW_TRACK_WAIT_MS; waited += session.pollMs) {
+          await session.sleep(session.pollMs);
+          now = await readTracks(op, deps.helper);
+        }
+        if (!now.ok || now.value.length !== known.length + 1) {
+          await closeSheet();
+          return withAdded(failed(op, created.status === "verified" ? "TARGET_NOT_FOUND" : "DEADLINE_EXCEEDED",
+            `Create was pressed but no new track appeared (${now.ok ? now.value.length : "?"} tracks, ${known.length} before)`,
+            { write_attempted: true, safe_to_retry: false, hint: "check gb_tracks list before retrying" }), added);
+        }
+        if (created.status !== "verified") warnings.push(`GarageBand was busy and answered Create late (track ${i + 1}); the track list proves the new track`);
+        const fresh = now.value.filter((t) => !known.some((k) => k.description === t.description));
+        added.push(...fresh.map(publicTrack));
+        known = now.value;
+      }
+      return verified(op, { added, tracks: known.map(publicTrack) }, warnings);
+    });
+  }
+
+  /** A failure after some tracks were added still names them: they exist in GarageBand. */
+  function withAdded(e: Envelope, added: ReturnType<typeof publicTrack>[]): Envelope {
+    return added.length && e.status !== "verified" ? { ...e, context: { ...(("context" in e && e.context) || {}), added } } as Envelope : e;
+  }
+
   return async function gbTracks(input: unknown): Promise<Envelope> {
     const parsed = GbTracksInput.safeParse(input);
     if (!parsed.success) {
@@ -321,6 +390,7 @@ export function createGbTracks(deps: GbTracksDeps) {
       case "mute":
       case "solo": return setFlag(op, a.track, a.command, a.enabled, a.dry_run === true);
       case "set_instrument": return setInstrument(op, a.track, a.patch, a.dry_run === true);
+      case "add_audio": return addAudio(op, a.count, a.dry_run === true);
     }
   };
 }

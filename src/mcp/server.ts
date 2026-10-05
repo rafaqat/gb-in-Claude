@@ -4,6 +4,7 @@ import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ZodTypeAny } from "zod";
 import { createGbSong, GB_SONG_COMMANDS, GbSongInput } from "./gb-song.js";
+import { createGbStem, GB_STEM_COMMANDS, GbStemInput } from "./gb-stem.js";
 import { createGbAnalyze, GB_ANALYZE_COMMANDS, ANALYSIS_FIELDS, GbAnalyzeInput } from "./gb-analyze.js";
 import type { AnalyzerPort } from "../analysis/analyzer.js";
 import type { ModelSidecar } from "../models/sidecar.js";
@@ -26,7 +27,7 @@ import { guarded } from "./tool-result.js";
 import type { Result } from "../result.js";
 import { createGbBand, GB_BAND_COMMANDS, GbBandInput, BandAudioItem, BandMidiItem } from "./gb-band.js";
 
-export const SERVER_VERSION = "0.4.0";
+export const SERVER_VERSION = "0.5.0";
 
 const json = (uri: string, value: unknown) => ({ contents: [{ uri, mimeType: "application/json", text: JSON.stringify(value) }] });
 
@@ -100,13 +101,41 @@ export function createServer(opts: ServerOptions): McpServer {
         path: z.string().optional().describe("inspect: a .band inside the workspace, e.g. donors/donor-av.band"),
         donor: z.string().optional().describe("build: a .band that GarageBand saved — gb_band inspect shows its slots"),
         filename: z.string().optional().describe("build: e.g. my-song-v1.band (no paths); written to bands/"),
-        audio: z.array(BandAudioItem).optional().describe("build: WAVs to place — at most as many as the donor has audio regions"),
+        audio: z.array(BandAudioItem).optional().describe("build: WAVs to place on the donor's audio tracks (an empty audio track is fine: slots are grafted)"),
         midi: z.array(BandMidiItem).optional().describe("build: new notes for the donor's MIDI regions, by region name"),
         dry_run: z.boolean().optional().describe("build: validate and plan without writing"),
       }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
     guarded("gb_band", createGbBand({ workspaceDir: opts.workspaceDir }), true),
+  );
+
+  server.registerTool(
+    "gb_stem",
+    {
+      title: "Bring outside audio to a song: inspect, align, separate",
+      description:
+        "Stems for gb_band. inspect: format, length, tempo, key, percussive or tonal, peak, and whether gb_band can place " +
+        "it. prepare: align a WAV to the song — stretch to to_bpm (from_bpm, or measured), shift by semitones, write 24-bit " +
+        "PCM at the project rate into stems/<filename>; drums are re-timed by their strokes, tonal parts by Rubber Band; " +
+        "verified by reading the file back and measuring its tempo. separate: split a mix into vocals, drums, bass and other " +
+        "(Demucs) in stems/. Never overwrites; dry_run writes nothing. Needs the model sidecar. Then place the stems with " +
+        "gb_band build.",
+      inputSchema: z.object({
+        command: z.enum(GB_STEM_COMMANDS),
+        path: z.string().optional().describe("a WAV/AIFF/FLAC inside the workspace, e.g. samples/tabla.wav"),
+        filename: z.string().optional().describe("prepare: output name, e.g. tabla-132.wav (written to stems/)"),
+        to_bpm: z.number().optional().describe("prepare: the song tempo"),
+        from_bpm: z.number().optional().describe("prepare: the source tempo (default: measured)"),
+        near_bpm: z.number().optional().describe("inspect: expected tempo (folds a half/double-time reading)"),
+        semitones: z.number().optional().describe("prepare: pitch shift, −12…12"),
+        mode: z.enum(["auto", "percussive", "tonal"]).optional().describe("prepare: how to stretch (default auto)"),
+        rate: z.number().optional().describe("prepare: 44100 (default) or 48000"),
+        dry_run: z.boolean().optional().describe("prepare / separate: plan without writing"),
+      }).strict(),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    guarded("gb_stem", createGbStem({ workspaceDir: opts.workspaceDir, ...(opts.listener ? { models: opts.listener } : {}) }), true),
   );
 
   if (opts.analyzer) {
@@ -143,6 +172,7 @@ export function createServer(opts: ServerOptions): McpServer {
   if (opts.system) {
     const registry: ToolRegistry = {
       gb_song: { description: "compose: Song JSON → validate / preview / MIDI / GM draft", commands: GB_SONG_COMMANDS },
+      gb_stem: { description: "outside audio: inspect / align (tempo, pitch, format) / separate into stems", commands: GB_STEM_COMMANDS },
       gb_band: { description: "GarageBand project files: inspect a .band, build one with audio + MIDI from a donor", commands: GB_BAND_COMMANDS },
       gb_sound: { description: "read-only catalog: patches, plugins, loops, samples, palette", commands: GB_SOUND_COMMANDS },
       ...(opts.analyzer ? { gb_analyze: { description: "listen: measure, flag and compare exports", commands: GB_ANALYZE_COMMANDS } } : {}),
@@ -180,7 +210,7 @@ export function createServer(opts: ServerOptions): McpServer {
     async (uri) => json(uri.href, { melodic: GM_PATCH_MAP, drumKits: GM_DRUM_KIT_MAP }));
 
   const schemas: Record<string, ZodTypeAny> = {
-    gb_song: GbSongInput, gb_band: GbBandInput, gb_sound: GbSoundInput,
+    gb_song: GbSongInput, gb_stem: GbStemInput, gb_band: GbBandInput, gb_sound: GbSoundInput,
     ...(opts.analyzer ? { gb_analyze: GbAnalyzeInput } : {}),
     ...(opts.system ? { gb_system: GbSystemInput } : {}),
     ...(live ? { gb_project: GbProjectInput, gb_export: GbExportInput, gb_tracks: GbTracksInput, gb_transport: GbTransportInput, gb_mix: GbMixInput } : {}),

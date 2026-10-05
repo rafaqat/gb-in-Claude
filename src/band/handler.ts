@@ -15,6 +15,8 @@ import { parseProjectData, serializeProjectData } from "./projectdata.js";
 import { audioPlacements, MAX_PLACEMENTS, regionRecords, withoutRegionsFrom, withPlacement, writeAudioFile, writeAudioRegion } from "./audio.js";
 import { wavInfo, withOverview, type WavInfo } from "./wav.js";
 import { midiRegions, withMidiNotes } from "./midi.js";
+import { visibleTracks } from "./tracks.js";
+import { graftAudioSlots } from "./graft.js";
 import { patchFor } from "../knowledge/gm-patch-map.js";
 import { bendRangeFor } from "../knowledge/bend-ranges.js";
 import { bendsForLine, rpnBendRange } from "../song/expression.js";
@@ -101,26 +103,35 @@ export class BuildBandHandler implements BuildBandSpec {
       const pd = parseProjectData(bytes);
       if (!pd.ok) return fail("DONOR_INVALID", `the donor's ProjectData is not readable: ${pd.error.message}`);
 
-      const placements = audioPlacements(pd.value).sort((a, b) => a.region - b.region);
-      if (placements.length > MAX_PLACEMENTS) return fail("DONOR_INVALID", `the donor holds more than ${MAX_PLACEMENTS} audio regions; use a small donor`);
-      if (input.regions.length > placements.length) {
-        return fail("REGION_COUNT", `the donor holds ${placements.length} audio region(s); ${input.regions.length} were asked for`, true);
+      // the donor's audio tracks (M11b: read from its track list, so an empty audio track counts) and their strips
+      const audioTracks = visibleTracks(pd.value).filter((t) => t.kind === "audio");
+      const firstPlacements = audioPlacements(pd.value);
+      const trackNumbers = new Set([...audioTracks.map((t) => t.number), ...firstPlacements.map((p) => p.track)]);
+      const strange = input.regions.find((r) => !trackNumbers.has(r.track));
+      if (strange) {
+        const named = audioTracks.map((t) => `${t.number} (${t.name})`).join(", ") || [...trackNumbers].sort((a, b) => a - b).join(", ") || "none";
+        return fail("TRACK_NOT_IN_DONOR", `track ${strange.track} is not an audio track of the donor (audio tracks: ${named})`);
       }
+      // fewer slots than stems: graft new slots onto the requested audio tracks (M11b), instead of refusing
+      let donorPd = pd.value;
+      if (input.regions.length > firstPlacements.length) {
+        if (input.regions.length > MAX_PLACEMENTS) return fail("REGION_COUNT", `at most ${MAX_PLACEMENTS} audio regions per project; ${input.regions.length} were asked for`, true);
+        const grafted = graftAudioSlots(donorPd, input.regions.slice(firstPlacements.length).map((r) => r.track));
+        if (!grafted.ok) return fail(grafted.error.code === "DONOR_INVALID" ? "DONOR_INVALID" : "TRACK_NOT_IN_DONOR", grafted.error.message);
+        donorPd = grafted.value;
+      }
+      const strips = new Map(visibleTracks(donorPd).map((t) => [t.number, t.strip]));
+      const placements = audioPlacements(donorPd).sort((a, b) => a.region - b.region);
+      if (placements.length > MAX_PLACEMENTS) return fail("DONOR_INVALID", `the donor holds more than ${MAX_PLACEMENTS} audio regions; use a small donor`);
 
       // each slot this build fills must own its records, or one sample would silently overwrite another
       const owned = new Set<number>();
       for (const p of placements.slice(0, input.regions.length)) {
-        const at = regionRecords(pd.value, p.region);
+        const at = regionRecords(donorPd, p.region);
         if (at.file >= 0 && owned.has(at.file) || at.region >= 0 && owned.has(at.region)) {
           return fail("DONOR_INVALID", "two of the donor's audio regions share their file or region records; use a .band that GarageBand saved");
         }
         owned.add(at.file).add(at.region);
-      }
-
-      const donorTracks = new Set(placements.map((p) => p.track));
-      const strange = input.regions.find((r) => !donorTracks.has(r.track));
-      if (strange) {
-        return fail("TRACK_NOT_IN_DONOR", `track ${strange.track} is not an audio track of the donor (it has ${[...donorTracks].sort((a, b) => a - b).join(", ")})`);
       }
 
       const samples: Sample[] = [];
@@ -139,7 +150,7 @@ export class BuildBandHandler implements BuildBandSpec {
 
       // region i fills donor slot i (the donor's region i): its placement (tick, track) and the records it links to;
       // the donor regions not used are trimmed afterwards
-      let project = pd.value;
+      let project = donorPd;
       const claimed = new Set<number>();
       for (const item of input.midi ?? []) {
         const named = midiRegions(project).filter((m) => m.name === item.region);
@@ -177,7 +188,7 @@ export class BuildBandHandler implements BuildBandSpec {
         });
       }
       input.regions.forEach((region, i) => {
-        project = withPlacement(project, placements[i]!, { tick: region.tick, track: region.track });
+        project = withPlacement(project, placements[i]!, { tick: region.tick, track: region.track, ...(strips.has(region.track) ? { strip: strips.get(region.track)! } : {}) });
       });
       const records = project.records.slice();
       for (const [i, region] of input.regions.entries()) {

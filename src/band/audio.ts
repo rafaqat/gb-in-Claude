@@ -119,6 +119,7 @@ export type AudioPlacement = { record: number; offset: number; tick: number; tra
 
 const LINK_AT = 0x2c;
 const TRACK_AT = 0x14;
+const STRIP_AT = 0x10;
 /** Region records (AuFl + AuRg) carry their region index in the record header: group u32 @+8 = index × 0x40000. */
 export const REGION_GROUP = 0x40000;
 export const groupOf = (header: Uint8Array) => new DataView(header.buffer, header.byteOffset, header.byteLength).getUint32(8, true);
@@ -152,13 +153,16 @@ export function withPlacementTick(pd: ProjectData, placement: AudioPlacement, ti
   return withPlacement(pd, placement, { tick, track: placement.track });
 }
 
-/** A copy of `pd` with one placement at `tick` on `track`; flag, id and link stay as GarageBand wrote them. */
-export function withPlacement(pd: ProjectData, placement: AudioPlacement, at: { tick: number; track: number }): ProjectData {
+/** A copy of `pd` with one placement at `tick` on `track`; flag and link stay as GarageBand wrote them. `strip`: the
+ * target track's channel strip (M11b — a placement carries its track's strip @+0x10; changing only the track number
+ * would leave the region tied to its old track's strip). */
+export function withPlacement(pd: ProjectData, placement: AudioPlacement, at: { tick: number; track: number; strip?: number }): ProjectData {
   const records = pd.records.slice();
   const host = records[placement.record]!;
-  const payload = host.payload.slice();
+  const payload = Uint8Array.from(host.payload);
   view(payload).setBigUint64(placement.offset + 4, BigInt(REGION_ORIGIN + at.tick), true);
   payload[placement.offset + TRACK_AT] = at.track;
+  if (at.strip !== undefined) view(payload).setUint32(placement.offset + STRIP_AT, at.strip, true);
   records[placement.record] = { ...host, payload };
   return { ...pd, records };
 }

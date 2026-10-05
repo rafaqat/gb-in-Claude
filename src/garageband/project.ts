@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { z } from "zod";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, rmSync } from "node:fs";
 import { basename, join } from "node:path";
 import { AxCore } from "../ax/core.js";
-import { GB_10_4_14, parseSavePrompt, parseTrackHeader, type RootSpec } from "../ax/locators.js";
+import { GB_10_4_14, parseSavePrompt, type RootSpec } from "../ax/locators.js";
 import type { Selector } from "../ax/selector.js";
 import type { HelperPort } from "../native/helper-port.js";
 import { callOp, AppStateResult, FindResult } from "../native/protocol.js";
@@ -35,10 +35,12 @@ export function openFailureCode(reason: string): ErrorCode {
   return "INTERNAL_ERROR";
 }
 import { bandDifferences, inspectBand } from "../band/inspect.js";
+import { parseProjectData } from "../band/projectdata.js";
+import { visibleTracks } from "../band/tracks.js";
 import { mutationGate } from "./gate.js";
 import { isScreenLocked } from "./screen.js";
 import { classifyDialogs, waitUntilIdle } from "./dialogs.js";
-import { regionName, pickFields } from "./session.js";
+import { pickFields, readTracks } from "./session.js";
 import { cleanText } from "../sound/text.js";
 
 export type ProjectDoc = { name: string; modified: boolean };
@@ -53,8 +55,16 @@ export const GbProjectInput = z.discriminatedUnion("command", [
   z.object({ command: z.literal("status"), fields: z.array(z.enum(PROJECT_FIELDS)).min(1).optional().describe("only these fields (running always included)") }).strict(),
   z.object({ command: z.literal("open_midi"), path: z.string(), dry_run: z.boolean().optional().describe("read the file and plan only — opens and saves nothing") }).strict(),
   z.object({ command: z.literal("open_band"), path: z.string(), dry_run: z.boolean().optional().describe("read the project and plan only — opens and saves nothing") }).strict(),
+  z.object({
+    command: z.literal("save_copy"),
+    filename: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9 _.-]{0,79}\.band$/, "a .band name such as my-song-donor.band (no folders)"),
+    dry_run: z.boolean().optional().describe("plan only — saves nothing"),
+  }).strict(),
 ]);
-export const GB_PROJECT_COMMANDS = ["status", "open_midi", "open_band"] as const;
+export const GB_PROJECT_COMMANDS = ["status", "open_midi", "open_band", "save_copy"] as const;
+const DONORS = "donors";
+/** Anything at a name — file, folder, link (dangling or not) — counts: a copy is never written through it. */
+const occupied = (path: string) => { try { lstatSync(path); return true; } catch { return false; } };
 
 export type GbProjectDeps = {
   workspaceDir: string;
@@ -76,7 +86,6 @@ export type GbProjectDeps = {
 const MAIN: RootSpec = { kind: "main_window" };
 const DIALOG: RootSpec = { kind: "dialog" };
 const REGIONS: Selector = { role: "AXLayoutItem", ancestors: [{ role: "AXGroup", description: "Tracks contents" }] };
-const HEADERS: Selector = { role: "AXLayoutItem", ancestors: [{ role: "AXGroup", description: "Tracks header" }] };
 const NOT_REGIONS = /^(cycle region|Note at )/;
 const realSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const safeName = (s: string) => s.replace(/[^A-Za-z0-9 _.-]/g, "_").slice(0, 60);
@@ -104,14 +113,12 @@ export function createGbProject(deps: GbProjectDeps) {
   };
   const mainTitle = (s: z.infer<typeof AppStateResult>) => s.windows?.find((w) => w.subrole === "AXStandardWindow")?.title;
 
+  /** Tracks by header, each with the first region in its own lane (a track may have none: M11b's empty audio track). */
   async function readProject() {
-    const regions = (await find(MAIN, REGIONS)).map((n) => regionName(n.desc ?? "")).filter((d) => d && !NOT_REGIONS.test(d));
-    const patches = (await find(MAIN, HEADERS)).map((n) => parseTrackHeader(n.desc ?? "")?.name).filter((p): p is string => !!p);
-    const names = regions.map((r) => cleanText(r)); // UI text: normalised for the agent; raw names stay internal
+    const read = await readTracks("gb_project.read", deps.helper);
     const tempo = await core.read("gb_project.read", GB_10_4_14.controls["lcd.tempo"]!);
     return {
-      regions,
-      tracks: names.map((name, i) => ({ name, patch: patches[i] === undefined ? null : cleanText(patches[i]!) })),
+      tracks: read.ok ? read.value.map((t) => ({ number: t.number, name: t.region, patch: t.patch })) : [],
       tempo: tempo.status === "verified" ? ((tempo.data as { value: unknown }).value as number | null) : null,
     };
   }
@@ -352,6 +359,40 @@ export function createGbProject(deps: GbProjectDeps) {
     });
   }
 
+  /**
+   * The open project saved as a copy into donors/ (M11b) — GarageBand keeps working on its own document — then read
+   * back: the copy must parse, and its tracks (number, audio or instrument, name) are what gb_band build can fill.
+   */
+  async function saveCopy(op: string, filename: string, dryRun: boolean): Promise<Envelope> {
+    const s = await appState();
+    if (!s.ok) return failed(op, "HELPER_UNAVAILABLE", s.error.message, { hint: "run gb_system doctor" });
+    if (!s.value.running) return failed(op, "GB_NOT_RUNNING", "GarageBand is not running");
+    const document = documentOf(mainTitle(s.value));
+    if (!document) return failed(op, "NO_PROJECT_OPEN", "no GarageBand project is open", { hint: "open one with gb_project open_midi" });
+    if (occupied(join(deps.workspaceDir, DONORS, filename))) {
+      return failed(op, "FILE_EXISTS", `${DONORS}/${filename} already exists; nothing saved`, { hint: "choose a new filename" });
+    }
+    if (dryRun) return verified(op, { dry_run: true, document, path: join(deps.workspaceDir, DONORS, filename), plan: ["save a copy of the open project (AppleScript save … in)", "read the copy back: its tracks"] });
+    const dir = workspaceOutputDir(deps.workspaceDir, DONORS, true);
+    if (!dir.ok) return failed(op, dir.error.code, dir.error.message);
+    const path = join(dir.value, filename);
+    if (occupied(path)) return failed(op, "FILE_EXISTS", `${DONORS}/${filename} already exists; nothing saved`);
+    return mutationGate.run(op, async () => {
+      const saved = await deps.scripts.backupDocument(document, path);
+      if (!saved.ok) return failed(op, "WRITE_FAILED", `GarageBand did not save the copy: ${saved.error}`, { write_attempted: true, safe_to_retry: false });
+      rmSync(join(path, "Alternatives", "000", "Autosave"), { recursive: true, force: true }); // a donor copy never asks "Saved / Auto-saved"
+      let bytes: Uint8Array;
+      try {
+        bytes = new Uint8Array(readFileSync(join(path, "Alternatives", "000", "ProjectData")));
+      } catch {
+        return failed(op, "WRITE_FAILED", "the copy has no ProjectData", { write_attempted: true, safe_to_retry: false });
+      }
+      const pd = parseProjectData(bytes);
+      if (!pd.ok) return failed(op, "WRITE_FAILED", `the copy cannot be read: ${pd.error.message}`, { write_attempted: true, safe_to_retry: false });
+      return verified(op, { document, path, tracks: visibleTracks(pd.value).map(({ number, kind, name }) => ({ number, kind, name: cleanText(name) })) });
+    });
+  }
+
   return async function gbProject(input: unknown): Promise<Envelope> {
     const parsed = GbProjectInput.safeParse(input);
     if (!parsed.success) {
@@ -360,6 +401,7 @@ export function createGbProject(deps: GbProjectDeps) {
     }
     const op = `gb_project.${parsed.data.command}`;
     if (parsed.data.command === "status") return status(op, parsed.data.fields);
+    if (parsed.data.command === "save_copy") return saveCopy(op, parsed.data.filename, parsed.data.dry_run === true);
     const { command, path, dry_run } = parsed.data;
     const open = command === "open_band" ? openBand : openMidi;
     if (dry_run === true) return open(op, path, true);

@@ -328,3 +328,71 @@ describe("GarageBand is in front ONLY around each click (keystroke window)", () 
     expect(log.filter((c) => unfocused.includes(c.op) && c.front).map((c) => c.op)).toEqual([]);
   });
 });
+
+/**
+ * Track ▸ New Tracks… as observed live (M11b): an AXSheet "New Track" with four AXRadioButtons described
+ * "MIDI, Software Instrument" / "Drummer, Rock" / "Mic or Line, Audio" / "Guitar or Bass, Audio", and Create / Cancel.
+ * Create adds the track ("Audio N") and closes the sheet; GarageBand can be too busy to answer the press in time.
+ */
+function installNewTracks(opts: { audioSelected?: boolean } = {}) {
+  const main = fake.app.windows[0]!;
+  const header = findAll(main, { role: "AXGroup", description: "Tracks header" }).matches[0]!.node;
+  const item = findAll(fake.app.menubar, { role: "AXMenuItem", title: "New Tracks…", ancestors: [{ title: "Track" }] }).matches[0]!.node;
+  let made = 0;
+  const addTrack = () => {
+    made += 1;
+    const n = (header.children ?? []).filter((c) => c.role === "AXLayoutItem").length + 1;
+    header.children = [...(header.children ?? []), { role: "AXLayoutItem", desc: `Track ${n} “Audio ${made}”`, children: [] }];
+  };
+  const state = { sheet: undefined as TreeNode | undefined, created: () => made };
+  fake.on(item, { onPress: () => {
+    const radio = (desc: string, value: number): TreeNode => ({ role: "AXRadioButton", desc, value, actions: ["AXPress"] });
+    const kinds = [radio("MIDI, Software Instrument", 0), radio("Drummer, Rock", 0), radio("Mic or Line, Audio", opts.audioSelected ? 1 : 0), radio("Guitar or Bass, Audio", 0)];
+    for (const k of kinds) fake.on(k, { onPress: () => { for (const o of kinds) o.value = o === k ? 1 : 0; } });
+    const create: TreeNode = { role: "AXButton", title: "Create", actions: ["AXPress"] };
+    const cancel: TreeNode = { role: "AXButton", title: "Cancel", actions: ["AXPress"] };
+    const sheet: TreeNode = { role: "AXSheet", desc: "New Track", children: [{ role: "AXGroup", children: [{ role: "AXRadioGroup", children: kinds }, create, cancel] }] };
+    const close = () => { main.children = (main.children ?? []).filter((c) => c !== sheet); };
+    fake.on(create, { onPress: () => { if (kinds[2]!.value === 1) addTrack(); close(); } });
+    fake.on(cancel, { onPress: close });
+    main.children = [...(main.children ?? []), sheet];
+    state.sheet = sheet;
+  } });
+  return { state, addTrack, main };
+}
+
+describe("gb_tracks add_audio (M11b)", () => {
+  it("dry_run plans without touching GarageBand", async () => {
+    installNewTracks();
+    const r = await createGbTracks(deps())({ command: "add_audio", count: 2, dry_run: true });
+    expect(r).toMatchObject({ status: "verified", data: { dry_run: true } });
+    expect(mutated()).toBe(false);
+  });
+
+  it("adds audio tracks through Track ▸ New Tracks… → “Mic or Line, Audio” → Create, each proven in the track list", async () => {
+    const { state } = installNewTracks();
+    const r = await createGbTracks(deps())({ command: "add_audio", count: 2 });
+    expect(r.status).toBe("verified");
+    expect(state.created()).toBe(2);
+    expect((r as { data: { added: { patch: string }[] } }).data.added.map((t) => t.patch)).toEqual(["Audio 1", "Audio 2"]);
+    expect(fake.calls.filter((c) => c.op === "ax.menu").map((c) => (c.params as { path: string[] }).path)).toEqual([["Track", "New Tracks…"], ["Track", "New Tracks…"]]);
+  });
+
+  it("GarageBand too busy to answer the Create press: the track list decides, and the result says so", async () => {
+    const { addTrack, main } = installNewTracks({ audioSelected: true });
+    fake.failNext("ax.press", { code: "DEADLINE_EXCEEDED", message: "press failed (AXError -25204)" });
+    fake.schedule(200, () => { addTrack(); main.children = (main.children ?? []).filter((c) => c.role !== "AXSheet"); });
+    const r = await createGbTracks(deps({ sleep: async (ms: number) => fake.sleep(ms) }))({ command: "add_audio", count: 1 });
+    expect(r.status).toBe("verified");
+    expect((r as { warnings?: string[] }).warnings?.join(" ")).toContain("busy");
+  });
+
+  it("no new track after Create: the sheet is cancelled and nothing is claimed", async () => {
+    const { state, main } = installNewTracks({ audioSelected: true });
+    fake.failNext("ax.press", { code: "TARGET_NOT_FOUND", message: "Create not found" });
+    const r = await createGbTracks(deps({ sleep: async (ms: number) => fake.sleep(ms) }))({ command: "add_audio", count: 1 });
+    expect(r.status).not.toBe("verified");
+    expect(state.created()).toBe(0);
+    expect((main.children ?? []).some((c) => c.role === "AXSheet")).toBe(false);
+  });
+});
