@@ -60,9 +60,15 @@ export function createAppleScripts(timeoutMs = 30_000): ProjectScripts {
   };
 }
 
-/** `open -b com.apple.garageband10 <file>` — argv only. */
+/**
+ * `open -b com.apple.garageband10 <file>` — argv only. Not `-g` (open in the background): tried live, GarageBand
+ * still comes forward for its own alerts (e.g. "Avoid feedback" on audio tracks), and the save-prompt path could not be
+ * verified in the background — the open stays in the foreground, where every path is proven.
+ */
+export const openArgs = (path: string): string[] => ["-b", "com.apple.garageband10", path];
+
 export function openInGarageBand(path: string): Promise<Result<void, string>> {
   return new Promise((resolve) => {
-    execFile("open", ["-b", "com.apple.garageband10", path], { timeout: 30_000 }, (error) => resolve(error ? err(error.message) : ok(undefined)));
+    execFile("open", openArgs(path), { timeout: 30_000 }, (error) => resolve(error ? err(error.message) : ok(undefined)));
   });
 }

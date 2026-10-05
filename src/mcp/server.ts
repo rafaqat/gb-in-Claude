@@ -30,7 +30,7 @@ import { guarded } from "./tool-result.js";
 import type { Result } from "../result.js";
 import { createGbBand, GB_BAND_COMMANDS, GbBandInput, BandAudioItem, BandMidiItem } from "./gb-band.js";
 
-export const SERVER_VERSION = "0.7.0";
+export const SERVER_VERSION = "0.7.1";
 
 const json = (uri: string, value: unknown) => ({ contents: [{ uri, mimeType: "application/json", text: JSON.stringify(value) }] });
 

@@ -334,15 +334,27 @@ describe("GarageBand is in front ONLY around each click (keystroke window)", () 
  * "MIDI, Software Instrument" / "Drummer, Rock" / "Mic or Line, Audio" / "Guitar or Bass, Audio", and Create / Cancel.
  * Create adds the track ("Audio N") and closes the sheet; GarageBand can be too busy to answer the press in time.
  */
-function installNewTracks(opts: { audioSelected?: boolean } = {}) {
+function installNewTracks(opts: { audioSelected?: boolean; belowSelected?: boolean; playing?: boolean; playAfter?: number } = {}) {
   const main = fake.app.windows[0]!;
+  const play = findAll(main, { role: "AXCheckBox", title: "Play" }).matches[0]!.node;
+  play.value = opts.playing ? 1 : 0; // the base fixture is playing; a project just opened is stopped
   const header = findAll(main, { role: "AXGroup", description: "Tracks header" }).matches[0]!.node;
   const item = findAll(fake.app.menubar, { role: "AXMenuItem", title: "New Tracks…", ancestors: [{ title: "Track" }] }).matches[0]!.node;
   let made = 0;
   const addTrack = () => {
     made += 1;
-    const n = (header.children ?? []).filter((c) => c.role === "AXLayoutItem").length + 1;
-    header.children = [...(header.children ?? []), { role: "AXLayoutItem", desc: `Track ${n} “Audio ${made}”`, children: [] }];
+    if (opts.playAfter === made) play.value = 1; // playback started mid-way (gb-mcp never presses Play)
+    const items = (header.children ?? []).filter((c) => c.role === "AXLayoutItem");
+    if (!opts.belowSelected) {
+      header.children = [...(header.children ?? []), { role: "AXLayoutItem", desc: `Track ${items.length + 1} “Audio ${made}”`, children: [] }];
+      return;
+    }
+    // GarageBand (live): the new track goes below the selected one, is selected, and the tracks under it are renumbered
+    const at = items.findIndex((c) => c.selected === true) + 1;
+    for (const c of items) c.selected = false;
+    items.splice(at, 0, { role: "AXLayoutItem", desc: `Track 0 “Audio ${made}”`, selected: true, children: [] });
+    items.forEach((c, i) => { c.desc = String(c.desc).replace(/^Track \d+/, `Track ${i + 1}`); });
+    header.children = [...(header.children ?? []).filter((c) => c.role !== "AXLayoutItem"), ...items];
   };
   const state = { sheet: undefined as TreeNode | undefined, created: () => made };
   fake.on(item, { onPress: () => {
@@ -358,7 +370,7 @@ function installNewTracks(opts: { audioSelected?: boolean } = {}) {
     main.children = [...(main.children ?? []), sheet];
     state.sheet = sheet;
   } });
-  return { state, addTrack, main };
+  return { state, addTrack, main, play, item };
 }
 
 describe("gb_tracks add_audio (M11b)", () => {
@@ -376,6 +388,61 @@ describe("gb_tracks add_audio (M11b)", () => {
     expect(state.created()).toBe(2);
     expect((r as { data: { added: { patch: string }[] } }).data.added.map((t) => t.patch)).toEqual(["Audio 1", "Audio 2"]);
     expect(fake.calls.filter((c) => c.op === "ax.menu").map((c) => (c.params as { path: string[] }).path)).toEqual([["Track", "New Tracks…"], ["Track", "New Tracks…"]]);
+  });
+
+  it("refuses while playback runs (GarageBand disables New Tracks… then) and leaves the playback alone — it may be the user's", async () => {
+    const { play } = installNewTracks({ playing: true });
+    const r = await createGbTracks(deps())({ command: "add_audio", count: 1 });
+    expect(r).toMatchObject({ status: "failed", error: "NOT_SUPPORTED", write_attempted: false });
+    expect((r as { hint: string }).hint).toMatch(/gb_transport stop/);
+    expect(mutated()).toBe(false);
+    expect(play.value).toBe(1);
+  });
+
+  it("playback that starts mid-way stops the adding: the tracks so far are named, the playback is left alone", async () => {
+    const { state, play } = installNewTracks({ playAfter: 1 });
+    const r = await createGbTracks(deps())({ command: "add_audio", count: 2 });
+    expect(r).toMatchObject({ status: "failed", error: "NOT_SUPPORTED", context: { added: [{ patch: "Audio 1" }] } });
+    expect((r as { message: string }).message).toMatch(/started.*1 of 2/);
+    expect(state.created()).toBe(1);
+    expect(play.value).toBe(1);
+  });
+
+  /** in a background GarageBand the Track menu can read disabled (stale) until a real click brings it forward. */
+  const staleMenu = (main: TreeNode, item: TreeNode, refreshes = true) => {
+    item.enabled = false;
+    const group = findAll(main, { role: "AXGroup", description: "Tracks header" }).matches[0]!.node;
+    const headers = (group.children ?? []).filter((c) => c.role === "AXLayoutItem");
+    for (const h of headers) fake.on(h, { onClick: (n) => { for (const o of headers) o.selected = o === n; if (refreshes) item.enabled = true; } });
+    return headers;
+  };
+
+  it("a Track menu that reads disabled while nothing plays is refreshed by one click on the selected track's header", async () => {
+    const { state, main, item } = installNewTracks();
+    const headers = staleMenu(main, item);
+    const selected = headers.find((h) => h.selected === true);
+    const r = await createGbTracks(deps())({ command: "add_audio", count: 1 });
+    expect(r.status).toBe("verified");
+    expect(state.created()).toBe(1);
+    expect(fake.clicks).toEqual([selected]);
+    expect((r as { warnings?: string[] }).warnings?.join(" ")).toMatch(/disabled.*header/i);
+  });
+
+  it("a Track menu that stays disabled after that click: one click only, nothing created, a hint to look", async () => {
+    const { state, main, item } = installNewTracks();
+    staleMenu(main, item, false);
+    const r = await createGbTracks(deps())({ command: "add_audio", count: 2 });
+    expect(r).toMatchObject({ status: "failed", error: "TARGET_DISABLED" });
+    expect((r as { hint?: string }).hint).toMatch(/ui_snapshot panel=menubar/);
+    expect(fake.clicks).toHaveLength(1);
+    expect(state.created()).toBe(0);
+  });
+
+  it("names only the new tracks, also when GarageBand inserts them above others and renumbers those", async () => {
+    installNewTracks({ belowSelected: true });
+    const r = await createGbTracks(deps())({ command: "add_audio", count: 2 });
+    expect(r.status).toBe("verified");
+    expect((r as { data: { added: { patch: string }[] } }).data.added.map((t) => t.patch)).toEqual(["Audio 1", "Audio 2"]);
   });
 
   it("GarageBand too busy to answer the Create press: the track list decides, and the result says so", async () => {

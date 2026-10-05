@@ -37,6 +37,10 @@ const CREATE: Target = { root: MAIN, selector: { role: "AXButton", title: "Creat
 const CANCEL: Target = { root: MAIN, selector: { role: "AXButton", title: "Cancel" }, kind: "button" };
 /** How long a track may take to appear after Create when GarageBand is busy (it answered −25204 live, then made it). */
 const NEW_TRACK_WAIT_MS = 6_000;
+const PLAY = GB_10_4_14.controls["transport.play"]!;
+const playbackRunning = (op: string) => failed(op, "NOT_SUPPORTED", "playback is running: GarageBand disables Track ▸ New Tracks… while it plays; nothing pressed", {
+  hint: "stop it with gb_transport stop (it may be the user's playback), then retry",
+});
 /** Its own interval (not pollMs): counted in pollMs, a 1 ms pollMs made 6,000 track-list reads (as waitEnabled in export.ts). */
 const NEW_TRACK_POLL_MS = 250;
 
@@ -324,9 +328,17 @@ export function createGbTracks(deps: GbTracksDeps) {
    * → Create; each is proven by the track list growing by one. A press GarageBand is too busy to answer is judged by
    * the track list, never by the failed step; a sheet left open is cancelled.
    */
+  /** Play's state: true/false, or null when it cannot be read. */
+  async function playing(op: string): Promise<boolean | null> {
+    const r = await core.read(op, PLAY);
+    const v = r.status === "verified" ? (r.data as { value: unknown }).value : null;
+    return v === 1 ? true : v === 0 ? false : null;
+  }
+
   async function addAudio(op: string, count: number, dryRun: boolean): Promise<Envelope> {
     const ready = await ensureReady(op, session);
     if (!ready.ok) return ready.error;
+    if ((await playing(op)) === true) return playbackRunning(op);
     const before = await readTracks(op, deps.helper);
     if (!before.ok) return before.error;
     if (dryRun) {
@@ -337,6 +349,7 @@ export function createGbTracks(deps: GbTracksDeps) {
     return mutationGate.run(op, async () => {
       const added: ReturnType<typeof publicTrack>[] = [];
       const warnings: string[] = [];
+      const borrows: Envelope[] = []; // focus borrowed for a header click (at most one per call)
       let known = before.value;
       const sheetOpen = async () => {
         const w = await core.wait({ root: MAIN, selector: NEW_TRACK_SHEET, condition: "present", timeoutMs: 300 });
@@ -344,8 +357,31 @@ export function createGbTracks(deps: GbTracksDeps) {
       };
       const closeSheet = async () => { if (await sheetOpen()) await core.press(op, CANCEL); };
       for (let i = 0; i < count; i++) {
-        const opened = await core.menu(op, NEW_TRACKS, { postCondition: { root: MAIN, selector: NEW_TRACK_SHEET, condition: "present", timeoutMs: 5_000 } });
-        if (opened.status !== "verified") { await closeSheet(); return withAdded(opened, added); }
+        if (i > 0 && (await playing(op)) === true) {
+          return withAdded(failed(op, "NOT_SUPPORTED",
+            `playback started while add_audio ran — gb-mcp never presses Play (a key typed into GarageBand?); ${i} of ${count} tracks added, nothing more pressed`,
+            { write_attempted: true, safe_to_retry: false, hint: `stop it with gb_transport stop, then add_audio {count: ${count - i}}` }), added);
+        }
+        const openSheet = () => core.menu(op, NEW_TRACKS, { postCondition: { root: MAIN, selector: NEW_TRACK_SHEET, condition: "present", timeoutMs: 5_000 } });
+        let opened = await openSheet();
+        if (opened.status === "failed" && opened.error === "TARGET_DISABLED" && borrows.length === 0) {
+          // a GarageBand in the background can keep a stale, disabled Track menu (all of it). One real
+          // click on a track header brings it forward and refreshes the menus; the selected track keeps the selection.
+          if ((await playing(op)) === true) return withAdded(playbackRunning(op), added);
+          const at = known.find((t) => t.selected) ?? known[known.length - 1];
+          if (at) {
+            const clicked = await core.withFocus(op, () => core.click(op, headerTarget(at), { at: HEADER_STRIP, expectSelected: true }));
+            borrows.push(clicked);
+            if (clicked.status === "verified") {
+              warnings.push(`Track ▸ New Tracks… read disabled (a stale menu in a background GarageBand); a click on track ${at.number}'s header refreshed it`);
+              opened = await openSheet();
+            }
+          }
+        }
+        if (opened.status === "failed" && opened.error === "TARGET_DISABLED" && borrows.length > 0) {
+          opened = { ...opened, hint: "Track ▸ New Tracks… stays disabled after a click on a track header: look at GarageBand (gb_system ui_snapshot panel=menubar) — a sheet, a recording or an edit field can hold it" };
+        }
+        if (opened.status !== "verified") { await closeSheet(); return withFocusNote(withAdded(opened, added), ...borrows); }
         const chosenAlready = await core.wait({ root: MAIN, selector: AUDIO_KIND.selector, condition: "value_equals", value: 1, timeoutMs: 200 });
         if (!(chosenAlready.ok && chosenAlready.value.satisfied)) {
           const chosen = await core.press(op, AUDIO_KIND);
@@ -365,12 +401,28 @@ export function createGbTracks(deps: GbTracksDeps) {
             { write_attempted: true, safe_to_retry: false, hint: "check gb_tracks list before retrying" }), added);
         }
         if (created.status !== "verified") warnings.push(`GarageBand was busy and answered Create late (track ${i + 1}); the track list proves the new track`);
-        const fresh = now.value.filter((t) => !known.some((k) => k.description === t.description));
-        added.push(...fresh.map(publicTrack));
+        added.push(...newTracks(known, now.value).map(publicTrack));
         known = now.value;
       }
-      return verified(op, { added, tracks: known.map(publicTrack) }, warnings);
+      return withFocusNote(verified(op, { added, tracks: known.map(publicTrack) }, warnings), ...borrows);
     });
+  }
+
+  /**
+   * The tracks in `now` that were not in `before`. A header's description carries its number ("Track 2 “Audio 2”"), and
+   * a track created above others renumbers them, so tracks are counted by patch name instead; among
+   * equal names the selected one wins (GarageBand selects the track it creates), else the lowest in the list.
+   */
+  function newTracks(before: readonly Track[], now: readonly Track[]): Track[] {
+    const had = new Map<string, number>();
+    for (const t of before) had.set(t.patch, (had.get(t.patch) ?? 0) + 1);
+    const out: Track[] = [];
+    for (const patch of new Set(now.map((t) => t.patch))) {
+      const same = now.filter((t) => t.patch === patch);
+      const extra = same.length - (had.get(patch) ?? 0);
+      if (extra > 0) out.push(...[...same].sort((a, b) => Number(b.selected) - Number(a.selected) || b.number - a.number).slice(0, extra));
+    }
+    return out.sort((a, b) => a.number - b.number);
   }
 
   /** A failure after some tracks were added still names them: they exist in GarageBand. */

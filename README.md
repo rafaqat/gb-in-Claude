@@ -184,8 +184,8 @@ More sample prompts, by task: [examples/prompts.md](examples/prompts.md).
 | `gb_generate` | start · status · list | no — sung covers and music from AI engines as background jobs (needs an engine) |
 | `gb_sound` | patches · plugins · loops · samples · palette | no — read-only catalog of what this Mac can play |
 | `gb_system` | doctor · describe · ui_snapshot | read-only |
-| `gb_project` | status · open_midi · open_band · save_copy | opens a song (unsaved projects are backed up first); save_copy writes a donor copy |
-| `gb_tracks` | list · select · mute · solo · set_instrument · add_audio | yes |
+| `gb_project` | status · open_midi · open_band · save_copy | opens a song (unsaved projects are backed up first) and verifies the NEW document once its window shows the tempo and the tracks; save_copy writes a donor copy |
+| `gb_tracks` | list · select · mute · solo · set_instrument · add_audio | yes — add_audio refuses while playback runs (GarageBand disables New Tracks… then) and names only the new tracks |
 | `gb_transport` | state · play · stop · rewind · set_tempo · set_metronome · set_count_in | yes |
 | `gb_mix` | get · set_volume (raw or dB) · set_pan | yes |
 | `gb_export` | song (WAVE) | yes — exports into the workspace, never overwrites; switches the metronome off for the export (GarageBand would render its click into the file) and back on after it |

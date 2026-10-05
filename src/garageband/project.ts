@@ -87,6 +87,9 @@ const MAIN: RootSpec = { kind: "main_window" };
 const DIALOG: RootSpec = { kind: "dialog" };
 const REGIONS: Selector = { role: "AXLayoutItem", ancestors: [{ role: "AXGroup", description: "Tracks contents" }] };
 const NOT_REGIONS = /^(cycle region|Note at )/;
+/** How long open_* waits for the window to show the tempo and the tracks after it is titled, and how often it reads. */
+const SETTLE_MS = 5_000;
+const SETTLE_POLL_MS = 250;
 const realSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const safeName = (s: string) => s.replace(/[^A-Za-z0-9 _.-]/g, "_").slice(0, 60);
 const stamp = () => new Date().toISOString().replace(/[-:]/g, "").replace(/\..+$/, "").replace("T", "-");
@@ -121,6 +124,19 @@ export function createGbProject(deps: GbProjectDeps) {
       tracks: read.ok ? read.value.map((t) => ({ number: t.number, name: t.region, patch: t.patch })) : [],
       tempo: tempo.status === "verified" ? ((tempo.data as { value: unknown }).value as number | null) : null,
     };
+  }
+
+  /**
+   * right after an open, the window can carry its title while the tempo and the track headers still
+   * read empty. Read until both show — on its own interval, not pollMs — for at most SETTLE_MS.
+   */
+  async function readProjectSettled() {
+    let p = await readProject();
+    for (let waited = 0; (p.tempo === null || p.tracks.length === 0) && waited < SETTLE_MS; waited += SETTLE_POLL_MS) {
+      await sleep(SETTLE_POLL_MS);
+      p = await readProject();
+    }
+    return p;
   }
 
   async function status(op: string, fields?: readonly string[]): Promise<Envelope> {
@@ -259,12 +275,15 @@ export function createGbProject(deps: GbProjectDeps) {
       hint: "gb_system status checks GarageBand and its permissions", context: { reason: cleanText(opened.error) },
     });
     let titleWaits = 0; // the regions can be ready a moment before GarageBand titles the window
+    // a project that was already open can show the same region names — only a new document counts
+    const before = new Set(docs.value.map((d) => d.name));
     const done = await awaitOpen(op, backedUp, async () => {
       const s = await appState();
       const regions = (await find(MAIN, REGIONS)).map((n) => n.desc ?? "").filter((x) => x && !NOT_REGIONS.test(x));
       if (!s.ok || regions.length !== expected.length || !regions.every((r, k) => r === expected[k])) return null;
+      if (before.has(documentOf(mainTitle(s.value)))) return null;
       if (documentOf(mainTitle(s.value)) === "" && titleWaits++ < 5) return null;
-      const p = await readProject();
+      const p = await readProjectSettled();
       const data = { document: documentOf(mainTitle(s.value)) || null, path: file.value, tempo: p.tempo, tracks: p.tracks, backups };
       if (summary.value.tempoBpm !== null && !sameTempo(p.tempo, summary.value.tempoBpm)) {
         return uncertain(op, "readback_timeout", { write_attempted: true, safe_to_retry: false, hint: `tempo reads ${p.tempo}, the file says ${summary.value.tempoBpm}`, data });
@@ -345,8 +364,11 @@ export function createGbProject(deps: GbProjectDeps) {
           hint: "the .band format guess is wrong for this donor or edit: compare gb_band inspect of the file and of the readback copy",
         });
       }
-      const p = await readProject();
+      const p = await readProjectSettled();
       const data = { document: doc.name, path: band.value, readback, ...expected.value, tracks: p.tracks, backups };
+      if (p.tempo === null && expected.value.tempo !== null) { // unknown, not different: GarageBand's own copy holds it
+        return verified(op, data, [`the tempo display could not be read; GarageBand's own copy holds ${expected.value.tempo} BPM`]);
+      }
       if (expected.value.tempo !== null && !sameTempo(p.tempo, expected.value.tempo)) {
         return uncertain(op, "readback_timeout", { write_attempted: true, safe_to_retry: false, hint: `tempo reads ${p.tempo}, the file says ${expected.value.tempo}`, data });
       }

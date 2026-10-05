@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { describe, it, expect } from "vitest";
-import { parseDocumentList, LIST_DOCUMENTS, BACKUP_DOCUMENT, osascriptArgv } from "./applescript.js";
+import { parseDocumentList, LIST_DOCUMENTS, BACKUP_DOCUMENT, osascriptArgv, openArgs } from "./applescript.js";
 import { execFileSync } from "node:child_process";
 
 describe("parseDocumentList", () => {
@@ -33,5 +33,11 @@ describe("osascriptArgv: document names are data, never options", () => {
   it.each(["-e", "-x.band", "--"])("passes %j through to the script unchanged", (name) => {
     const argv = osascriptArgv(["on run argv", "return item 1 of argv & \"|\" & item 2 of argv", "end run"], [name, "/tmp/p"]);
     expect(execFileSync("osascript", argv).toString().trim()).toBe(`${name}|/tmp/p`);
+  });
+});
+
+describe("openArgs: the file path is the last argument, after the bundle id", () => {
+  it("opens in the foreground (-g was tried live and not kept: GarageBand comes forward for its alerts anyway)", () => {
+    expect(openArgs("/w/song.mid")).toEqual(["-b", "com.apple.garageband10", "/w/song.mid"]);
   });
 });

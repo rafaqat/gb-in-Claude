@@ -294,6 +294,35 @@ describe("gb_project open_midi: the window title lags the regions (document came
   });
 });
 
+describe("gb_project open_midi: the old project can look like the new one (same region names)", () => {
+  it("waits for a NEW document instead of verifying the project that was already open", async () => {
+    docs = [{ name: "Untitled 8", modified: false }];
+    fake.app.windows = [projectWindow("Untitled 8", 126)]; // same tracks and tempo as ascent-v2.mid
+    const slow = async (path: string) => {
+      opened.push(path);
+      fake.schedule(fake.clockMs + 1_000, () => { fake.app.windows = [projectWindow("Untitled 9", 126)]; });
+      return OPENED;
+    };
+    const r = await createGbProject(deps({ openFile: slow, sleep: async (ms: number) => fake.sleep(ms), timeoutMs: 5_000 }))(
+      { command: "open_midi", path: "ascent-v2.mid" });
+    expect(r).toMatchObject({ status: "verified", data: { document: "Untitled 9" } });
+  });
+});
+
+describe("gb_project open_midi: the tempo shows after the regions", () => {
+  it("waits for the tempo display instead of reporting 'tempo reads null'", async () => {
+    const late = async (path: string) => {
+      const r = await simulateOpen("Untitled 9", 126)(path);
+      const tempo = fake.app.windows[0]!.children![0]!.children![0]!;
+      tempo.value = undefined;
+      fake.schedule(fake.clockMs + 1_000, () => { tempo.value = 126; });
+      return r;
+    };
+    const r = await createGbProject(deps({ openFile: late, sleep: async (ms: number) => fake.sleep(ms) }))({ command: "open_midi", path: "ascent-v2.mid" });
+    expect(r).toMatchObject({ status: "verified", data: { tempo: 126 } });
+  });
+});
+
 describe("hallucinated keys are refused by the handler too", () => {
   it("open_midi with `dryRun` (camelCase) is INPUT_INVALID — it must never fall through to a real open", async () => {
     const r = await createGbProject(deps())({ command: "open_midi", path: "ascent-v2.mid", dryRun: true });
@@ -385,6 +414,39 @@ describe("gb_project open_band", () => {
     expect(readback.startsWith(join(ws, "bands", "readback", "av-"))).toBe(true);
     expect(existsSync(join(readback, "Alternatives", "000", "ProjectData"))).toBe(true);
     expect(opened).toEqual([band]);
+  });
+
+  /** The window is titled at once, but its tempo and track headers read empty until `afterMs`. */
+  const drawnLate = (afterMs: number) => async (path: string) => {
+    const r = await openBand()(path);
+    const w = fake.app.windows[0]!;
+    const tempo = w.children![0]!.children![0]!;
+    const header = w.children![1]!;
+    const headers = header.children ?? [];
+    tempo.value = undefined;
+    header.children = [];
+    fake.schedule(fake.clockMs + afterMs, () => { tempo.value = 120; header.children = headers; });
+    return r;
+  };
+
+  it("waits for the window to show the tempo and the tracks before it compares (live: empty for a moment after the open)", async () => {
+    const r = await createGbProject(deps({ openFile: drawnLate(1_500), scripts: resave(), sleep: async (ms: number) => fake.sleep(ms) }))(
+      { command: "open_band", path: "bands/av.band" });
+    expect(r).toMatchObject({ status: "verified", data: { tempo: 120 } });
+    expect((r as { data: { tracks: unknown[] } }).data.tracks).toHaveLength(4);
+  });
+
+  it("a tempo display that never reads: verified on GarageBand's own copy, with a warning (unknown is not a mismatch)", async () => {
+    const r = await createGbProject(deps({ openFile: drawnLate(60_000), scripts: resave(), sleep: async (ms: number) => fake.sleep(ms) }))(
+      { command: "open_band", path: "bands/av.band" });
+    expect(r).toMatchObject({ status: "verified", data: { tempo: 120 } });
+    expect((r as { warnings?: string[] }).warnings?.join(" ")).toMatch(/tempo.*could not be read.*copy/i);
+  });
+
+  it("a tempo display that shows ANOTHER tempo stays uncertain (a real difference, not a slow window)", async () => {
+    const otherTempo = async (path: string) => { const r = await openBand()(path); fake.app.windows[0]!.children![0]!.children![0]!.value = 100; return r; };
+    const r = await createGbProject(deps({ openFile: otherTempo, scripts: resave() }))({ command: "open_band", path: "bands/av.band" });
+    expect(r).toMatchObject({ status: "uncertain", hint: "tempo reads 100, the file says 120" });
   });
 
   it("fails with READBACK_MISMATCH when GarageBand's own copy differs from the file — the format guess was wrong", async () => {
