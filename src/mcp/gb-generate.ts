@@ -212,6 +212,11 @@ export function createGbGenerate(deps: GbGenerateDeps) {
     }
     const out = join(deps.workspaceDir, GEN_DIR, cmd.filename);
     if (occupied(out)) return failed(op, "FILE_EXISTS", `${GEN_DIR}/${cmd.filename} already exists; nothing written`, { hint: "choose a new filename" });
+    // MuLaCover also writes its MIDI inputs into a new folder next to the output; the engine refuses a taken name too
+    const inputsDir = `${cmd.filename.slice(0, -".wav".length)}-inputs`;
+    if (cmd.engine === "mulacover" && occupied(join(deps.workspaceDir, GEN_DIR, inputsDir))) {
+      return failed(op, "FILE_EXISTS", `${GEN_DIR}/${inputsDir} already exists; nothing written`, { hint: "choose a new filename" });
+    }
     const eta = estimate(cmd, srcSeconds);
     if (cmd.dry_run) return verified(op, { dry_run: true, engine: cmd.engine, task: cmd.task, out, eta_s: eta, inputs: { ...inputs, out } });
     if (running) {

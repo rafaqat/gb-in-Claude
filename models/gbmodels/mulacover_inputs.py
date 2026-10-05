@@ -7,7 +7,8 @@ sixteenth-note grid with the first tempo only (it takes no tempo from MIDI and c
   sound (a held pad counts in every bar it covers), the lowest note's first, at most 4; MuLaCover's own transcriber
   also gives block chords, and an arpeggio is not one;
 - drums: the named tracks on channel 10.
-The bar range starts at 0 in the output. Nothing is overwritten. Runs in MuLaCover's venv and in models/.venv (mido)."""
+The bar range starts at 0 in the output. The inputs go into a new folder, never through a link; nothing is
+overwritten. Runs in MuLaCover's venv and in models/.venv (mido)."""
 import math
 import os
 from collections import Counter, defaultdict
@@ -62,7 +63,9 @@ def _write(path: str, ppq: int, tempo: int, numerator: int, denominator: int, no
         msgs.append(mido.Message("note_on" if is_on else "note_off", note=p, velocity=90 if is_on else 0, channel=channel, time=at - t))
         t = at
     mid.tracks.append(mido.MidiTrack(msgs))
-    mid.save(path)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644)  # a new file, never through a link
+    with os.fdopen(fd, "wb") as f:
+        mid.save(file=f)
 
 
 def _bar_chords(notes, bars: int, bar_ticks: int):
@@ -99,10 +102,10 @@ def build(song_mid: str, out_dir: str, melody: list[str], chords: list[str], dru
     end = start + bars * bar_ticks
     targets = {"melody": os.path.join(out_dir, "melody.mid"), "chord": os.path.join(out_dir, "chord.mid"),
                "drums": os.path.join(out_dir, "drums.mid") if drums else None}
-    taken = [p for p in targets.values() if p and os.path.lexists(p)]
-    if taken:
-        raise FileExistsError(f"already there: {', '.join(os.path.basename(p) for p in taken)}; nothing written")
-    os.makedirs(out_dir, exist_ok=True)
+    try:  # a new folder: anything at that name — a folder, a file, a link (dangling or not) — is refused
+        os.mkdir(out_dir)
+    except FileExistsError:
+        raise FileExistsError(f"{os.path.basename(out_dir)} already exists; nothing written") from None
     _write(targets["melody"], src.ticks_per_beat, tempo, num, den, _notes(melody_tracks, start, end), 0)
     _write(targets["chord"], src.ticks_per_beat, tempo, num, den, _bar_chords(_notes(chord_tracks, start, end), bars, bar_ticks), 0)
     if drums:

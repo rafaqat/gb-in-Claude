@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mkdtempSync, writeFileSync, mkdirSync, realpathSync, readdirSync } from "node:fs";
+import { mkdtempSync, writeFileSync, mkdirSync, realpathSync, readdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createGbGenerate } from "./gb-generate.js";
@@ -80,6 +80,17 @@ describe("gb_generate start: checks before anything runs", () => {
     mkdirSync(join(ws, "gen"));
     writeFileSync(join(ws, "gen", "cover.wav"), "x");
     expect(await make()(ACE_COVER)).toMatchObject({ status: "failed", error: "FILE_EXISTS" });
+  });
+});
+
+describe("gb_generate never writes outside the workspace", () => {
+  it("a MuLaCover job whose inputs folder name is taken (here a link out of the workspace) is FILE_EXISTS before it runs", async () => {
+    mkdirSync(join(ws, "gen"));
+    symlinkSync(mkdtempSync(join(tmpdir(), "outside-")), join(ws, "gen", "vocals-inputs"));
+    const r = await make()(MULA);
+    expect(r).toMatchObject({ status: "failed", error: "FILE_EXISTS" });
+    expect((r as { message: string }).message).toContain("vocals-inputs");
+    expect(mula.calls).toHaveLength(0);
   });
 });
 

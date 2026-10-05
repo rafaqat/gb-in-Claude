@@ -108,5 +108,36 @@ class BuildsMuLaCoverInputs(unittest.TestCase):
             build(self.mid, out, melody=["Lead"], chords=["Pad"], bars=1)
 
 
+class NeverWritesThroughALink(unittest.TestCase):
+    """The inputs folder must be new: a link (dangling or not) or anything else at that name is refused, so the MIDI
+    files can never land outside the workspace."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.mid = os.path.join(self.dir, "song.mid")
+        song(self.mid)
+
+    def test_a_link_to_another_folder_is_refused_and_nothing_lands_there(self):
+        outside = tempfile.mkdtemp()
+        link = os.path.join(self.dir, "job-inputs")
+        os.symlink(outside, link)
+        with self.assertRaises(FileExistsError):
+            build(self.mid, link, melody=["Lead"], chords=["Pad"], bars=1)
+        self.assertEqual(os.listdir(outside), [])
+
+    def test_a_dangling_link_is_refused(self):
+        link = os.path.join(self.dir, "job-inputs")
+        os.symlink(os.path.join(tempfile.mkdtemp(), "not-yet"), link)
+        with self.assertRaises(FileExistsError):
+            build(self.mid, link, melody=["Lead"], chords=["Pad"], bars=1)
+        self.assertFalse(os.path.exists(os.readlink(link)))
+
+    def test_an_existing_folder_is_refused(self):
+        folder = os.path.join(self.dir, "job-inputs")
+        os.mkdir(folder)
+        with self.assertRaises(FileExistsError):
+            build(self.mid, folder, melody=["Lead"], chords=["Pad"], bars=1)
+
+
 if __name__ == "__main__":
     unittest.main()
