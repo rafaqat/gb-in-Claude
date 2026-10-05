@@ -84,6 +84,13 @@ describe("gb-mcp server", () => {
     expect(build.properties.audio.items.required).toEqual(expect.arrayContaining(["wav", "bar", "track"]));
   });
 
+  it("sends short instructions at session start: read the song format first; write vocals from ACE-Step's examples", () => {
+    const text = client.getInstructions() ?? "";
+    expect(text).toMatch(/gb:\/\/knowledge\/song-format/);
+    expect(text).toMatch(/gb_generate examples/);
+    expect(text.length).toBeLessThan(1500); // loaded in every session: keep it short
+  });
+
   it("lists the composition, project-file, analysis, sound-catalog and system tools", async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(["gb_analyze", "gb_band", "gb_generate", "gb_song", "gb_sound", "gb_stem", "gb_system"]); // M12b: gb_generate

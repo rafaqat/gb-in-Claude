@@ -54,6 +54,7 @@ const server = createServer({
   gmRenderer: createGmRenderer({ binary: resolve(packageRoot, "native/bin/gm-render"), timeoutMs: 300_000 }),
   ...(listener ? { listener } : {}),
   engines,
+  aceExamplesDir: resolve(engineDirs.ace_step, "examples", "text2music"),
 });
 const shutdown = () => {
   const exit = () => process.exit(0);

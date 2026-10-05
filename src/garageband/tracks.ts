@@ -37,6 +37,8 @@ const CREATE: Target = { root: MAIN, selector: { role: "AXButton", title: "Creat
 const CANCEL: Target = { root: MAIN, selector: { role: "AXButton", title: "Cancel" }, kind: "button" };
 /** How long a track may take to appear after Create when GarageBand is busy (it answered −25204 live, then made it). */
 const NEW_TRACK_WAIT_MS = 6_000;
+/** Its own interval (not pollMs): counted in pollMs, a 1 ms pollMs made 6,000 track-list reads (as waitEnabled in export.ts). */
+const NEW_TRACK_POLL_MS = 250;
 
 export type GbTracksDeps = Omit<SessionDeps, "sleep" | "pollMs"> & {
   helper: HelperPort;
@@ -352,8 +354,8 @@ export function createGbTracks(deps: GbTracksDeps) {
         const created = await core.press(op, CREATE);
         // the evidence decides: the list must grow by one, whatever the press answered
         let now = await readTracks(op, deps.helper);
-        for (let waited = 0; (!now.ok || now.value.length <= known.length) && waited < NEW_TRACK_WAIT_MS; waited += session.pollMs) {
-          await session.sleep(session.pollMs);
+        for (let waited = 0; (!now.ok || now.value.length <= known.length) && waited < NEW_TRACK_WAIT_MS; waited += NEW_TRACK_POLL_MS) {
+          await session.sleep(NEW_TRACK_POLL_MS);
           now = await readTracks(op, deps.helper);
         }
         if (!now.ok || now.value.length !== known.length + 1) {

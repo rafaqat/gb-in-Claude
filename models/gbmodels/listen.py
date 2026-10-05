@@ -20,9 +20,8 @@ def run(handle, inputs: dict) -> dict:
     """inputs: wav; optional bpm (the song's tempo: adds the grid check), key (adds the match), top (genres, default 3)."""
     beats, downbeats = handle["beats"]["model"](inputs["wav"])
     beats = [float(b) for b in beats]
-    ibi = np.diff(beats)
-    out = {"beats": {"count": len(beats), "downbeats": len(downbeats),
-                     "bpm": round(60.0 / float(np.median(ibi)), 2) if len(ibi) else None}}
+    bpm = beatthis.tempo(beats)  # the mean of the regular intervals: a median is quantised by the 20 ms frames
+    out = {"beats": {"count": len(beats), "downbeats": len(downbeats), "bpm": round(bpm, 2) if bpm else None}}
     if inputs.get("bpm"):
         out["beats"]["grid"] = grid_score(beats, float(inputs["bpm"]), swing=inputs.get("swing"), swing_unit=inputs.get("swing_unit", "16th"))
     k = skey.run(handle["key"], {"wav": inputs["wav"]})

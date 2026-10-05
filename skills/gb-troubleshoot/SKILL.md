@@ -1,7 +1,7 @@
 ---
 name: gb-troubleshoot
 description: Use when a gb-mcp tool returns status "failed" or "uncertain" (SCREEN_LOCKED, DIALOG_UNEXPECTED, TARGET_NOT_FOUND, TARGET_DISABLED, PERMISSION_*, GB_NOT_RUNNING, FILE_EXISTS, DEPENDENCY_MISSING, …) — the recovery for each code, without ever bypassing gb-mcp's safety rules.
-version: 0.6.1
+version: 0.7.0
 ---
 
 # gb-mcp troubleshooting

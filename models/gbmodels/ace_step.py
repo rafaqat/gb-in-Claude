@@ -18,6 +18,8 @@ WEIGHTS_REVISION = "19671f406d603126926c1b7e2adc169acbcade22"  # ACE-Step/Ace-St
 DIT, LM = "acestep-v15-turbo", "acestep-5Hz-lm-1.7B"
 TASKS = ("cover", "text")
 INSTRUMENTAL = "[Instrumental]"
+# ACE-Step's own examples run to 724 characters; its text encoder keeps about 256 tokens (≈ 1000 characters of English)
+CAPTION_MAX = 1000
 
 
 def _number(inputs: dict, key: str, lo: float, hi: float, default=None, integer: bool = False):
@@ -43,8 +45,8 @@ def validate(inputs: dict) -> dict:
     if task not in TASKS:
         raise ValueError(f"task must be one of {', '.join(TASKS)}")
     caption = inputs.get("caption")
-    if not isinstance(caption, str) or not caption.strip() or len(caption) > 512:
-        raise ValueError("caption must be 1–512 characters")
+    if not isinstance(caption, str) or not caption.strip() or len(caption) > CAPTION_MAX:
+        raise ValueError(f"caption must be 1–{CAPTION_MAX} characters")
     lyrics = inputs.get("lyrics", INSTRUMENTAL)
     if not isinstance(lyrics, str) or not lyrics.strip() or len(lyrics) > 4096:
         raise ValueError("lyrics must be 1–4096 characters ([Instrumental] for none)")

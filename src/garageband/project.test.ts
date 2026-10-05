@@ -267,7 +267,7 @@ describe("gb_project open_midi dry_run", () => {
   });
 });
 
-describe("gb_project status: silent tracks (found live: )", () => {
+describe("gb_project status: silent tracks (found live)", () => {
   it("reports the region name without GarageBand's “, muted” suffix", async () => {
     const regions = fake.app.windows[0]!.children!.find((c) => c.desc === "Tracks contents")!;
     regions.children![0]!.desc = "Drums, muted";

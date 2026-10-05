@@ -122,6 +122,13 @@ class MeasureTest(unittest.TestCase):
         y, _ = sf.read(out, always_2d=True)
         np.testing.assert_allclose(onsets(y)[:12], self.times[:12] * 120 / 100, atol=0.012)
 
+    def test_the_measured_tempo_is_not_quantised_to_the_tracker_frames(self):
+        # beat_this works on 20 ms frames: 84.85 BPM has 0.70 s and 0.72 s intervals; their median reads 85.71 (1 % off)
+        x, _ = clicks(84.85, 64)
+        path = os.path.join(self.dir.name, "clicks8485.wav")
+        sf.write(path, x, SR, subtype="PCM_16")
+        self.assertAlmostEqual(stems.measure_bpm(self.handle, path), 84.85, delta=0.05)
+
     def test_a_measured_tempo_folds_toward_the_target_when_it_is_half_or_double(self):
         self.assertEqual(stems.fold(60.0, 118), 120.0)
         self.assertEqual(stems.fold(240.0, 125), 120.0)

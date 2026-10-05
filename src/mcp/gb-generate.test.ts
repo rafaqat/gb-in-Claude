@@ -83,6 +83,29 @@ describe("gb_generate start: checks before anything runs", () => {
   });
 });
 
+describe("gb_generate examples: ACE-Step's own examples as many-shot prompts for a request", () => {
+  const examplesDir = () => {
+    const d = join(ws, "ace-examples");
+    mkdirSync(d);
+    writeFileSync(join(d, "example_1.json"), JSON.stringify({ caption: "A nostalgic synthwave track for a night drive.", lyrics: "[Verse 1]\nNeon lights", bpm: 110, duration: 120, keyscale: "A minor", language: "en", timesignature: "4" }));
+    writeFileSync(join(d, "example_2.json"), JSON.stringify({ caption: "A tender piano ballad with a soft female vocal.", lyrics: "[Verse 1]\nStay", bpm: 72, duration: 150, keyscale: "C major", language: "en", timesignature: "4" }));
+    return d;
+  };
+
+  it("returns the best-fitting examples with caption, lyrics and metadata, and the attribution", async () => {
+    const gen = createGbGenerate({ workspaceDir: ws, engines: {}, aceExamplesDir: examplesDir() });
+    const r = await gen({ command: "examples", query: "synthwave for a night drive", limit: 1 });
+    expect(r).toMatchObject({ status: "verified", data: { examples: [{ id: "example_1", caption: expect.stringContaining("synthwave"), lyrics: expect.any(String), bpm: 110, keyscale: "A minor", language: "en" }] } });
+    expect(data(r).attribution).toMatch(/ACE-Step 1\.5.*MIT/);
+  });
+
+  it("without ACE-Step installed it is DEPENDENCY_MISSING with the install hint", async () => {
+    const r = await createGbGenerate({ workspaceDir: ws, engines: {}, aceExamplesDir: join(ws, "none") })({ command: "examples", query: "pop" });
+    expect(r).toMatchObject({ status: "failed", error: "DEPENDENCY_MISSING" });
+    expect((r as { hint: string }).hint).toMatch(/install-engines/);
+  });
+});
+
 describe("gb_generate never writes outside the workspace", () => {
   it("a MuLaCover job whose inputs folder name is taken (here a link out of the workspace) is FILE_EXISTS before it runs", async () => {
     mkdirSync(join(ws, "gen"));

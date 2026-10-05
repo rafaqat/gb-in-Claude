@@ -18,6 +18,110 @@ gb_generate makes audio that MIDI cannot: sung vocals, or a full re-recording of
 
 One generation runs at a time (ENGINE_BUSY otherwise). Starting one engine closes the other: each needs about 14 GB.
 
+## Write the caption and the lyrics
+
+Before you write them, call \`gb_generate examples {query: "<the user's request>"}\`: it returns ACE-Step's own example
+songs that fit the request best (caption, lyrics, bpm, key, length, language). Write in their style and structure;
+write new words. ACE-Step reads about 256 tokens of the caption (≈ 1000 characters of English).
+
+- **Caption — one paragraph, in this order:** genre and mood; the instruments and how they play; the voice (gender,
+  timbre, range, delivery); the arrangement (builds, solos, breaks); the production and the overall mood.
+- **Lyrics — one [Section] tag per line**, a blank line between sections: [Intro], [Verse 1], [Pre-Chorus], [Chorus],
+  [Bridge], [Outro], [Build-Up], [Drop]. A tag may direct the part: [Intro - Guitar Riff], [Verse 1 - Female],
+  [Chorus - Both], [Instrumental Break: Saxophone Solo], [whispered]. A part with no voice: [Verse 2 - Instrumental].
+  Ad-libs are plain lines (Mm hmm). Mixed languages: a language tag such as [en] or [ja] before the lines.
+- **MuLaCover:** the same lyrics format; style goes into tags as \`genre:[…]; instrument:[…]; mood:[…]\`.
+
+Three of ACE-Step's examples (examples from ACE-Step 1.5 — github.com/ace-step/ACE-Step-1.5 — MIT licence, Copyright (c) 2026 ACEStep):
+
+**example_76** — bpm 92, Ab major, 218 s, en
+
+caption: A groovy neo-soul track with warm Wurlitzer keys, tight pocket drums, and silky female vocals. Features rich harmonies, subtle guitar licks, and a head-nodding groove that blends classic soul with modern production.
+
+\`\`\`
+[Intro]
+
+[Verse 1]
+Sunday morning golden light
+You stayed over through the night
+Coffee brewing records spin
+This is where our love begins
+
+[Pre-Chorus]
+No rush no hurry
+No stress no worry
+
+[Chorus]
+Easy like a Sunday morning
+Love without a warning
+You and me we flow so free
+Easy like it's meant to be
+…
+\`\`\`
+
+**example_54** — bpm 128, F minor, 210 s, en
+
+caption: A high-energy EDM festival anthem with massive synth drops, pounding four-on-the-floor kicks, and euphoric build-ups. Features pitched vocal chops, soaring lead synths, and an explosive drop that commands the dancefloor.
+
+\`\`\`
+[Intro]
+
+[Verse 1]
+We came to light up the night
+Hands up reaching for the sky
+Feel the bass running through your veins
+Let go of all your fears and pain
+
+[Build-Up]
+Can you feel it rising
+The moment is now
+We're all together
+Scream it out loud
+
+[Drop]
+We are the fire
+Burning so bright
+We are the dreamers
+Owning the night
+Let the music take control
+Feel it deep within your soul
+
+[Verse 2]
+Strangers become family here
+United by the sound we hear
+This moment will live forever more
+This is what we're living for
+…
+\`\`\`
+
+**example_66** — bpm 66, F major, 203 s, en
+
+caption: A romantic duet ballad with lush orchestral strings, grand piano, and intertwining male and female vocals. The arrangement builds from intimate verses to a sweeping cinematic chorus, capturing the timeless essence of love.
+
+\`\`\`
+[Intro]
+
+[Verse 1 - Female]
+I never knew what love could be
+Until you came and rescued me
+In your eyes I found my home
+Never have to be alone
+
+[Verse 2 - Male]
+You're the answer to my prayer
+The one I searched for everywhere
+Now that I have found you here
+I'll hold you close and keep you near
+
+[Chorus - Both]
+Forever starts tonight
+Two hearts become one light
+Through every storm we'll find our way
+I promise you I'll stay
+Forever starts tonight
+…
+\`\`\`
+
 ## Steps: a sung part next to your MIDI song
 
 1. Make the inputs.

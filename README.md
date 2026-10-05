@@ -167,6 +167,11 @@ Talk to Claude Code:
 | Listening | *Export it and tell me how it sounds* |
 | A check-up | *Run the gb-mcp doctor* |
 | Your own audio | *Put vocals.wav on bar 9 and the drum loop from bar 1, using my donor project* (see below) |
+| A song with vocals | *Write a warm acoustic folk song with a female voice about an old lighthouse keeper. Make it a WAV and a GarageBand project made from its stems* |
+| Another take | *Make another take with a different seed and tell me how the two differ in tempo and key* |
+| Stems | *Split exports/demo.wav into vocals, drums, bass and other, and put the vocals next to my song from bar 5* |
+
+More sample prompts, by task: [examples/prompts.md](examples/prompts.md).
 
 ### Tools
 
@@ -183,7 +188,7 @@ Talk to Claude Code:
 | `gb_tracks` | list · select · mute · solo · set_instrument · add_audio | yes |
 | `gb_transport` | state · play · stop · rewind · set_tempo · set_metronome · set_count_in | yes |
 | `gb_mix` | get · set_volume (raw or dB) · set_pan | yes |
-| `gb_export` | song (WAVE) | yes — exports into the workspace, never overwrites |
+| `gb_export` | song (WAVE) | yes — exports into the workspace, never overwrites; switches the metronome off for the export (GarageBand would render its click into the file) and back on after it |
 
 Every changing command accepts `dry_run: true` (plan only); every reading command accepts `fields` (return less).
 Inputs are strict: a misspelled parameter is rejected before anything runs.
@@ -249,9 +254,13 @@ Install the engines once — each at a reviewed version, in its own environment,
 ./scripts/install-engines.sh all --dry-run   # the plan, nothing changed
 ```
 
+Before Claude Code writes a caption or lyrics, it calls `gb_generate examples {query}`: ACE-Step's own example songs
+(200, MIT; read from the installed engine) that fit the request best, with caption, lyrics, bpm, key and length. The
+server's instructions tell it to write in their style, with new words. Captions can be up to 1000 characters.
+
 It is safe to re-run (an interrupted download resumes); restart Claude Code afterwards. A generation takes minutes, so
 it is a **job**: `gb_generate start` returns at once, `gb_generate status {job}` follows it until `done`, with the
-measured tempo and key. Then `gb_stem separate` takes the vocal, `gb_stem prepare` re-times it to the song (MuLaCover
+measured tempo (the mean of the regular beat intervals — not a median, which the tracker's 20 ms frames round) and key. Then `gb_stem separate` takes the vocal, `gb_stem prepare` re-times it to the song (MuLaCover
 picks its own tempo — the status gives the exact call), and `gb_tracks add_audio` + `gb_project save_copy` +
 `gb_band build` place it next to your MIDI tracks. One engine runs at a time (each needs ~14 GB of memory). Read
 `gb://knowledge/generate`. MuLaCover's token generator runs on this repository's own MLX port

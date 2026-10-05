@@ -395,4 +395,11 @@ describe("gb_tracks add_audio (M11b)", () => {
     expect(state.created()).toBe(0);
     expect((main.children ?? []).some((c) => c.role === "AXSheet")).toBe(false);
   });
+
+  it("the wait for the new track has its own interval: a 1 ms pollMs does not make thousands of track-list reads", async () => {
+    installNewTracks({ audioSelected: true });
+    fake.failNext("ax.press", { code: "TARGET_NOT_FOUND", message: "Create not found" });
+    await createGbTracks(deps({ sleep: async (ms: number) => fake.sleep(ms) }))({ command: "add_audio", count: 1 });
+    expect(fake.calls.length).toBeLessThan(200);
+  });
 });

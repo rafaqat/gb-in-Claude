@@ -4,7 +4,7 @@ import { z } from "zod";
 import { existsSync, renameSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import { AxCore, type Target } from "../ax/core.js";
-import type { RootSpec } from "../ax/locators.js";
+import { GB_10_4_14, type RootSpec } from "../ax/locators.js";
 import type { HelperPort } from "../native/helper-port.js";
 import { verified, uncertain, failed, type Envelope } from "../mcp/envelope.js";
 import { readWavInfo } from "./wav.js";
@@ -18,6 +18,9 @@ import { cleanText } from "../sound/text.js";
 const PRUNE = ["AXOutline", "AXBrowser", "AXTable"];
 const PANEL: RootSpec = { kind: "dialog", identifier: "save-panel" };
 const APP: RootSpec = { kind: "app" };
+/** GarageBand renders the metronome into Export Song to Disk — a click on every beat, which also sets
+ *  the peak, so GarageBand's normalisation pulls the whole mix down. It is switched off for the export. */
+const METRONOME = GB_10_4_14.controls["transport.metronome"]!;
 const inPanel = (selector: Target["selector"], kind: Target["kind"]): Target => ({ root: PANEL, selector, kind, prune_roles: PRUNE });
 
 const SafeWavName = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9 _-]{0,79}\.wav$/, "letters, digits, space, _ or -, ending in .wav (no paths)");
@@ -49,6 +52,8 @@ export type GbExportDeps = {
 };
 
 const realSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+/** A warning on a verified result; other results are returned as they are (they carry a hint instead). */
+const withWarning = (e: Envelope, w: string): Envelope => (e.status === "verified" ? { ...e, warnings: [...(e.warnings ?? []), w] } : e);
 
 export function createGbExport(deps: GbExportDeps) {
   const core = deps.core ?? new AxCore(deps.helper);
@@ -116,6 +121,18 @@ export function createGbExport(deps: GbExportDeps) {
     return undefined;
   }
 
+  /** The Metronome Click toggle: true/false, or null when it cannot be read (unknown is never "off"). */
+  async function metronomeOn(op: string): Promise<boolean | null> {
+    const r = await core.read(op, METRONOME);
+    const v = r.status === "verified" ? (r.data as { value: unknown }).value : null;
+    return v === 1 ? true : v === 0 ? false : null;
+  }
+  /** Press the toggle towards `want`, proven by reading it back. */
+  async function switchMetronome(op: string, want: boolean): Promise<boolean> {
+    const r = await core.press(op, METRONOME);
+    return r.status !== "failed" && (await metronomeOn(op)) === want;
+  }
+
   async function exportSong(op: string, filename: string, format: string, dryRun = false): Promise<Envelope> {
     const name = SafeWavName.safeParse(filename);
     if (!name.success) return failed(op, "PATH_INVALID", `filename: ${name.error.issues[0]!.message}`);
@@ -137,18 +154,45 @@ export function createGbExport(deps: GbExportDeps) {
     }
 
     if (dryRun) {
+      const click = await metronomeOn(op);
+      const steps = ["Share ▸ Export Song to Disk…", `choose ${format}, name, and ${inboxName} (read back)`, "press Export when enabled", "wait for a finished WAV"];
       return verified(op, {
-        dry_run: true, path: target, format, destination: inboxName,
-        plan: ["Share ▸ Export Song to Disk…", `choose ${format}, name, and ${inboxName} (read back)`, "press Export when enabled", "wait for a finished WAV"],
+        dry_run: true, path: target, format, destination: inboxName, metronome: click,
+        plan: click === true ? ["switch the metronome off (read back)", ...steps, "switch the metronome back on"] : steps,
       });
     }
-    const first = await viaPanel(op, name.data, target, format);
+    // The metronome is switched off for the export (its click would be in the file) and back on after it.
+    const click = await metronomeOn(op);
+    if (click === true && !(await switchMetronome(op, false))) {
+      return failed(op, "READBACK_MISMATCH", "the metronome is on and did not read back as off; nothing exported (its click would be in the file)", {
+        write_attempted: true, safe_to_retry: true, hint: "switch it off with gb_transport set_metronome {enabled: false}, then export again",
+      });
+    }
+    const result = await viaPanels(op, name.data, target, format);
+    if (click === null) {
+      return withWarning(result, "the metronome could not be read: if it is on, its click is in the export — check gb_transport state");
+    }
+    if (click === false) return result;
+    if (result.status === "uncertain") { // GarageBand may still be rendering: a click switched on now would land in the file
+      return { ...result, hint: `${result.hint}. The metronome was switched off for the export and is left off: switch it back on with gb_transport set_metronome {enabled: true} when the export has ended` };
+    }
+    const restored = await switchMetronome(op, true);
+    if (result.status === "failed") {
+      return restored ? result : { ...result, hint: `${result.hint ?? ""} The metronome is still off: gb_transport set_metronome {enabled: true}`.trim() };
+    }
+    const paused = { ...result, data: { ...(result.data as object), metronome_paused: true } };
+    return restored ? paused : withWarning(paused, "the metronome was switched off for the export and did not read back as on: gb_transport set_metronome {enabled: true}");
+  }
+
+  /** One panel; one new panel when the first did not list the inbox. */
+  async function viaPanels(op: string, filename: string, target: string, format: string): Promise<Envelope> {
+    const first = await viaPanel(op, filename, target, format);
     if (!placesMissing.has(first)) return first;
     // the first panel right after a project opened lacked the inbox; a new panel listed it.
     await sleep(placesRetryMs);
-    const second = await viaPanel(op, name.data, target, format);
+    const second = await viaPanel(op, filename, target, format);
     if (second.status !== "verified") return second;
-    return { ...second, warnings: [...(second.warnings ?? []), "the first save panel did not list the inbox; a new panel did (retried once)"] };
+    return withWarning(second, "the first save panel did not list the inbox; a new panel did (retried once)");
   }
 
   /** Share ▸ Export Song to Disk… → format, name, the inbox → Export → a finished WAV. The panel is cancelled on failure. */

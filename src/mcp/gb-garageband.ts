@@ -64,7 +64,9 @@ export function registerGarageBandTools(server: McpServer, deps: GarageBandToolD
       description:
         "song: Share ▸ Export Song to Disk as WAVE into the workspace export inbox (the save panel's file browser is never " +
         "walked). Format, name and destination are read back; success means the panel closed AND a finished WAV appeared. " +
-        "Never overwrites. Then analyze it with gb_analyze against_song. dry_run: check name/target/state only.",
+        "Never overwrites. GarageBand renders its metronome into the file, so an enabled metronome is switched off for the " +
+        "export and back on after it (metronome_paused). Then analyze it with gb_analyze against_song. dry_run: check " +
+        "name/target/state only.",
       inputSchema: z.object({
         command: z.enum(GB_EXPORT_COMMANDS),
         filename: z.string().optional().describe("e.g. ascent-v2.wav (no paths)"),

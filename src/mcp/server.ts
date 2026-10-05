@@ -24,12 +24,13 @@ import { GM_PATCH_MAP, GM_DRUM_KIT_MAP, patchFor } from "../knowledge/gm-patch-m
 import { SONG_FORMAT_GUIDE } from "../knowledge/song-format.js";
 import { BAND_FILES_GUIDE } from "../knowledge/band-files.js";
 import { GENERATE_GUIDE } from "../knowledge/generate.js";
+import { SERVER_INSTRUCTIONS } from "./instructions.js";
 import { STYLES } from "../song/styles.js";
 import { guarded } from "./tool-result.js";
 import type { Result } from "../result.js";
 import { createGbBand, GB_BAND_COMMANDS, GbBandInput, BandAudioItem, BandMidiItem } from "./gb-band.js";
 
-export const SERVER_VERSION = "0.6.1";
+export const SERVER_VERSION = "0.7.0";
 
 const json = (uri: string, value: unknown) => ({ contents: [{ uri, mimeType: "application/json", text: JSON.stringify(value) }] });
 
@@ -44,12 +45,14 @@ export type ServerOptions = {
   listener?: ModelSidecar;
   /** M12b engine sidecars for gb_generate, one per installed engine (missing = not installed). */
   engines?: Partial<Record<(typeof ENGINES)[number], ModelSidecar>>;
+  /** ACE-Step's example songs (examples/text2music in its checkout) for gb_generate examples. */
+  aceExamplesDir?: string;
   /** The installed patch catalog shared by gb_sound and gb_tracks set_instrument (default: scan this Mac). */
   patchCatalog?: PatchCatalog;
 };
 
 export function createServer(opts: ServerOptions): McpServer {
-  const server = new McpServer({ name: "gb-mcp", version: SERVER_VERSION });
+  const server = new McpServer({ name: "gb-mcp", version: SERVER_VERSION }, { instructions: SERVER_INSTRUCTIONS });
   const patchCatalog = opts.patchCatalog ?? createPatchCatalog();
   const live = Boolean(opts.system && opts.garageband);
   const gbSong = createGbSong({ workspaceDir: opts.workspaceDir, ...(opts.gmRenderer ? { gmRenderer: opts.gmRenderer } : {}), ...(opts.listener ? { models: opts.listener } : {}) });
@@ -152,7 +155,9 @@ export function createServer(opts: ServerOptions): McpServer {
         "(music from a caption, bpm, key, duration); mulacover (MuLaCover; outputs NON-COMMERCIAL) — task cover (sing lyrics " +
         "on the song's own melody / chord / drum tracks from its MIDI; it picks its own tempo). start returns a job at once " +
         "(generation takes 1.5–8 min); poll status until state is done; the result is a checked WAV in gen/ with measured " +
-        "bpm and key. One job at a time. Then gb_stem separate / prepare and gb_band build. Read gb://knowledge/generate.",
+        "bpm and key. One job at a time. Then gb_stem separate / prepare and gb_band build. Before you write a caption or " +
+        "lyrics, call examples {query} — ACE-Step's own example songs that fit the request — and write in their style. " +
+        "Read gb://knowledge/generate.",
       inputSchema: z.object({
         command: z.enum(GB_GENERATE_COMMANDS),
         engine: z.enum(ENGINES).optional().describe("start: ace_step or mulacover"),
@@ -160,7 +165,7 @@ export function createServer(opts: ServerOptions): McpServer {
         filename: z.string().optional().describe("start: output name in gen/, e.g. vocals-v1.wav"),
         job: z.string().optional().describe("status: the job id from start"),
         src: z.string().optional().describe("ace_step cover: the song to cover (workspace WAV, e.g. exports/song.wav)"),
-        caption: z.string().optional().describe("ace_step: style / instruments / voice, ≤ 512 characters"),
+        caption: z.string().optional().describe("ace_step: one paragraph — genre, mood, instruments, voice, arrangement, production; ≤ 1000 characters"),
         strength: z.number().optional().describe("ace_step cover: 0–1, how closely to keep the source (default 0.7)"),
         bpm: z.number().optional().describe("ace_step: tempo (text: requested; cover: the song's)"),
         key: z.string().optional().describe("ace_step: e.g. E minor"),
@@ -176,10 +181,15 @@ export function createServer(opts: ServerOptions): McpServer {
         lyrics: z.string().optional().describe("section markers on their own lines: [Verse]\\n…; ace_step default [Instrumental]"),
         seed: z.number().optional().describe("another seed, another take"),
         dry_run: z.boolean().optional().describe("start: check and plan, run nothing"),
+        query: z.string().optional().describe("examples: the user's request, e.g. 'warm acoustic love song, male voice'"),
+        language: z.string().optional().describe("examples: vocal language code, e.g. en, ja, zh"),
+        instrumental: z.boolean().optional().describe("examples: prefer instrumental examples"),
+        limit: z.number().optional().describe("examples: how many, 1–8 (default 4)"),
       }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
-    guarded("gb_generate", createGbGenerate({ workspaceDir: opts.workspaceDir, engines: opts.engines ?? {}, ...(opts.listener ? { listener: opts.listener } : {}) }), true),
+    guarded("gb_generate", createGbGenerate({ workspaceDir: opts.workspaceDir, engines: opts.engines ?? {}, ...(opts.listener ? { listener: opts.listener } : {}),
+      ...(opts.aceExamplesDir ? { aceExamplesDir: opts.aceExamplesDir } : {}) }), true),
   );
 
   if (opts.analyzer) {

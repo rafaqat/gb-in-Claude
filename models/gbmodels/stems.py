@@ -77,14 +77,15 @@ def fold(bpm: float, near: float) -> float:
 
 
 def measure_bpm(handle: dict, path: str, near: float | None = None) -> float:
-    """Tempo from the beat tracker (beat_this): 60 / the median beat interval, folded toward `near`."""
+    """Tempo from the beat tracker (beat_this): the mean of the regular beat intervals (beatthis.tempo — not the median,
+    which the tracker's 20 ms frames quantise), folded toward `near`."""
+    from gbmodels import beatthis
     if handle.get("beats") is None:
-        from gbmodels import beatthis
         handle["beats"] = beatthis.load(handle["device"])
     beats, _ = handle["beats"]["model"](path)
     if len(beats) < 3:
         raise ValueError("too few beats to measure a tempo; pass from_bpm")
-    bpm = 60.0 / float(np.median(np.diff(beats)))
+    bpm = beatthis.tempo(beats)
     return round(fold(bpm, near) if near else bpm, 2)
 
 

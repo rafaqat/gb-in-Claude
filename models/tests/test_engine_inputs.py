@@ -40,12 +40,19 @@ class AceStepInputs(unittest.TestCase):
         cases = [({"task": "remix"}, "task"), ({"task": "cover", "caption": "x", "out": self.out}, "src"),
                  ({"task": "cover", "src": wav(self.d), "caption": "x", "strength": 1.5, "out": self.out}, "strength"),
                  ({"task": "text", "caption": "x", "duration": 5, "out": self.out}, "duration"),
-                 ({"task": "text", "caption": "x" * 513, "duration": 30, "out": self.out}, "caption"),
+                 ({"task": "text", "caption": "x" * 1001, "duration": 30, "out": self.out}, "caption"),
                  ({"task": "text", "caption": "x", "duration": 30, "bpm": 400, "out": self.out}, "bpm"),
                  ({"task": "text", "caption": "x", "duration": 30, "out": "relative.wav"}, "out")]
         for inputs, word in cases:
             with self.assertRaisesRegex(ValueError, word, msg=str(inputs)[:80]):
                 ace_step.validate(inputs)
+
+    def test_a_caption_as_long_as_acesteps_own_examples_is_accepted(self):
+        # ACE-Step's 200 examples have captions up to 724 characters; its text encoder keeps about 256 tokens
+        v = ace_step.validate({"task": "text", "caption": "x" * 700, "duration": 30, "out": self.out})
+        self.assertEqual(len(v["caption"]), 700)
+        with self.assertRaisesRegex(ValueError, "caption"):
+            ace_step.validate({"task": "text", "caption": "x" * 1001, "duration": 30, "out": self.out})
 
     def test_an_existing_output_is_never_overwritten(self):
         open(self.out, "wb").close()

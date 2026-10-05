@@ -19,6 +19,7 @@ import { resolveWorkspaceFile, workspaceOutputDir } from "../workspace/paths.js"
 import { wavInfo } from "../band/wav.js";
 import type { ModelSidecar } from "../models/sidecar.js";
 import { verified, failed, type Envelope } from "./envelope.js";
+import { ATTRIBUTION, loadExamples, rankExamples } from "../generate/examples.js";
 
 export const ENGINES = ["ace_step", "mulacover"] as const;
 type Engine = (typeof ENGINES)[number];
@@ -38,7 +39,7 @@ const Start = z.object({
   filename: SafeWav,
   // ace_step
   src: z.string().min(1).optional(),
-  caption: z.string().min(1).max(512).optional(),
+  caption: z.string().min(1).max(1000).optional(), // ACE-Step's encoder keeps about 256 tokens
   strength: z.number().min(0).max(1).optional(),
   bpm: z.number().int().min(30).max(300).optional(),
   key: z.string().min(1).max(32).optional(),
@@ -63,8 +64,15 @@ export const GbGenerateInput = z.discriminatedUnion("command", [
   Start,
   z.object({ command: z.literal("status"), job: z.string().regex(/^g-[a-z0-9-]{1,64}$/, "a job id from start, such as g-20261005-120000-ab12") }).strict(),
   z.object({ command: z.literal("list") }).strict(),
+  z.object({
+    command: z.literal("examples"),
+    query: z.string().min(1).max(500),
+    language: z.string().min(2).max(8).optional(),
+    instrumental: z.boolean().optional(),
+    limit: z.number().int().min(1).max(8).optional(),
+  }).strict(),
 ]);
-export const GB_GENERATE_COMMANDS = ["start", "status", "list"] as const;
+export const GB_GENERATE_COMMANDS = ["start", "status", "list", "examples"] as const;
 
 const REQUIRED: Record<string, readonly (keyof StartInput)[]> = {
   "ace_step:cover": ["src", "caption"],
@@ -83,7 +91,11 @@ type Job = {
 };
 
 /** engines: one sidecar per installed engine (missing = not installed); listener: the models/.venv sidecar (measures). */
-export type GbGenerateDeps = { workspaceDir: string; engines: Partial<Record<Engine, ModelSidecar>>; listener?: ModelSidecar };
+export type GbGenerateDeps = {
+  workspaceDir: string; engines: Partial<Record<Engine, ModelSidecar>>; listener?: ModelSidecar;
+  /** ACE-Step's own example songs (examples/text2music in its reviewed checkout): many-shot prompts for `examples`. */
+  aceExamplesDir?: string;
+};
 
 function occupied(path: string): boolean {
   try {
@@ -169,6 +181,17 @@ export function createGbGenerate(deps: GbGenerateDeps) {
     }
     const cmd = parsed.data;
     const op = `gb_generate.${cmd.command}`;
+
+    if (cmd.command === "examples") {
+      const loaded = deps.aceExamplesDir ? loadExamples(deps.aceExamplesDir) : null;
+      if (!loaded?.ok || loaded.value.length === 0) {
+        return failed(op, "DEPENDENCY_MISSING", "ACE-Step's examples are not installed", { hint: "./scripts/install-engines.sh ace-step; " + GUIDE });
+      }
+      const examples = rankExamples(loaded.value, { query: cmd.query, ...(cmd.language ? { language: cmd.language } : {}),
+        ...(cmd.instrumental !== undefined ? { instrumental: cmd.instrumental } : {}), ...(cmd.limit ? { limit: cmd.limit } : {}) });
+      return verified(op, { examples, of: loaded.value.length, attribution: ATTRIBUTION,
+        use: "write the caption and lyrics for gb_generate start in the same style and structure; do not copy their words" });
+    }
 
     if (cmd.command === "list") {
       const dir = join(deps.workspaceDir, JOBS_DIR);

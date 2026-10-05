@@ -227,7 +227,7 @@ describe("gb_export song dry_run", () => {
   });
 });
 
-describe("gb_export song: the Export press can report an AX error although it worked (found live: )", () => {
+describe("gb_export song: the Export press can report an AX error although it worked (found live)", () => {
   const okPressErrs = (exportHappens: boolean) => ({
     call: async (op: string, params?: Record<string, unknown>, opts?: { deadlineMs?: number }) => {
       if (op === "ax.press" && (params?.selector as { identifier?: string })?.identifier === "OKButton") {
@@ -322,6 +322,59 @@ describe("gb_export song: the panel closes by itself mid-flow (found live: 19:16
     panelClosesOnNameSet(false);
     const r = await createGbExport(deps())({ command: "song", filename: "vanished.wav" });
     expect(r).toMatchObject({ status: "uncertain", write_attempted: true, safe_to_retry: false });
+  });
+});
+
+describe("gb_export song: GarageBand renders the metronome into the export", () => {
+  const metronome = () => findAll(fake.app.windows[0]!, { role: "AXCheckBox", title: "Metronome Click" }).matches[0]!.node;
+
+  it("switches an enabled metronome off for the export and back on after it, and says so", async () => {
+    let atExport: unknown;
+    const write = exportWrites;
+    exportWrites = (name) => { atExport = metronome().value; write(name); };
+    const r = await createGbExport(deps())({ command: "song", filename: "no-click.wav" });
+    expect(r).toMatchObject({ status: "verified", data: { path: join(inbox, "no-click.wav"), metronome_paused: true } });
+    expect(atExport).toBe(0);
+    expect(metronome().value).toBe(1);
+  });
+
+  it("an uncertain export (no finished file yet) leaves it off — a click switched on mid-render would land in the file", async () => {
+    exportWrites = () => {};
+    const r = await createGbExport(deps())({ command: "song", filename: "pending.wav" });
+    expect(r).toMatchObject({ status: "uncertain", safe_to_retry: false });
+    expect(metronome().value).toBe(0);
+    expect((r as { hint: string }).hint).toMatch(/metronome.*off.*gb_transport set_metronome/i);
+  });
+
+  it("a metronome that does not switch off stops the export before any panel opens", async () => {
+    fake.on(metronome(), { onPress: () => {} }); // the press lands but the click stays on
+    const r = await createGbExport(deps())({ command: "song", filename: "clicky.wav" });
+    expect(r).toMatchObject({ status: "failed", error: "READBACK_MISMATCH", safe_to_retry: true });
+    expect((r as { hint: string }).hint).toMatch(/gb_transport set_metronome/);
+    expect(fake.calls.some((c) => c.op === "ax.menu")).toBe(false);
+    expect(existsSync(join(inbox, "clicky.wav"))).toBe(false);
+  });
+
+  it("a metronome it cannot read: exports, and warns that the click may be in the file", async () => {
+    metronome().value = "?";
+    const r = await createGbExport(deps())({ command: "song", filename: "unknown.wav" });
+    expect(r).toMatchObject({ status: "verified", data: { path: join(inbox, "unknown.wav") } });
+    expect((r as { warnings?: string[] }).warnings?.join(" ")).toMatch(/metronome.*could not be read/i);
+  });
+
+  it("a failed export (nothing exported) switches it back on", async () => {
+    installPanelBehaviours(["GarageBand", "Music"]); // the inbox is not a recent place
+    const r = await createGbExport(deps({ placesRetryMs: 0 }))({ command: "song", filename: "nowhere.wav" });
+    expect(r).toMatchObject({ status: "failed", error: "TARGET_NOT_FOUND" });
+    expect(metronome().value).toBe(1);
+  });
+
+  it("dry_run shows the metronome in the plan and touches nothing", async () => {
+    const r = await createGbExport(deps())({ command: "song", filename: "plan.wav", dry_run: true });
+    expect(r).toMatchObject({ status: "verified", data: { dry_run: true, metronome: true } });
+    expect((r as { data: { plan: string[] } }).data.plan.join(" ")).toMatch(/metronome off.*back on/i);
+    expect(fake.calls.some((c) => ["ax.menu", "ax.press", "ax.set"].includes(c.op))).toBe(false);
+    expect(metronome().value).toBe(1);
   });
 });
 
