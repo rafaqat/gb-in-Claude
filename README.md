@@ -7,6 +7,8 @@ export a WAV, and "listen" to the result (loudness, tone, drums, tempo, key, a s
 - **No API key.** Claude Code is the composer; gb-mcp is its hands and ears.
 - **Verified, not hoped.** Every GarageBand action is read back. A result is `verified`, `uncertain` (delivered but
   not confirmed — check before retrying) or `failed` (nothing happened, with a hint).
+- **Sung vocals (optional).** `gb_generate` makes vocals and music with two AI engines on your Mac — ACE-Step 1.5
+  and MuLaCover (non-commercial outputs) — and gb-mcp places them next to your MIDI tracks in GarageBand.
 - **Safe by default.** It never overwrites or deletes files, backs up unsaved projects before replacing them, never
   answers a dialog it did not open, never starts a content download, and only borrows the keyboard focus for a click
   while you pause typing.
@@ -58,6 +60,7 @@ gives the General MIDI celesta.
 | Swift | Xcode or the Command Line Tools (`xcode-select --install`) — builds two small native helpers |
 | Python | 3.10 or later (`brew install python`) — for audio analysis |
 | Rubber Band | optional — `gb_stem prepare` uses it to stretch tonal stems (`brew install rubberband`) |
+| AI engines | optional — `gb_generate`: Apple Silicon, ~26 GB of disk, [uv](https://docs.astral.sh/uv/) (`brew install uv`); see below |
 | Claude Code | [installed](https://docs.claude.com/en/docs/claude-code) and signed in |
 
 ## Install
@@ -173,6 +176,7 @@ Talk to Claude Code:
 | `gb_band` | inspect · build | no — writes a GarageBand project (.band) with your WAVs and MIDI notes |
 | `gb_analyze` | audio · against_song · compare (+ field `ml` with the optional models) | no — reads audio, writes spectrogram PNGs |
 | `gb_stem` | inspect · prepare · separate | no — reads outside audio, writes placeable stems (needs the optional models) |
+| `gb_generate` | start · status · list | no — sung covers and music from AI engines as background jobs (needs an engine) |
 | `gb_sound` | patches · plugins · loops · samples · palette | no — read-only catalog of what this Mac can play |
 | `gb_system` | doctor · describe · ui_snapshot | read-only |
 | `gb_project` | status · open_midi · open_band · save_copy | opens a song (unsaved projects are backed up first); save_copy writes a donor copy |
@@ -185,7 +189,7 @@ Every changing command accepts `dry_run: true` (plan only); every reading comman
 Inputs are strict: a misspelled parameter is rejected before anything runs.
 
 Resources: `gb://knowledge/song-format` (read first), `gb://knowledge/analysis`, `gb://knowledge/production`,
-`gb://knowledge/styles`, `gb://knowledge/gm-patch-map`, `gb://knowledge/band-files`, and the JSON Schemas `gb://schema/song` and
+`gb://knowledge/styles`, `gb://knowledge/gm-patch-map`, `gb://knowledge/band-files`, `gb://knowledge/generate`, and the JSON Schemas `gb://schema/song` and
 `gb://schema/tools`.
 
 ### The workspace
@@ -199,6 +203,7 @@ Resources: `gb://knowledge/song-format` (read first), `gb://knowledge/analysis`,
 ├── bands/      GarageBand projects written by gb_band (readback/ holds GarageBand's own check copies)
 ├── donors/     copies of open projects (gb_project save_copy), used as gb_band donors
 ├── stems/      placeable stems from gb_stem (24-bit PCM)
+├── gen/        audio from gb_generate (gen/jobs/ keeps each job)
 └── sessions/    automatic backups of unsaved GarageBand projects (.band)
 ```
 
@@ -227,6 +232,31 @@ The format facts behind this are in `eval/m11b/BAND-FORMAT.md`; the live end-to-
 
 Song JSON is described in `gb://knowledge/song-format`; `examples/twinkle-epic.song.json` shows most of it
 (sections, drum grids, chord parts, melodies, levels).
+
+### Generated vocals and music: gb_generate (optional engines)
+
+MIDI cannot sing. `gb_generate` runs two AI engines on your Mac (Apple Silicon) and gives you a checked WAV:
+
+| Engine | Tasks | Melody | Time (M4 Air) | Licence |
+|---|---|---|---|---|
+| `ace_step` — [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) | `cover`: re-sing / re-play a song export to a caption and lyrics; `text`: music from a caption, bpm, key, length | follows the source melody loosely | cover ≈ the song's length | MIT |
+| `mulacover` — [MuLaCover](https://github.com/HeartMuLa/MuLaCover) | `cover`: sing lyrics on the song's own melody, chords and drums (from its MIDI) | reads the melody as MIDI | 30 s of song ≈ 2–2.5 min | weights AND outputs **non-commercial** (CC BY-NC 4.0) |
+
+Install the engines once — each at a reviewed version, in its own environment, outside this repository:
+
+```sh
+./scripts/install-engines.sh ace-step        # 10 GB;  or: mulacover (15 GB; asks you to accept its licence), all
+./scripts/install-engines.sh all --dry-run   # the plan, nothing changed
+```
+
+It is safe to re-run (an interrupted download resumes); restart Claude Code afterwards. A generation takes minutes, so
+it is a **job**: `gb_generate start` returns at once, `gb_generate status {job}` follows it until `done`, with the
+measured tempo and key. Then `gb_stem separate` takes the vocal, `gb_stem prepare` re-times it to the song (MuLaCover
+picks its own tempo — the status gives the exact call), and `gb_tracks add_audio` + `gb_project save_copy` +
+`gb_band build` place it next to your MIDI tracks. One engine runs at a time (each needs ~14 GB of memory). Read
+`gb://knowledge/generate`. MuLaCover's token generator runs on this repository's own MLX port
+(`models/mulacover_mlx`, about 3× the original's speed on Apple Silicon; `eval/m12d`); measurements: `eval/m12a`,
+`eval/m12b`.
 
 ### Genre drafts, grooves, swing and glide
 
@@ -329,3 +359,10 @@ GarageBand's interface differs between versions; the element locators live in `s
   of this repository. `models/bench` also measured
   [Foundation-1](https://huggingface.co/RoyalCities/Foundation-1) (Stability AI Community License), which gb-mcp does
   not use yet.
+- The `gb_generate` engines are downloaded by `scripts/install-engines.sh` from their authors and are not part of this
+  repository: [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) (MIT, code and weights);
+  **MuLaCover by MuLa Labs** — https://github.com/HeartMuLa/MuLaCover — (code Apache-2.0; weights CC BY-NC 4.0 with
+  output terms: generated audio is for non-commercial use only), with
+  [HeartCodec](https://huggingface.co/HeartMuLa/HeartCodec-oss-20260123) (Apache-2.0) and
+  [Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B) (Apache-2.0). `models/mulacover_mlx` is this
+  repository's own MLX implementation of MuLaCover's token generator (MIT); it loads the weights you downloaded.

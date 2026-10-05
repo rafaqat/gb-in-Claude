@@ -20,7 +20,8 @@ export interface ModelSidecar {
   close(): void;
 }
 
-export type SidecarOptions = { command: string; args: string[]; cwd: string; timeoutMs: number; startTimeoutMs?: number };
+/** env: extra variables for the process (on top of this process's own), e.g. GBMODELS_ENV for an M12 engine. */
+export type SidecarOptions = { command: string; args: string[]; cwd: string; timeoutMs: number; startTimeoutMs?: number; env?: Record<string, string> };
 
 type Pending = { resolve: (r: Result<unknown, SidecarError>) => void; timer: NodeJS.Timeout };
 
@@ -42,7 +43,7 @@ export function createModelSidecar(opts: SidecarOptions): ModelSidecar {
     new Promise((resolve) => {
       let settled = false;
       const settle = (r: Result<void, SidecarError>) => { if (!settled) { settled = true; resolve(r); } };
-      const child = spawn(opts.command, opts.args, { cwd: opts.cwd, stdio: ["pipe", "pipe", "ignore"] });
+      const child = spawn(opts.command, opts.args, { cwd: opts.cwd, stdio: ["pipe", "pipe", "ignore"], ...(opts.env ? { env: { ...process.env, ...opts.env } } : {}) });
       proc = child;
       const startTimer = setTimeout(() => settle(err({ code: "SIDECAR_UNAVAILABLE", message: "the sidecar did not report ready in time" })), opts.startTimeoutMs ?? 60_000);
       child.on("error", (e) => {

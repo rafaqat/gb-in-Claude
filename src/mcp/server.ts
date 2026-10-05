@@ -5,6 +5,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ZodTypeAny } from "zod";
 import { createGbSong, GB_SONG_COMMANDS, GbSongInput } from "./gb-song.js";
 import { createGbStem, GB_STEM_COMMANDS, GbStemInput } from "./gb-stem.js";
+import { createGbGenerate, ENGINES, GB_GENERATE_COMMANDS, GbGenerateInput } from "./gb-generate.js";
 import { createGbAnalyze, GB_ANALYZE_COMMANDS, ANALYSIS_FIELDS, GbAnalyzeInput } from "./gb-analyze.js";
 import type { AnalyzerPort } from "../analysis/analyzer.js";
 import type { ModelSidecar } from "../models/sidecar.js";
@@ -22,12 +23,13 @@ import { registerSchemaResources } from "../knowledge/schemas.js";
 import { GM_PATCH_MAP, GM_DRUM_KIT_MAP, patchFor } from "../knowledge/gm-patch-map.js";
 import { SONG_FORMAT_GUIDE } from "../knowledge/song-format.js";
 import { BAND_FILES_GUIDE } from "../knowledge/band-files.js";
+import { GENERATE_GUIDE } from "../knowledge/generate.js";
 import { STYLES } from "../song/styles.js";
 import { guarded } from "./tool-result.js";
 import type { Result } from "../result.js";
 import { createGbBand, GB_BAND_COMMANDS, GbBandInput, BandAudioItem, BandMidiItem } from "./gb-band.js";
 
-export const SERVER_VERSION = "0.5.0";
+export const SERVER_VERSION = "0.6.0";
 
 const json = (uri: string, value: unknown) => ({ contents: [{ uri, mimeType: "application/json", text: JSON.stringify(value) }] });
 
@@ -40,6 +42,8 @@ export type ServerOptions = {
   workspaceDir: string; analyzer?: AnalyzerPort; gmRenderer?: GmRendererPort; system?: GbSystemDeps; garageband?: GarageBandOptions;
   /** M8 model sidecar for gb_analyze's `ml` field (optional). */
   listener?: ModelSidecar;
+  /** M12b engine sidecars for gb_generate, one per installed engine (missing = not installed). */
+  engines?: Partial<Record<(typeof ENGINES)[number], ModelSidecar>>;
   /** The installed patch catalog shared by gb_sound and gb_tracks set_instrument (default: scan this Mac). */
   patchCatalog?: PatchCatalog;
 };
@@ -138,6 +142,46 @@ export function createServer(opts: ServerOptions): McpServer {
     guarded("gb_stem", createGbStem({ workspaceDir: opts.workspaceDir, ...(opts.listener ? { models: opts.listener } : {}) }), true),
   );
 
+  server.registerTool(
+    "gb_generate",
+    {
+      title: "Generate vocals or music with an AI engine (background jobs)",
+      description:
+        "Audio MIDI cannot make: sung vocals, or a re-recording of the song. Engines: ace_step (ACE-Step 1.5, MIT) — task " +
+        "cover (re-sing / re-play a song export to a caption and lyrics; strength = how closely it keeps the source) or text " +
+        "(music from a caption, bpm, key, duration); mulacover (MuLaCover; outputs NON-COMMERCIAL) — task cover (sing lyrics " +
+        "on the song's own melody / chord / drum tracks from its MIDI; it picks its own tempo). start returns a job at once " +
+        "(generation takes 1.5–8 min); poll status until state is done; the result is a checked WAV in gen/ with measured " +
+        "bpm and key. One job at a time. Then gb_stem separate / prepare and gb_band build. Read gb://knowledge/generate.",
+      inputSchema: z.object({
+        command: z.enum(GB_GENERATE_COMMANDS),
+        engine: z.enum(ENGINES).optional().describe("start: ace_step or mulacover"),
+        task: z.enum(["cover", "text"]).optional().describe("start: ace_step cover | text; mulacover cover"),
+        filename: z.string().optional().describe("start: output name in gen/, e.g. vocals-v1.wav"),
+        job: z.string().optional().describe("status: the job id from start"),
+        src: z.string().optional().describe("ace_step cover: the song to cover (workspace WAV, e.g. exports/song.wav)"),
+        caption: z.string().optional().describe("ace_step: style / instruments / voice, ≤ 512 characters"),
+        strength: z.number().optional().describe("ace_step cover: 0–1, how closely to keep the source (default 0.7)"),
+        bpm: z.number().optional().describe("ace_step: tempo (text: requested; cover: the song's)"),
+        key: z.string().optional().describe("ace_step: e.g. E minor"),
+        duration: z.number().optional().describe("ace_step text: 10–600 s"),
+        thinking: z.boolean().optional().describe("ace_step text: false skips the LM (faster)"),
+        midi: z.string().optional().describe("mulacover: the song MIDI in the workspace (gb_song render_midi)"),
+        melody: z.array(z.string()).optional().describe("mulacover: melody track name(s)"),
+        chords: z.array(z.string()).optional().describe("mulacover: harmony track name(s) → one block chord per bar"),
+        drums: z.array(z.string()).optional().describe("mulacover: drum track name(s)"),
+        start_bar: z.number().optional().describe("mulacover: first bar (default 1)"),
+        bars: z.number().optional().describe("mulacover: how many bars (default: to the end; ≤ 300 s)"),
+        tags: z.string().optional().describe("mulacover: style, e.g. genre:[film song]; instrument:[bansuri]; mood:[warm]"),
+        lyrics: z.string().optional().describe("section markers on their own lines: [Verse]\\n…; ace_step default [Instrumental]"),
+        seed: z.number().optional().describe("another seed, another take"),
+        dry_run: z.boolean().optional().describe("start: check and plan, run nothing"),
+      }).strict(),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    guarded("gb_generate", createGbGenerate({ workspaceDir: opts.workspaceDir, engines: opts.engines ?? {}, ...(opts.listener ? { listener: opts.listener } : {}) }), true),
+  );
+
   if (opts.analyzer) {
     const gbAnalyze = createGbAnalyze({ workspaceDir: opts.workspaceDir, analyzer: opts.analyzer, ...(opts.listener ? { listener: opts.listener } : {}) });
     server.registerTool(
@@ -173,6 +217,7 @@ export function createServer(opts: ServerOptions): McpServer {
     const registry: ToolRegistry = {
       gb_song: { description: "compose: Song JSON → validate / preview / MIDI / GM draft", commands: GB_SONG_COMMANDS },
       gb_stem: { description: "outside audio: inspect / align (tempo, pitch, format) / separate into stems", commands: GB_STEM_COMMANDS },
+      gb_generate: { description: "AI engines: sung covers and music (ace_step, mulacover) as background jobs", commands: GB_GENERATE_COMMANDS },
       gb_band: { description: "GarageBand project files: inspect a .band, build one with audio + MIDI from a donor", commands: GB_BAND_COMMANDS },
       gb_sound: { description: "read-only catalog: patches, plugins, loops, samples, palette", commands: GB_SOUND_COMMANDS },
       ...(opts.analyzer ? { gb_analyze: { description: "listen: measure, flag and compare exports", commands: GB_ANALYZE_COMMANDS } } : {}),
@@ -198,6 +243,10 @@ export function createServer(opts: ServerOptions): McpServer {
     { description: "gb_band: make a donor, build a .band with audio + MIDI, verify it with gb_project open_band", mimeType: "text/markdown" },
     async (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: BAND_FILES_GUIDE }] }));
 
+  server.registerResource("generate", "gb://knowledge/generate",
+    { description: "gb_generate: engines (ACE-Step, MuLaCover), steps to a placed vocal, times, licences, install", mimeType: "text/markdown" },
+    async (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: GENERATE_GUIDE }] }));
+
   server.registerResource("styles", "gb://knowledge/styles",
     { description: "Style presets: GM program and GarageBand patch per role", mimeType: "application/json" },
     async (uri) => json(uri.href, Object.fromEntries(Object.entries(STYLES).map(([name, s]) => [name, {
@@ -210,7 +259,7 @@ export function createServer(opts: ServerOptions): McpServer {
     async (uri) => json(uri.href, { melodic: GM_PATCH_MAP, drumKits: GM_DRUM_KIT_MAP }));
 
   const schemas: Record<string, ZodTypeAny> = {
-    gb_song: GbSongInput, gb_stem: GbStemInput, gb_band: GbBandInput, gb_sound: GbSoundInput,
+    gb_song: GbSongInput, gb_stem: GbStemInput, gb_generate: GbGenerateInput, gb_band: GbBandInput, gb_sound: GbSoundInput,
     ...(opts.analyzer ? { gb_analyze: GbAnalyzeInput } : {}),
     ...(opts.system ? { gb_system: GbSystemInput } : {}),
     ...(live ? { gb_project: GbProjectInput, gb_export: GbExportInput, gb_tracks: GbTracksInput, gb_transport: GbTransportInput, gb_mix: GbMixInput } : {}),

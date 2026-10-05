@@ -1,0 +1,116 @@
+{
+ "speed": [
+  {
+   "variant": "base",
+   "run": "speed-1",
+   "seconds": 135.3,
+   "switches": {
+    "dit_compile": false,
+    "vae_fp16": false
+   },
+   "dit_s": 39.9,
+   "vae_decode_s": 39.5,
+   "pipeline_s": 79.4,
+   "mlx_peak_gb": 13.69,
+   "snr_vs_base_db": "identical"
+  },
+  {
+   "variant": "base",
+   "run": "speed-2",
+   "seconds": 114.1,
+   "switches": {
+    "dit_compile": false,
+    "vae_fp16": false
+   },
+   "dit_s": 42.8,
+   "vae_decode_s": 36.6,
+   "pipeline_s": 79.4,
+   "mlx_peak_gb": 13.7,
+   "snr_vs_base_db": "identical"
+  },
+  {
+   "variant": "vae16",
+   "run": "speed-1",
+   "seconds": 98.9,
+   "switches": {
+    "dit_compile": false,
+    "vae_fp16": true
+   },
+   "dit_s": 45.5,
+   "vae_decode_s": 21.6,
+   "pipeline_s": 67.1,
+   "mlx_peak_gb": 10.01,
+   "snr_vs_base_db": 6.9
+  },
+  {
+   "variant": "vae16",
+   "run": "speed-2",
+   "seconds": 89.8,
+   "switches": {
+    "dit_compile": false,
+    "vae_fp16": true
+   },
+   "dit_s": 39.7,
+   "vae_decode_s": 19.4,
+   "pipeline_s": 59.2,
+   "mlx_peak_gb": 10.02,
+   "snr_vs_base_db": 6.9
+  },
+  {
+   "variant": "compile",
+   "run": "speed-1",
+   "seconds": 125.3,
+   "switches": {
+    "dit_compile": true,
+    "vae_fp16": false
+   },
+   "dit_s": 41.8,
+   "vae_decode_s": 35.5,
+   "pipeline_s": 77.3,
+   "mlx_peak_gb": 13.69,
+   "snr_vs_base_db": 12.9
+  },
+  {
+   "variant": "compile",
+   "run": "speed-2",
+   "seconds": 116.2,
+   "switches": {
+    "dit_compile": true,
+    "vae_fp16": false
+   },
+   "dit_s": 42.0,
+   "vae_decode_s": 37.6,
+   "pipeline_s": 79.6,
+   "mlx_peak_gb": 13.7,
+   "snr_vs_base_db": 12.9
+  },
+  {
+   "variant": "both",
+   "run": "speed-1",
+   "seconds": 108.5,
+   "switches": {
+    "dit_compile": true,
+    "vae_fp16": true
+   },
+   "dit_s": 50.5,
+   "vae_decode_s": 24.0,
+   "pipeline_s": 74.5,
+   "mlx_peak_gb": 10.01,
+   "snr_vs_base_db": 6.9
+  },
+  {
+   "variant": "both",
+   "run": "speed-2",
+   "seconds": 90.1,
+   "switches": {
+    "dit_compile": true,
+    "vae_fp16": true
+   },
+   "dit_s": 37.4,
+   "vae_decode_s": 20.1,
+   "pipeline_s": 57.5,
+   "mlx_peak_gb": 10.02,
+   "snr_vs_base_db": 6.9
+  }
+ ]
+}

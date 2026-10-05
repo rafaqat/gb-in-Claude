@@ -1,0 +1,30 @@
+{
+ "midi": "song.mid",
+ "export": "exports/song.wav",
+ "bpm": 120,
+ "name": "vocals-demo",
+ "mulacover": {
+  "melody": [
+   "Lead"
+  ],
+  "chords": [
+   "Pad",
+   "Bass"
+  ],
+  "drums": [
+   "Drums"
+  ],
+  "start_bar": 5,
+  "bars": 16,
+  "lyrics": "[Verse]\nRain comes down on the empty street\nLights are dancing at my feet\nEvery step is a song for you\nRunning home to the river blue\n\n[Chorus]\nRiver, river, sing to me\nCarry me home across the sea",
+  "tags": "genre:[pop ballad]; instrument:[piano,strings]; mood:[warm]",
+  "seed": 7
+ },
+ "ace_step": {
+  "caption": "pop ballad, female vocals, piano, strings",
+  "lyrics": "[Verse]\nRain comes down on the empty street\nLights are dancing at my feet\n\n[Chorus]\nRiver, river, sing to me\nCarry me home across the sea",
+  "strength": 0.7,
+  "key": "C major",
+  "seed": 2
+ }
+}

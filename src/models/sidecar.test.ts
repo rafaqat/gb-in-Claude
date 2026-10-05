@@ -41,6 +41,12 @@ describe("model sidecar client (M8): one long-lived process, JSON lines", () => 
     expect((again as { value: { pid: number } }).value.pid).not.toBe((first as { value: { pid: number } }).value.pid);
   });
 
+  it("starts the process with extra environment variables (M12b: GBMODELS_ENV names an engine's environment)", async () => {
+    sidecar = createModelSidecar({ command: process.execPath, args: [FAKE], cwd: process.cwd(), timeoutMs: 2000, env: { GBMODELS_ENV: "mulacover" } });
+    expect(await sidecar.run("env", {})).toMatchObject({ ok: true, value: { GBMODELS_ENV: "mulacover" } });
+    expect(await make().run("env", {})).toMatchObject({ ok: true, value: { GBMODELS_ENV: null } });
+  });
+
   it("reports a sidecar that cannot start (SIDECAR_UNAVAILABLE)", async () => {
     sidecar = createModelSidecar({ command: "/nonexistent/python", args: [], cwd: process.cwd(), timeoutMs: 1000 });
     expect(await sidecar.run("echo", {})).toMatchObject({ ok: false, error: { code: "SIDECAR_UNAVAILABLE" } });

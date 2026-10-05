@@ -86,19 +86,21 @@ describe("gb-mcp server", () => {
 
   it("lists the composition, project-file, analysis, sound-catalog and system tools", async () => {
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(["gb_analyze", "gb_band", "gb_song", "gb_sound", "gb_stem", "gb_system"]); // M11b: gb_stem
+    expect(tools.map((t) => t.name).sort()).toEqual(["gb_analyze", "gb_band", "gb_generate", "gb_song", "gb_sound", "gb_stem", "gb_system"]); // M12b: gb_generate
   });
 
   it("serves agent knowledge resources: song format, styles, GM patch map, analysis guide, production rubric, band files", async () => {
     const { resources } = await client.listResources();
     expect(resources.map((r) => r.uri).sort()).toEqual([
-      "gb://knowledge/analysis", "gb://knowledge/band-files", "gb://knowledge/gm-patch-map", "gb://knowledge/production",
+      "gb://knowledge/analysis", "gb://knowledge/band-files", "gb://knowledge/generate", "gb://knowledge/gm-patch-map", "gb://knowledge/production",
       "gb://knowledge/song-format", "gb://knowledge/styles", "gb://schema/song", "gb://schema/tools",
     ]);
     const styles = await client.readResource({ uri: "gb://knowledge/styles" });
     expect((styles.contents[0] as { text: string }).text).toContain("orbit-ambient");
     const band = await client.readResource({ uri: "gb://knowledge/band-files" });
     expect((band.contents[0] as { text: string }).text).toMatch(/## Make a donor/);
+    const generate = await client.readResource({ uri: "gb://knowledge/generate" });
+    expect((generate.contents[0] as { text: string }).text).toMatch(/non-commercial/);
   });
 });
 

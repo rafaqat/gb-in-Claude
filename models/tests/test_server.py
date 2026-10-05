@@ -90,3 +90,20 @@ class SidecarTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NamedEnvironmentTest(unittest.TestCase):
+    """The engines' venvs (ACE-Step, MuLaCover) are also called .venv: GBMODELS_ENV names the environment a server
+    serves, so each engine gets its own server and no model loads in the wrong one."""
+
+    def test_gbmodels_env_names_the_environment(self):
+        proc = subprocess.Popen([sys.executable, "-m", "gbmodels.server"], cwd=HERE, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL, text=True, bufsize=1, env={**os.environ, "GBMODELS_ENV": "ace-step"})
+        try:
+            ready = json.loads(proc.stdout.readline())
+            self.assertEqual((ready["env"], ready["models"]), ("ace-step", ["ace_step"]))
+            proc.stdin.write(json.dumps({"id": 1, "op": "run", "model": "skey"}) + "\n")
+            self.assertEqual(json.loads(proc.stdout.readline())["error"]["code"], "WRONG_ENVIRONMENT")
+        finally:
+            proc.stdin.close()
+            proc.wait(timeout=30)

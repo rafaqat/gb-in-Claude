@@ -51,7 +51,10 @@ export type ErrorCode =
   | "DONOR_INVALID"
   | "DONOR_TOO_SMALL"
   | "TRACK_NOT_IN_DONOR"
-  | "MIDI_REGION_NOT_IN_DONOR";
+  | "MIDI_REGION_NOT_IN_DONOR"
+  // generation engines (gb_generate)
+  | "ENGINE_BUSY"
+  | "JOB_NOT_FOUND";
 
 /** Why an action's effect could not be confirmed (closed set). */
 export type UncertainReason =

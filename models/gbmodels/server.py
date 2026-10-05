@@ -7,7 +7,7 @@ lines on stdout (the protocol stream). Libraries that print are redirected to st
     reply:    {"id": 1, "ok": true, "result": {...}, "load_s": 1.2?, "run_s": 0.4?}
               {"id": 1, "ok": false, "error": {"code": "UNKNOWN_MODEL" | "BAD_REQUEST" | "MODEL_FAILED", "message": "..."}}
 
-One server runs per Python environment (Foundation-1 lives in .venv-sat); a request for a model of another
+One server runs per Python environment (Foundation-1 lives in .venv-sat, the M12 engines in their own venvs); a request for a model of another
 environment is answered with WRONG_ENVIRONMENT, never loaded half-way.
 """
 import contextlib
@@ -21,7 +21,9 @@ from gbmodels.common import sync
 from gbmodels.registry import MODELS
 
 DEVICE = {"torch": "mps", "onnx": "coreml", "mlx": "mlx"}
-ENV = os.path.basename(os.path.dirname(os.path.dirname(sys.executable)))  # ".venv" or ".venv-sat"
+# ".venv" or ".venv-sat" from the venv folder; GBMODELS_ENV names it where folders clash (the engines' venvs are
+# also called .venv: "ace-step", "mulacover")
+ENV = os.environ.get("GBMODELS_ENV") or os.path.basename(os.path.dirname(os.path.dirname(sys.executable)))
 
 
 class Server:

@@ -3,6 +3,20 @@
 """The models of the M8 sidecar and what is known about them. `license` is recorded, never used to filter. `venv` names the Python environment the model runs in."""
 
 MODELS = {
+    "ace_step": {
+        "name": "ACE-Step 1.5 turbo (cover, text-to-music): DiT on MLX, 1.7B LM on MLX, float16 VAE",
+        "module": "gbmodels.ace_step", "venv": "ace-step", "kind": "mlx",
+        "source": "https://github.com/ace-step/ACE-Step-1.5 (pinned commit) + https://huggingface.co/ACE-Step/Ace-Step1.5 (pinned revision)",
+        "license": "MIT (code and weights)",
+        "task": "M12b gb_generate: a sung or instrumental cover of a song export; music from a text brief",
+    },
+    "mulacover": {
+        "name": "MuLaCover: a sung cover from melody / chord / drum MIDI — MLX token generator + the authors' codec on MPS",
+        "module": "gbmodels.mulacover", "venv": "mulacover", "kind": "mlx",
+        "source": "https://github.com/HeartMuLa/MuLaCover (pinned commit) + models/mulacover_mlx (our MLX port)",
+        "license": "code Apache-2.0; weights AND outputs CC BY-NC 4.0 (non-commercial)",
+        "task": "M12b gb_generate: vocals that follow a song's own melody and chords",
+    },
     "stems": {
         "name": "Stem tools: inspect, prepare (tempo / pitch / format), separate (Demucs htdemucs)",
         "module": "gbmodels.stems", "venv": ".venv", "kind": "torch",

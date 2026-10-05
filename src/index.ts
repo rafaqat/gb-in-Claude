@@ -28,6 +28,18 @@ const modelsPython = resolve(modelsDir, ".venv", "bin", "python");
 const listener = existsSync(modelsPython)
   ? createModelSidecar({ command: modelsPython, args: ["-m", "gbmodels.server"], cwd: modelsDir, timeoutMs: 120_000, startTimeoutMs: 120_000 })
   : undefined;
+// M12b engines for gb_generate, each in its own venv (outside gb-mcp, at reviewed commits; see gb://knowledge/generate):
+// a sidecar per installed engine, named with GBMODELS_ENV; a request may take most of an hour (a long song)
+const engineCache = process.env.GB_MCP_ENGINE_HOME ?? resolve(homedir(), "Library", "Caches", "gb-mcp"); // scripts/install-engines.sh
+const engineDirs = {
+  ace_step: process.env.GB_MCP_ACESTEP ?? resolve(engineCache, "ace-step"),
+  mulacover: process.env.GB_MCP_MULACOVER ?? resolve(engineCache, "mulacover"),
+};
+const engines = Object.fromEntries(Object.entries(engineDirs)
+  .map(([name, dir]) => [name, resolve(dir, ".venv", "bin", "python")] as const)
+  .filter(([, py]) => existsSync(py))
+  .map(([name, py]) => [name, createModelSidecar({ command: py, args: ["-m", "gbmodels.server"], cwd: modelsDir, timeoutMs: 45 * 60_000,
+    startTimeoutMs: 120_000, env: { GBMODELS_ENV: name.replace("_", "-") } })]));
 const server = createServer({
   system,
   garageband: {
@@ -41,11 +53,13 @@ const server = createServer({
   analyzer: createPythonAnalyzer({ python, analysisDir: resolve(packageRoot, "analysis"), timeoutMs: 180_000 }),
   gmRenderer: createGmRenderer({ binary: resolve(packageRoot, "native/bin/gm-render"), timeoutMs: 300_000 }),
   ...(listener ? { listener } : {}),
+  engines,
 });
 const shutdown = () => {
   const exit = () => process.exit(0);
   setTimeout(exit, 1000).unref(); // never hang on a stuck helper
   listener?.close();
+  for (const engine of Object.values(engines)) engine.close();
   system.helper.close().then(exit, exit);
 };
 process.on("SIGINT", shutdown);
