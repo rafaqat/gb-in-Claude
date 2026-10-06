@@ -518,3 +518,47 @@ GarageBand's interface differs between versions; the element locators live in `s
 - The vocal demo, the sung Twinkle versions and the AI covers (`media/vocal-demo.*`, `media/twinkle-sung-*`,
   `media/*-ace-step.*`) were generated with ACE-Step 1.5 (MIT) through gb_generate; the demo's words are new, the
   Twinkle words are traditional (Jane Taylor, 1806, public domain).
+
+
+
+
+
+  
+
+https://github.com/user-attachments/assets/66f3a722-42fe-42fb-b193-2e6db6516286
+
+[vocal-demo.band.zip](https://github.com/user-attachments/files/33102382/vocal-demo.band.zip)
+
+
+https://github.com/user-attachments/assets/38f75edd-5502-462a-bdfa-2aa154ccb792
+
+
+
+https://github.com/user-attachments/assets/2937c283-41fc-4850-b9e9-e236ac6fe49f
+
+[twinkle-violin-piano-ace-step.band.zip](https://github.com/user-attachments/files/33102376/twinkle-violin-piano-ace-step.band.zip)
+
+
+https://github.com/user-attachments/assets/3383ddb1-3ed0-4b2e-9401-db26f1f58986
+
+[twinkle-sung-zimmer.band.zip](https://github.com/user-attachments/files/33102373/twinkle-sung-zimmer.band.zip)
+
+
+https://github.com/user-attachments/assets/a4885bf1-545c-461c-a89b-db8487a25e66
+
+[twinkle-sung-lullaby.band.zip](https://github.com/user-attachments/files/33102370/twinkle-sung-lullaby.band.zip)
+
+
+https://github.com/user-attachments/assets/c2263d11-255b-49bf-8332-2a75626090ab
+
+[twinkle-sung-country.band.zip](https://github.com/user-attachments/files/33102366/twinkle-sung-country.band.zip)
+
+
+https://github.com/user-attachments/assets/4f4b302c-5736-4eef-b525-14eb1d353970
+
+
+
+https://github.com/user-attachments/assets/39f2c6aa-a6bb-436b-9525-4e583ca3edfe
+
+[twinkle-jupiter-ace-step.band.zip](https://github.com/user-attachments/files/33102362/twinkle-jupiter-ace-step.band.zip)
+
