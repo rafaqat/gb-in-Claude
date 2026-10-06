@@ -17,49 +17,124 @@ export a WAV, and "listen" to the result (loudness, tone, drums, tempo, key, a s
 
 ## Listen
 
-### A sung demo (gb_generate)
+Every example comes with its video, the MP3, the **GarageBand project** (`.band`, zipped — unzip and open it in
+GarageBand) and what made it: the prompt, the Song JSON, or the caption and lyrics. Two kinds:
 
-A short indie-pop song with a sung vocal: Claude Code wrote the caption and new lyrics after reading ACE-Step's own
-examples, `gb_generate` made it with ACE-Step 1.5 on a MacBook Air in about 2 minutes, `gb_stem separate {model:
-"roformer"}` took the vocal out, `gb_analyze lyrics` checked the words (6 of 8 lines sung as written, 2 partly) and
-`gb_analyze master` set the loudness (−14 LUFS).
+- **Made in GarageBand** — Claude Code writes the song as Song JSON, gb-mcp opens it in GarageBand, which plays it with
+  its own instruments, and saves the project.
+- **Made with ACE-Step 1.5** (MIT) through `gb_generate` — sung songs and AI covers of the GarageBand songs, placed on
+  audio tracks of a GarageBand project with `gb_band build` and checked with `gb_project open_band`.
 
-[▶ Listen (MP3)](media/vocal-demo.mp3) · [Caption, lyrics and calls](examples/vocal-demo.md)
+GitHub starts each player muted: turn the sound on in the player. The pieces are pastiches in a style, not affiliated
+with the composers; *Twinkle, Twinkle, Little Star* and its words (Jane Taylor, 1806) are public domain.
 
-### Twinkle, Twinkle, Little Star
+### Made in GarageBand
 
-Three versions of *Twinkle, Twinkle, Little Star*. Claude Code wrote each one as Song JSON, GarageBand's own
-instruments play it through gb-mcp, and `gb_analyze` checked every export. They are pastiches in each composer's
-style, not affiliated with the composers.
-
-GitHub starts each player muted: turn the sound on in the player.
-
-#### In the style of John Williams
+#### Twinkle, Twinkle — in the style of John Williams
 
 Celesta and harp magic, a brass fanfare, a march, then a jump up to E♭ for the finale.
 
 https://github.com/user-attachments/assets/bd76db5a-bce2-4683-864b-7b516084aec5
 
-[▶ Listen (MP3)](media/twinkle-williams.mp3) · [Song JSON](examples/twinkle-williams.song.json)
+[▶ MP3](media/twinkle-williams.mp3) · [MP4](media/twinkle-williams.mp4) · [GarageBand project](examples/bands/twinkle-williams.band.zip) · [Song JSON](examples/twinkle-williams.song.json)
 
-#### In the style of Hans Zimmer
+The video's celesta is GarageBand's Toy Celesta (`gb_tracks set_instrument`); the project keeps the General MIDI
+celesta (Delicate Bells) — choose Toy Celesta on the Celesta track to hear the video's sound.
+
+#### Twinkle, Twinkle — in the style of Hans Zimmer
 
 A ticking ostinato, brass "braams", and a storm in D minor that breaks into D major.
 
 https://github.com/user-attachments/assets/0f1adb5a-aa1d-4645-8ae6-9de8a9cd78f1
 
-[▶ Listen (MP3)](media/twinkle-zimmer.mp3) · [Song JSON](examples/twinkle-zimmer.song.json)
+[▶ MP3](media/twinkle-zimmer.mp3) · [MP4](media/twinkle-zimmer.mp4) · [GarageBand project](examples/bands/twinkle-zimmer.band.zip) · [Song JSON](examples/twinkle-zimmer.song.json)
 
-#### In the style of J. S. Bach
+#### Twinkle, Twinkle — in the style of J. S. Bach
 
 A toccata flourish, then a three-voice fugue on the tune for pipe organ, ending on a D-major chord.
 
 https://github.com/user-attachments/assets/4b70c3b3-0a6a-4c90-86cb-a91b52e067ef
 
-[▶ Listen (MP3)](media/twinkle-bach.mp3) · [Song JSON](examples/twinkle-bach.song.json)
+[▶ MP3](media/twinkle-bach.mp3) · [MP4](media/twinkle-bach.mp4) · [GarageBand project](examples/bands/twinkle-bach.band.zip) · [Song JSON](examples/twinkle-bach.song.json)
 
-The Williams celesta is GarageBand's Toy Celesta, loaded with `gb_tracks set_instrument`; the Song JSON alone
-gives the General MIDI celesta.
+#### Twinkle, Twinkle — a hymn to the night sky (Holst's *Jupiter* style)
+
+Piano and celesta at night, ticking strings over a drone, then the tune as a broad 3/4 hymn — strings and horn, six
+horns in unison, brass and timpani — and a luminous D-major finale.
+
+⬇️ DRAG twinkle-jupiter-garageband.mp4 HERE
+
+[▶ MP3](media/twinkle-jupiter-garageband.mp3) · [MP4](media/twinkle-jupiter-garageband.mp4) · [GarageBand project](examples/bands/twinkle-jupiter.band.zip) · [Song JSON](examples/twinkle-jupiter.song.json) · [The prompt](examples/twinkle-jupiter.md)
+
+#### Twinkle, Twinkle — violin and piano
+
+An intimate four-minute lullaby: piano, the tune on the violin, a middle swell, a closing phrase that settles.
+
+⬇️ DRAG twinkle-violin-piano-garageband.mp4 HERE
+
+[▶ MP3](media/twinkle-violin-piano-garageband.mp3) · [MP4](media/twinkle-violin-piano-garageband.mp4) · [GarageBand project](examples/bands/twinkle-violin-piano.band.zip) · [Song JSON](examples/twinkle-violin-piano.song.json) · [The prompt](examples/twinkle-violin-piano.md)
+
+### Made with ACE-Step 1.5 (MIT)
+
+#### A sung demo
+
+A short indie-pop song with new words: Claude Code wrote the caption and lyrics after reading ACE-Step's own examples,
+`gb_generate` made it on a MacBook Air in about 2 minutes, `gb_analyze lyrics` checked the words (6 of 8 lines sung as
+written, 2 partly) and `gb_analyze master` set the loudness.
+
+⬇️ DRAG vocal-demo.mp4 HERE
+
+[▶ MP3](media/vocal-demo.mp3) · [MP4](media/vocal-demo.mp4) · [Caption, lyrics and calls](examples/vocal-demo.md) · GarageBand project (stereo, on a track pair): ⬇️ DRAG vocal-demo.band.zip HERE
+
+#### Twinkle, Twinkle — sung
+
+The violin-and-piano song with a female singer and the traditional words, then two restyles that keep her voice:
+
+```
+Twinkle, twinkle, little star
+How I wonder what you are
+Up above the world so high
+Like a diamond in the sky
+Twinkle, twinkle, little star
+How I wonder what you are
+```
+
+**Lullaby** — female voice, solo violin and piano.
+
+⬇️ DRAG twinkle-sung-lullaby.mp4 HERE
+
+[▶ MP3](media/twinkle-sung-lullaby.mp3) · [MP4](media/twinkle-sung-lullaby.mp4) · GarageBand project: ⬇️ DRAG twinkle-sung-lullaby.band.zip HERE
+
+**In the style of Hans Zimmer** — the same voice over felt piano, a growing string ostinato, organ, low brass and taiko.
+
+⬇️ DRAG twinkle-sung-zimmer.mp4 HERE
+
+[▶ MP3](media/twinkle-sung-zimmer.mp3) · [MP4](media/twinkle-sung-zimmer.mp4) · GarageBand project: ⬇️ DRAG twinkle-sung-zimmer.band.zip HERE
+
+**Modern country** — the same voice with acoustic guitars, pedal steel, fiddle and a half-time band.
+
+⬇️ DRAG twinkle-sung-country.mp4 HERE
+
+[▶ MP3](media/twinkle-sung-country.mp3) · [MP4](media/twinkle-sung-country.mp4) · GarageBand project: ⬇️ DRAG twinkle-sung-country.band.zip HERE
+
+Prompts, captions, lyrics and how the cover strength decided whether a voice appeared: [examples/twinkle-sung.md](examples/twinkle-sung.md).
+
+#### AI covers of the GarageBand songs
+
+ACE-Step 1.5 re-plays a GarageBand export from a caption (`gb_generate` `cover`).
+
+**Jupiter hymn** (strength 0.6)
+
+⬇️ DRAG twinkle-jupiter-ace-step.mp4 HERE
+
+[▶ MP3](media/twinkle-jupiter-ace-step.mp3) · [MP4](media/twinkle-jupiter-ace-step.mp4) · GarageBand project: ⬇️ DRAG twinkle-jupiter-ace-step.band.zip HERE
+
+**Violin and piano** (strength 0.5) — with a real solo violin; it stays in time with the MIDI song, so its GarageBand
+project holds both: the MIDI instruments and the cover on an audio track.
+
+⬇️ DRAG twinkle-violin-piano-ace-step.mp4 HERE
+
+[▶ MP3](media/twinkle-violin-piano-ace-step.mp3) · [MP4](media/twinkle-violin-piano-ace-step.mp4) · GarageBand project: ⬇️ DRAG twinkle-violin-piano-ace-step.band.zip HERE
 
 ## Requirements
 
@@ -440,4 +515,6 @@ GarageBand's interface differs between versions; the element locators live in `s
   [Chordonomicon](https://huggingface.co/datasets/ailsntua/Chordonomicon) (Kantarelis et al. 2024,
   [arXiv 2410.22046](https://arxiv.org/abs/2410.22046)). The dataset is CC BY-NC 4.0 and is not part of this
   repository; `eval/m13-chords` reproduces the counts from your own download.
-- The vocal demo (`media/vocal-demo.mp3`) was generated with ACE-Step 1.5 (MIT) through gb_generate; its words are new.
+- The vocal demo, the sung Twinkle versions and the AI covers (`media/vocal-demo.*`, `media/twinkle-sung-*`,
+  `media/*-ace-step.*`) were generated with ACE-Step 1.5 (MIT) through gb_generate; the demo's words are new, the
+  Twinkle words are traditional (Jane Taylor, 1806, public domain).

@@ -1,0 +1,195 @@
+{
+ "title": "Twinkle, Twinkle, Little Star (violin and piano)",
+ "tempo": 60,
+ "key": "D major",
+ "humanize": "natural",
+ "seed": 23,
+ "sections": [
+  {
+   "name": "intro",
+   "bars": 4
+  },
+  {
+   "name": "theme 1",
+   "bars": 12
+  },
+  {
+   "name": "theme 2",
+   "bars": 12
+  },
+  {
+   "name": "middle",
+   "bars": 12
+  },
+  {
+   "name": "theme 3",
+   "bars": 12
+  },
+  {
+   "name": "closing",
+   "bars": 4,
+   "tempoTo": 50
+  },
+  {
+   "name": "end",
+   "bars": 3,
+   "tempoTo": 44
+  }
+ ],
+ "tracks": [
+  {
+   "name": "Violin",
+   "role": "lead",
+   "program": 40,
+   "vibrato": "light",
+   "parts": {
+    "theme 1": {
+     "notes": "d5 d5 a5 a5 | b5 b5 a5@2 | g5 g5 f#5 f#5 | e5 e5 d5@2 | a5 a5 g5 g5 | f#5 f#5 e5@2 | a5 a5 g5 g5 | f#5 f#5 e5@2 | d5 d5 a5 a5 | b5 b5 a5@2 | g5 g5 f#5 f#5 | e5 e5 d5@2",
+     "dynamics": "p"
+    },
+    "theme 2": {
+     "notes": "f#4@4 | g4@2 f#4@2 | d4@2 f#4@2 | e4@2 f#4@2 | f#4@2 g4@2 | f#4@2 e4@2 | a4@2 b4@2 | a4@2 g4@2 | f#4@4 | g4@2 a4@2 | b4@2 a4@2 | g4@2 f#4@2",
+     "dynamics": "pp<p"
+    },
+    "middle": {
+     "notes": "f#5@3 e5 | d5@4 | a5@3 g5 | e5@4 | f#5@2 b5@2 | b5@2 d6@2 | e6@2 b5@2 | c#6@2 a5@2 | a5@4 | b5@2 g5@2 | g5@2 e5@2 | f#5@4",
+     "dynamics": "p<f>p"
+    },
+    "theme 3": {
+     "notes": "d4 d4 a4 a4 | b4 b4 a4@2 | g4 g4 f#4 f#4 | e4 e4 d4@2 | a4 a4 g4 g4 | f#4 f#4 e4@2 | a4 a4 g4 g4 | f#4 f#4 e4@2 | d4 d4 a4 a4 | b4 b4 a4@2 | g4 g4 f#4 f#4 | e4 e4 d4@2",
+     "dynamics": "p"
+    },
+    "closing": {
+     "notes": "g5@2 f#5@2 | e5@2 e5@2 | d5@4 | d5@4",
+     "dynamics": "p>pp"
+    }
+   }
+  },
+  {
+   "name": "Piano Melody",
+   "role": "lead",
+   "program": 0,
+   "vibrato": "off",
+   "parts": {
+    "theme 2": {
+     "notes": "d5 d5 a5 a5 | b5 b5 a5@2 | g5 g5 f#5 f#5 | e5 e5 d5@2 | a5 a5 g5 g5 | f#5 f#5 e5@2 | a5 a5 g5 g5 | f#5 f#5 e5@2 | d5 d5 a5 a5 | b5 b5 a5@2 | g5 g5 f#5 f#5 | e5 e5 d5@2",
+     "dynamics": "mp",
+     "pedal": "half"
+    },
+    "end": {
+     "notes": "~ a5 ~ f#5 | d5@4 | ~@4",
+     "dynamics": "pp>ppp",
+     "pedal": "bar"
+    }
+   }
+  },
+  {
+   "name": "Piano Chords",
+   "role": "arp",
+   "program": 0,
+   "level": -6,
+   "parts": {
+    "intro": {
+     "chords": "D | G | D/F# | A",
+     "style": "broken",
+     "octave": 3,
+     "dynamics": "pp<p",
+     "pedal": "bar"
+    },
+    "theme 1": {
+     "chords": "D | G D | G D | A7 D | D G | D A | D G | D A | D | G D | G D | A7 D",
+     "style": "broken",
+     "octave": 3,
+     "dynamics": "p",
+     "pedal": "bar"
+    },
+    "theme 2": {
+     "chords": "D | G D | G D | A7 D | D G | D A | D G | D A | D | G D | G D | A7 D",
+     "style": "broken",
+     "octave": 3,
+     "dynamics": "pp",
+     "pedal": "bar"
+    },
+    "middle": {
+     "chords": "Bm | G | D | A | Bm | G | Em | A | D | G | Em A | D",
+     "style": "broken",
+     "octave": 3,
+     "dynamics": "p<mf>p",
+     "pedal": "bar"
+    }
+   }
+  },
+  {
+   "name": "Piano Block",
+   "role": "pad",
+   "program": 0,
+   "level": -8,
+   "parts": {
+    "theme 3": {
+     "chords": "D | G D | G D | A7 D | D G | D A | D G | D A | D | G D | G D | A7 D",
+     "style": "sustain",
+     "octave": 3,
+     "dynamics": "pp",
+     "pedal": "bar"
+    },
+    "closing": {
+     "chords": "G D | A7 | D | D",
+     "style": "sustain",
+     "octave": 3,
+     "dynamics": "pp",
+     "pedal": "bar"
+    }
+   }
+  },
+  {
+   "name": "Piano Bass",
+   "role": "bass",
+   "program": 0,
+   "level": -6,
+   "parts": {
+    "intro": {
+     "chords": "D | G | D/F# | A",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "pp",
+     "pedal": "bar"
+    },
+    "theme 1": {
+     "chords": "D | G D | G D | A7 D | D G | D A | D G | D A | D | G D | G D | A7 D",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "pp",
+     "pedal": "bar"
+    },
+    "theme 2": {
+     "chords": "D | G D | G D | A7 D | D G | D A | D G | D A | D | G D | G D | A7 D",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "pp",
+     "pedal": "bar"
+    },
+    "middle": {
+     "chords": "Bm | G | D | A | Bm | G | Em | A | D | G | Em A | D",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "pp",
+     "pedal": "bar"
+    },
+    "theme 3": {
+     "chords": "D | G D | G D | A7 D | D G | D A | D G | D A | D | G D | G D | A7 D",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "pp",
+     "pedal": "bar"
+    },
+    "closing": {
+     "chords": "G D | A | D | D",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "pp",
+     "pedal": "bar"
+    }
+   }
+  }
+ ]
+}

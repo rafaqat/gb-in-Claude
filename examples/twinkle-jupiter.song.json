@@ -1,0 +1,358 @@
+{
+ "title": "Twinkle, Twinkle, Little Star (a hymn to the night sky)",
+ "tempo": 72,
+ "timeSignature": [
+  3,
+  4
+ ],
+ "key": "D major",
+ "humanize": "natural",
+ "seed": 17,
+ "sections": [
+  {
+   "name": "night",
+   "bars": 8
+  },
+  {
+   "name": "tick",
+   "bars": 8
+  },
+  {
+   "name": "breath",
+   "bars": 2,
+   "tempoTo": 60
+  },
+  {
+   "name": "hymn 1",
+   "bars": 8,
+   "tempo": 60
+  },
+  {
+   "name": "hymn 2",
+   "bars": 8
+  },
+  {
+   "name": "hymn 3",
+   "bars": 8
+  },
+  {
+   "name": "piano",
+   "bars": 4
+  },
+  {
+   "name": "finale",
+   "bars": 8
+  },
+  {
+   "name": "last",
+   "bars": 2,
+   "tempoTo": 50
+  }
+ ],
+ "tracks": [
+  {
+   "name": "Piano",
+   "role": "lead",
+   "program": 0,
+   "vibrato": "off",
+   "parts": {
+    "night": {
+     "notes": "d5@2 d5 | a5@3 | ~@3 | b5@2 b5 | a5@3 | ~@3 | g5@2 f#5 | e5@2 d5",
+     "dynamics": "pp<p",
+     "pedal": "bar"
+    },
+    "tick": {
+     "notes": "a5@2 a5 | g5@3 | ~@3 | f#5@2 f#5 | e5@3 | ~@3 | ~@3 | ~@3",
+     "dynamics": "p",
+     "pedal": "bar"
+    },
+    "piano": {
+     "notes": "d5@2 d5 | a5@2 a5 | b5@2 b5 | a5@3",
+     "dynamics": "pp",
+     "pedal": "bar"
+    }
+   }
+  },
+  {
+   "name": "Piano Left",
+   "role": "bass",
+   "program": 0,
+   "parts": {
+    "night": {
+     "chords": "D | D | G | G | D | D | Em A | D",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "pp",
+     "pedal": "bar"
+    },
+    "piano": {
+     "chords": "D | D/F# | G | A",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "pp",
+     "pedal": "bar"
+    }
+   }
+  },
+  {
+   "name": "Celesta",
+   "role": "lead-high",
+   "program": 8,
+   "level": -6,
+   "vibrato": "off",
+   "parts": {
+    "night": {
+     "notes": "~@3 | ~@3 | ~ a6 d7 | ~@3 | ~@3 | ~ f#6 a6 | ~@3 | ~@2 a6"
+    },
+    "tick": {
+     "notes": "~@3 | ~@3 | ~ e6 a6 | ~@3 | ~@3 | ~ d6 a6 | ~@3 | ~@3"
+    },
+    "finale": {
+     "notes": "~@3 | ~ ~ a6 | ~@3 | ~ ~ e6 | ~@3 | ~ ~ f#6 | ~@3 | d7@3",
+     "dynamics": "mp"
+    },
+    "last": {
+     "notes": "~ ~ a6 | ~@3"
+    }
+   }
+  },
+  {
+   "name": "Ostinato",
+   "role": "arp",
+   "program": 48,
+   "level": -12,
+   "parts": {
+    "tick": {
+     "notes": "d5 a4 d5 a4 d5 a4 | d5 a4 d5 a4 d5 a4 | d5 a4 d5 a4 d5 a4 | d5 a4 d5 a4 d5 a4 | d5 a4 d5 a4 d5 a4 | d5 a4 d5 a4 d5 a4 | d5 a4 d5 a4 d5 a4 | d5 a4 d5 a4 d5 a4",
+     "dynamics": "pp<p"
+    },
+    "breath": {
+     "notes": "d5 a4 d5 a4 ~@2 | ~@6",
+     "dynamics": "p>ppp"
+    }
+   }
+  },
+  {
+   "name": "Drone",
+   "role": "pad",
+   "program": 89,
+   "level": -14,
+   "parts": {
+    "night": {
+     "chords": "D | D | D | D | D | D | D | D",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "ppp<pp"
+    },
+    "tick": {
+     "chords": "D | D | D | D | D | D | D | D",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "pp<p"
+    },
+    "breath": {
+     "chords": "D | D",
+     "style": "sustain",
+     "octave": 2,
+     "dynamics": "p>ppp"
+    }
+   }
+  },
+  {
+   "name": "Melody Strings",
+   "role": "lead",
+   "program": 48,
+   "level": -2,
+   "vibrato": "light",
+   "parts": {
+    "breath": {
+     "notes": "~@3 | ~ ~ a3",
+     "dynamics": "pp"
+    },
+    "hymn 1": {
+     "notes": "d4@2 d4 | a4@2 a4 | b4@2 b4 | a4@3 | g4@2 g4 | f#4@2 f#4 | e4@2 e4 | d4@3",
+     "dynamics": "p<mp"
+    },
+    "hymn 2": {
+     "notes": "a5@2 a5 | g5@2 g5 | f#5@2 f#5 | e5@3 | a5@2 a5 | g5@2 g5 | f#5@2 f#5 | e5@4 a4@2",
+     "dynamics": "mp<mf"
+    },
+    "hymn 3": {
+     "notes": "d5@2 d5 | a5@2 a5 | b5@2 b5 | a5@3 | g5@2 g5 | f#5@2 f#5 | e5@2 e5 | d5@3",
+     "dynamics": "f<ff>f"
+    },
+    "finale": {
+     "notes": "d5@2 d5 | a5@2 a5 | b5@2 b5 | a5@3 | g5@2 g5 | f#5@2 f#5 | e5@2 e5 | d5@3",
+     "dynamics": "mf<f"
+    }
+   }
+  },
+  {
+   "name": "Horn",
+   "role": "lead",
+   "program": 60,
+   "level": -7,
+   "vibrato": "light",
+   "parts": {
+    "hymn 1": {
+     "notes": "d4@2 d4 | a4@2 a4 | b4@2 b4 | a4@3 | g4@2 g4 | f#4@2 f#4 | e4@2 e4 | d4@3",
+     "dynamics": "p<mp"
+    }
+   }
+  },
+  {
+   "name": "Six Horns",
+   "role": "lead",
+   "program": 60,
+   "vibrato": "light",
+   "parts": {
+    "hymn 2": {
+     "notes": "a4@2 a4 | g4@2 g4 | f#4@2 f#4 | e4@3 | a4@2 a4 | g4@2 g4 | f#4@2 f#4 | e4@4 a3@2",
+     "dynamics": "mp<f"
+    },
+    "hymn 3": {
+     "notes": "d4@2 d4 | a4@2 a4 | b4@2 b4 | a4@3 | g4@2 g4 | f#4@2 f#4 | e4@2 e4 | d4@3",
+     "dynamics": "f<ff"
+    },
+    "finale": {
+     "notes": "d4@2 d4 | a4@2 a4 | b4@2 b4 | a4@3 | g4@2 g4 | f#4@2 f#4 | e4@2 e4 | d4@3",
+     "dynamics": "mf"
+    }
+   }
+  },
+  {
+   "name": "Trumpets",
+   "role": "lead-high",
+   "program": 56,
+   "level": -5,
+   "vibrato": "off",
+   "parts": {
+    "hymn 3": {
+     "notes": "d4@2 d4 | a4@2 a4 | b4@2 b4 | a4@3 | g4@2 g4 | f#4@2 f#4 | e4@2 e4 | d4@3",
+     "dynamics": "mf<f"
+    }
+   }
+  },
+  {
+   "name": "Strings",
+   "role": "pad",
+   "program": 48,
+   "level": -4,
+   "parts": {
+    "hymn 1": {
+     "chords": "D D Bm | D/F# D/F# A | G G Em | Asus4 Asus4 A | G G Em | D/F# D/F# Bm | Em7 Em7 A7 | D",
+     "style": "sustain",
+     "dynamics": "p<mp"
+    },
+    "hymn 2": {
+     "chords": "D D F#m | Em Em G | Bm Bm D | Asus4 A A | F#m F#m D/F# | G G Em | D/F# D/F# Bm | Esus4 E A7",
+     "style": "sustain",
+     "dynamics": "mp<f"
+    },
+    "hymn 3": {
+     "chords": "D D Bm | D/F# D/F# A | G G Em | Asus4 Asus4 A | G G Em | D/F# D/F# Bm | Em7 Em7 A7 | D",
+     "style": "sustain",
+     "dynamics": "f<ff"
+    },
+    "finale": {
+     "chords": "D D Bm | D/F# D/F# A | G G Em | Asus4 Asus4 A | G G Em | D/F# D/F# Bm | Em7 Em7 A7 | D",
+     "style": "sustain",
+     "dynamics": "mf<f"
+    },
+    "last": {
+     "chords": "D | D",
+     "style": "sustain",
+     "dynamics": "mf>pp"
+    }
+   }
+  },
+  {
+   "name": "Basses",
+   "role": "bass",
+   "program": 43,
+   "level": -3,
+   "parts": {
+    "hymn 1": {
+     "chords": "D D B | F# F# A | G G E | A A A | G G E | F# F# B | E E A | D",
+     "style": "sustain",
+     "dynamics": "p<mp"
+    },
+    "hymn 2": {
+     "chords": "D D F# | E E G | B B D | A A A | F# F# D | G G E | F# F# B | E E A",
+     "style": "sustain",
+     "dynamics": "mp<f"
+    },
+    "hymn 3": {
+     "chords": "D D B | F# F# A | G G E | A A A | G G E | F# F# B | E E A | D",
+     "style": "sustain",
+     "dynamics": "f"
+    },
+    "finale": {
+     "chords": "D D B | F# F# A | G G E | A A A | G G E | F# F# B | E E A | D",
+     "style": "sustain",
+     "dynamics": "mf"
+    },
+    "last": {
+     "chords": "D | D",
+     "style": "sustain",
+     "dynamics": "mf>pp"
+    }
+   }
+  },
+  {
+   "name": "Trombones",
+   "role": "pad",
+   "program": 57,
+   "level": -6,
+   "parts": {
+    "hymn 2": {
+     "chords": "D D F#m | Em Em G | Bm Bm D | Asus4 A A | F#m F#m D/F# | G G Em | D/F# D/F# Bm | Esus4 E A7",
+     "style": "sustain",
+     "octave": 3,
+     "dynamics": "pp<p"
+    },
+    "hymn 3": {
+     "chords": "D D Bm | D/F# D/F# A | G G Em | Asus4 Asus4 A | G G Em | D/F# D/F# Bm | Em7 Em7 A7 | D",
+     "style": "sustain",
+     "octave": 3,
+     "dynamics": "mf<f"
+    }
+   }
+  },
+  {
+   "name": "Timpani",
+   "role": "bass",
+   "program": 47,
+   "level": -6,
+   "parts": {
+    "hymn 2": {
+     "notes": "d2@3 | ~@3 | ~@3 | a1@3 | ~@3 | ~@3 | ~@3 | a1 a1 a1",
+     "dynamics": "p<mp"
+    },
+    "hymn 3": {
+     "notes": "d2@3 | ~@3 | g1@3 | a1@3 | g1@3 | ~@3 | a1 a1 a1 | d2@3",
+     "dynamics": "f"
+    }
+   }
+  },
+  {
+   "name": "Cymbals",
+   "role": "drums",
+   "program": 48,
+   "level": -6,
+   "parts": {
+    "hymn 3": {
+     "grid": {
+      "crash": "............|............|............|............|............|............|............|X..........."
+     }
+    },
+    "finale": {
+     "grid": {
+      "ride": "............|............|............|............|............|............|oooooooooxxX|............",
+      "crash": "............|............|............|............|............|............|............|x..........."
+     }
+    }
+   }
+  }
+ ]
+}
