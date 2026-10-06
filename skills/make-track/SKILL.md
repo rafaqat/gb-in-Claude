@@ -1,7 +1,7 @@
 ---
 name: make-track
 description: Use when the user asks to make, write, compose or produce a new track/song in GarageBand with gb-mcp. Turns a brief into Song JSON, renders it, opens it in GarageBand, exports and analyzes it — hands-free (no clicks from you).
-version: 0.9.0
+version: 0.9.1
 ---
 
 # Make a track (gb-mcp)

@@ -13,8 +13,9 @@ and an arpeggio is not one. Paths are relative to the workspace (out/). Never ov
 import os, sys
 import mido
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACE = os.environ.get("GB_MCP_WORKSPACE") or os.path.join(os.path.dirname(ROOT), "out")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # eval/: _paths
+from _paths import ROOT, workspace  # noqa: E402
+WORKSPACE = workspace()
 
 
 def one_track(src: mido.MidiFile, name: str, bars: int, channel: int) -> mido.MidiFile:

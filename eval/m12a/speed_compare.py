@@ -11,8 +11,9 @@ run gives the floor: the same settings and seed twice.
 import json, os, sys
 import numpy as np, soundfile as sf
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACE = os.environ.get("GB_MCP_WORKSPACE") or os.path.join(os.path.dirname(ROOT), "out")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # eval/: _paths
+from _paths import ROOT, workspace  # noqa: E402
+WORKSPACE = workspace()
 GEN = os.path.join(WORKSPACE, "gen", "m12a")
 VARIANTS = ("base", "vae16", "compile", "both")
 

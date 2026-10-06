@@ -13,3 +13,6 @@ models/bench/inputs/*.wav
 # other git worktrees of this repo (e.g. created by Claude Code)
 .claude/worktrees/
 models/bench/*.log
+# eval caches and outputs belong in the workspace; never commit them from eval/
+eval/**/*.npz
+eval/**/prompts-chosen*.json

@@ -39,9 +39,9 @@ export const DRUM_VOICES = {
 
 export type DrumVoice = keyof typeof DRUM_VOICES;
 
-/** Voices only GarageBand's Orchestral Kit (GM kit 40/48) plays as their own sounds — M14 live probe: SoCal, Retro Rock
- * and Roots are silent on them; Boutique 808 plays one pitched 808 boom across them and Electro one pitched click.
- * Tambourine, cowbell and claves sound on every kit. */
+/** Voices that, of the six GarageBand kits GM reaches, only the Orchestral Kit (GM kit 40/48) plays as their own sounds —
+ * M14 live probe: SoCal, Retro Rock and Roots are silent on them; Boutique 808 plays one pitched 808 boom across them
+ * and Electro one pitched click. Tambourine, cowbell and claves sound on all six. */
 export const ORCHESTRAL_KIT_ONLY: ReadonlySet<DrumVoice> = new Set<DrumVoice>(["bongo-high", "bongo-low", "conga-mute",
   "conga-high", "conga-low", "timbale-high", "timbale-low", "agogo-high", "agogo-low", "cabasa", "guiro-short", "guiro-long",
   "woodblock-high", "woodblock-low", "triangle-mute", "triangle"]);

@@ -30,7 +30,7 @@ describe("validateSong: production warnings", () => {
       .toContainEqual(["warning", "HUMANIZE_OFF", "humanize"]);
   });
 
-  // M14 live probe: only the Orchestral Kit (40/48) plays hand percussion; other kits are silent or play one pitched sound
+  // M14 live probe: of the six kits GM reaches, only the Orchestral Kit (40/48) plays hand percussion; other kits are silent or play one pitched sound
   it.each([[undefined, "the default kit"], [0, "SoCal"], [24, "Boutique 808"]])("warns that hand percussion on kit %s (%s) will not sound as written", (program, _kit) => {
     expect(codes({ ...base, tracks: [{ name: "Perc", role: "drums", ...(program === undefined ? {} : { program }),
       parts: { a: { grid: { kick: "x...", "conga-high": "..x." } } } }] }))

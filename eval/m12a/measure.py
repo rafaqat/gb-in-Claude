@@ -18,8 +18,9 @@ Stems go to <workspace>/gen/m12a/stems/ (reused when present; never overwritten)
 import json, os, re, sys
 import numpy as np, soundfile as sf, librosa, mido
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACE = os.environ.get("GB_MCP_WORKSPACE") or os.path.join(os.path.dirname(ROOT), "out")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # eval/: _paths
+from _paths import ROOT, workspace  # noqa: E402
+WORKSPACE = workspace()
 GEN = os.path.join(WORKSPACE, "gen", "m12a")
 sys.path.insert(0, os.path.join(ROOT, "models"))
 from gbmodels import stems  # noqa: E402

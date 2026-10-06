@@ -14,8 +14,9 @@ Part 2 is eval/m12b/measure.py. Stops at the first step that is not verified.
 """
 import asyncio, json, os, sys, time
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACE = os.environ.get("GB_MCP_WORKSPACE") or os.path.join(os.path.dirname(ROOT), "out")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # eval/: _paths
+from _paths import ROOT, workspace  # noqa: E402
+WORKSPACE = workspace()
 
 async def main(config: str) -> int:
     with open(config) as f:

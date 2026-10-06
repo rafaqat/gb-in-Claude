@@ -10,11 +10,12 @@ import { createDefaultSystemDeps } from "./mcp/gb-system.js";
 import { createAppleScripts, openInGarageBand } from "./garageband/applescript.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createServer, SERVER_VERSION } from "./mcp/server.js";
+import { workspaceDir as resolveWorkspace } from "./workspace.js";
 import { mutationGate } from "./garageband/gate.js";
 import { existsSync } from "node:fs";
 import { createModelSidecar } from "./models/sidecar.js";
 
-const workspaceDir = resolve(process.env.GB_MCP_WORKSPACE ?? resolve(homedir(), "Music", "gb-mcp"));
+const workspaceDir = resolveWorkspace();
 // One GarageBand mutation at a time across every gb-mcp process of this user (two Claude sessions, any workspace).
 mutationGate.configure({ lockPath: resolve(homedir(), "Library", "Caches", "gb-mcp", "garageband.lock") });
 console.log = (...args: unknown[]) => console.error(...args); // belt and braces: nothing reaches stdout

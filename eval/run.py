@@ -20,8 +20,9 @@ import os
 import statistics
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gb-mcp/
-WORKSPACE = os.environ.get("GB_MCP_WORKSPACE") or os.path.expanduser("~/Music/gb-mcp")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # eval/: _paths
+from _paths import ROOT, workspace  # noqa: E402
+WORKSPACE = workspace()  # GB_MCP_WORKSPACE, else out/ beside gb-mcp; passed on to the server it starts
 sys.path.insert(0, os.path.join(ROOT, "models"))
 
 from gbmodels import beatthis, clap, skey  # noqa: E402

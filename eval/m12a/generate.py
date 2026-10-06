@@ -12,8 +12,9 @@ results.jsonl; a job whose WAV exists is skipped (a run can resume), and nothing
 """
 import json, os, resource, subprocess, sys, time
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACE = os.environ.get("GB_MCP_WORKSPACE") or os.path.join(os.path.dirname(ROOT), "out")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # eval/: _paths
+from _paths import ROOT, workspace  # noqa: E402
+WORKSPACE = workspace()
 ACE = os.environ.get("GB_MCP_ACESTEP", os.path.expanduser("~/Library/Caches/gb-mcp/ace-step"))
 PINNED_COMMIT = "ca1e85fe9430179831e6bc6be790c332190a3866"  # github.com/ace-step/ACE-Step-1.5, MIT, reviewed 2026-10-05
 WEIGHTS = ("ACE-Step/Ace-Step1.5", "19671f406d603126926c1b7e2adc169acbcade22")  # MIT; turbo DiT, 1.7B LM, VAE, text encoder

@@ -54,7 +54,7 @@ export function validateSong(song: Song, opts: ValidateOptions = {}): Issue[] {
       .filter((v) => ORCHESTRAL_KIT_ONLY.has(v as DrumVoice));
     if (hand.length > 0) {
       issues.push({ severity: "warning", code: "PERCUSSION_NEEDS_ORCHESTRAL_KIT", path: `tracks.${t.name}`,
-        message: `${hand.join(", ")}: on GarageBand only the Orchestral Kit plays these (SoCal, Retro Rock and Roots are silent; ` +
+        message: `${hand.join(", ")}: of the six GarageBand kits GM reaches, only the Orchestral Kit plays these (SoCal, Retro Rock and Roots are silent; ` +
           `Boutique 808 and Electro play one pitched sound). Move them to their own drums track with "program": 40.` });
     }
   }

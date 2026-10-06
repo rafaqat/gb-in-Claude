@@ -21,7 +21,9 @@ import sys
 from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # gb-mcp/
-OUT = os.environ.get("M13_17_OUT") or os.path.join(os.environ.get("GB_MCP_WORKSPACE") or os.path.expanduser("~/Music/gb-mcp"), "eval-m13-17")
+sys.path.insert(0, os.path.join(ROOT, "eval"))  # _paths: the workspace (GB_MCP_WORKSPACE, default ~/Music/gb-mcp)
+from _paths import workspace  # noqa: E402
+OUT = os.environ.get("M13_17_OUT") or os.path.join(workspace(), "eval-m13-17")
 sys.path.insert(0, os.path.join(ROOT, "models"))
 
 from gbmodels import beatthis, clap  # noqa: E402

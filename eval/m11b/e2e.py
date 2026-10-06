@@ -11,8 +11,9 @@ verified) → 7 gb_export song. Prints each step's status; stops at the first th
 """
 import asyncio, json, os, sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACE = os.environ.get("GB_MCP_WORKSPACE") or os.path.expanduser("~/Music/gb-mcp")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # eval/: _paths
+from _paths import ROOT, workspace  # noqa: E402
+WORKSPACE = workspace()
 
 
 async def main(mid: str, stem: str, bpm: float, name: str) -> int:

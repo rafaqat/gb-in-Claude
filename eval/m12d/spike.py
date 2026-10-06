@@ -10,8 +10,9 @@ outputs non-commercial): MuLaCover@bbbaef2, HeartCodec-oss@f889dab, Qwen3-Embedd
 """
 import json, os, resource, subprocess, sys, time
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACE = os.environ.get("GB_MCP_WORKSPACE") or os.path.join(os.path.dirname(ROOT), "out")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # eval/: _paths
+from _paths import ROOT, workspace  # noqa: E402
+WORKSPACE = workspace()
 CODE = os.environ.get("GB_MCP_MULACOVER", os.path.expanduser("~/Library/Caches/gb-mcp/mulacover"))
 CKPT = os.path.expanduser("~/Library/Caches/gb-mcp/mulacover-ckpt")
 PINNED_COMMIT = "f01810c715a58ddc3d5a795c562fe5d8fbd56b24"

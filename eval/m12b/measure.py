@@ -14,8 +14,9 @@ Pass: every lag ≤ 5 ms; rest vs MIDI-only ≥ 0.95 and above the control; ever
 import json, os, sys
 import numpy as np, soundfile as sf, librosa
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-WORKSPACE = os.environ.get("GB_MCP_WORKSPACE") or os.path.join(os.path.dirname(ROOT), "out")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # eval/: _paths
+from _paths import ROOT, workspace  # noqa: E402
+WORKSPACE = workspace()
 SR = 44100
 
 

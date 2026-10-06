@@ -79,7 +79,7 @@ describe("genre templates (M9): a full Song JSON draft for every genre gb-mcp kn
     }
   });
 
-  // M14 live probe (out/probe-export/m14-perc-probe-v1.wav): on GarageBand only the Orchestral Kit plays hand percussion
+  // M14 live probe (out/probe-export/m14-perc-probe-v1.wav): of the six GarageBand kits GM reaches, only the Orchestral Kit plays hand percussion
   // (congas, bongos, timbales, güiro …) as distinct sounds — SoCal, Retro Rock and Roots are silent on those notes, and
   // Boutique 808 and Electro play one pitched sound across them
   it.each(Object.keys(GENRE_TEMPLATES))("%s: hand percussion plays on the Orchestral Kit, in its own drum track", (genre) => {

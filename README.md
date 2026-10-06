@@ -384,9 +384,9 @@ Arabic pop, Khaleeji, mahraganat, raï, gnawa, Moroccan chaabi, dabke; country, 
 soul, blues, Celtic folk, lullaby, K-pop and amapiano.
 
 Drum grids take Latin and world percussion too (conga, bongo, timbale, cowbell, claves, güiro, agogo, cabasa,
-tambourine, woodblock, triangle). On GarageBand only the Orchestral Kit (GM kit 40) plays the hand percussion — the
-acoustic kits are silent on those notes and Boutique 808 plays one pitched boom — so templates give it its own
-drums track there, and `gb_song validate` warns about any other kit. GM cannot reach some signature instruments in
+tambourine, woodblock, triangle). Of the six GarageBand kits that General MIDI reaches, only the Orchestral Kit (GM
+kit 40) plays the hand percussion — the acoustic kits are silent on those notes and Boutique 808 plays one pitched
+boom — so templates give it its own drums track there, and `gb_song validate` warns about any other kit. GM cannot reach some signature instruments in
 GarageBand (sitar, oud, banjo, pedal steel, accordion): a draft carries the genre's rhythm and harmony, and
 `gb_generate` gives its real sound. `gb://knowledge/genres` has the caption words (instruments, voice, production,
 tempo) for each of the 47 genres.
