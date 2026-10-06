@@ -71,7 +71,7 @@ def load(device: str, **_) -> dict:
     from mulacover import MuLaCoverGenPipeline
     from . import mulacover_shims
     shims = mulacover_shims.apply()
-    pipe = MuLaCoverGenPipeline.from_pretrained(CKPT, device=torch.device("mps"), lazy_load=True,
+    pipe = MuLaCoverGenPipeline.from_pretrained(CKPT, device=torch.device("mps"), lazy_load=True,  # CKPT: a local folder, pinned at install
                                                 dtype={"mulacover": torch.bfloat16, "codec": torch.float32, "qwen": torch.float32, "transcriptor": torch.float32})
     from mulacover_mlx.model import MuLaCoverDims, MuLaCoverMLX, load_checkpoint
     model = MuLaCoverMLX(MuLaCoverDims.from_config(os.path.join(CKPT, "MuLaCover", "config.json")))

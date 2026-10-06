@@ -9,6 +9,7 @@
 import { z } from "zod";
 import { existsSync, lstatSync, readFileSync } from "node:fs";
 import { basename, extname, join } from "node:path";
+import { recordSource } from "../workspace/stem-source.js";
 import { resolveWorkspaceFile, workspaceOutputDir } from "../workspace/paths.js";
 import { wavInfo } from "../band/wav.js";
 import type { ModelSidecar } from "../models/sidecar.js";
@@ -149,6 +150,7 @@ export function createGbStem(deps: GbStemDeps) {
     const checked = Object.entries(stems).map(([name, path]) => ({ name, path, file: placeable(path) }));
     const bad = checked.filter((c) => !c.file.ok);
     if (bad.length) return failed(op, "AUDIO_INVALID", `stems that cannot be placed: ${bad.map((b) => (b.file as { message: string }).message).join("; ")}`);
+    recordSource(made.value, base, wav); // which recording these stems are
     const frames = checked.map((c) => (c.file as { frames: number }).frames);
     const warnings = Math.max(...frames) - Math.min(...frames) > Math.max(...frames) * LENGTH_TOLERANCE ? ["the stems differ in length by more than 1 %"] : [];
     return verified(op, { stems, model, rate }, warnings);

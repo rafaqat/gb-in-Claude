@@ -12,10 +12,14 @@ export type WavError = { code: "NOT_WAV" | "WAV_UNSUPPORTED"; message: string };
 
 type Chunk = { id: string; at: number; size: number };
 
+/** More chunks than any real WAV has (they have a handful): a file of empty chunks is damage, and listing them all
+ * cost ~16 bytes of heap per file byte. */
+const MAX_CHUNKS = 1024;
+
 function chunks(b: Uint8Array): Chunk[] {
   const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
   const out: Chunk[] = [];
-  for (let at = 12; at + 8 <= b.length; ) {
+  for (let at = 12; at + 8 <= b.length && out.length <= MAX_CHUNKS; ) {
     const size = v.getUint32(at + 4, true);
     out.push({ id: String.fromCharCode(...b.subarray(at, at + 4)), at: at + 8, size });
     at += 8 + size + (size & 1);
@@ -29,6 +33,7 @@ export function wavInfo(b: Uint8Array): Result<WavInfo, WavError> {
   if (b.length < 12 || ascii(b, 0) !== "RIFF" || ascii(b, 8) !== "WAVE") return err({ code: "NOT_WAV", message: "not a RIFF/WAVE file" });
   const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
   const list = chunks(b);
+  if (list.length > MAX_CHUNKS) return err({ code: "NOT_WAV", message: `the WAV has more than ${MAX_CHUNKS} chunks (damaged)` });
   const fmt = list.find((c) => c.id === "fmt ");
   const data = list.find((c) => c.id === "data");
   if (!fmt || !data) return err({ code: "NOT_WAV", message: "the WAV has no fmt or data chunk" });

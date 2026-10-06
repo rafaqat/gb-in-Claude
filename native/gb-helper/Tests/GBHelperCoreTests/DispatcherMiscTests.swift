@@ -80,6 +80,17 @@ final class DispatcherMiscTests: XCTestCase {
     XCTAssertEqual(r.result?["waited_ms"], 500)
   }
 
+  // security review 2026-10-06 (B5): a search cut off by its node cap (or the deadline) proves nothing about absence —
+  // the export's abort() would skip Cancel and leave the panel open
+  func testWaitAbsentIsNotSatisfiedByASearchThatStoppedEarly() {
+    addDialog(at: 0); backend.sleep(ms: 0)
+    let r = call("ax.wait", ["root": ["kind": "app"], "condition": "absent", "poll_ms": 100, "max_nodes": 1,
+                             "selector": ["role": "AXWindow", "identifier": "save-panel"]], deadline: 1000)
+    XCTAssertTrue(r.ok, r.line())
+    XCTAssertEqual(r.result?["satisfied"], false, r.line())
+    XCTAssertEqual(r.result?["complete"], false, r.line())
+  }
+
   func testWaitValueEquals() {
     backend.scheduled.append((200, { [unowned self] in self.backend.windows[0].children[0].children[1].value = 1 }))
     let r = call("ax.wait", ["root": ["kind": "main_window"], "condition": "value_equals", "value": 1, "poll_ms": 50,

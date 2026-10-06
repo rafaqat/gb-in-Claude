@@ -31,6 +31,19 @@ MULACOVER_LICENCE = (
     "repository): non-commercial use only. gb-mcp's own code (MIT) and ACE-Step (MIT) are not affected.")
 
 
+def lock_path(name: str) -> str:
+    """models/locks/<name>.lock: the venv's packages from the index, each with its SHA-256."""
+    return os.path.join(MODELS_DIR, "locks", f"{name}.lock")
+
+
+def locked(name: str) -> list[list[str]]:
+    """Install `name`'s lock: every file is checked against its hash; nothing the lock does not list is added. Its
+    build tools (`name`-build.lock, the same pins) go first, so a package without a wheel is built with them
+    (--no-build-isolation), never with build tools fetched from the index unchecked."""
+    pip = ["uv", "pip", "install", "--python", ".venv/bin/python", "--require-hashes", "--no-deps"]
+    return [pip + ["-r", lock_path(f"{name}-build")], pip + ["--no-build-isolation", "-r", lock_path(name)]]
+
+
 class InstallError(RuntimeError):
     pass
 
@@ -53,7 +66,8 @@ ENGINES = {
         "commit": mulacover.PINNED_COMMIT, "dir_env": "GB_MCP_MULACOVER", "dir": "mulacover", "ckpt_env": "GB_MCP_MULACOVER_CKPT",
         "ckpt": "mulacover-ckpt", "gb": 15.4, "licence": MULACOVER_LICENCE, "gbmodels_env": "mulacover",
         "venv": [["uv", "venv", "--python", "3.12", ".venv"],
-                 ["uv", "pip", "install", "--python", ".venv/bin/python", "torch==2.10.0", "torchaudio==2.10.0", "-e", ".[audio]", MLX]],
+                 *locked("mulacover"),  # torch 2.10.0, torchaudio 2.10.0, its [audio] extras, MLX
+                 ["uv", "pip", "install", "--python", ".venv/bin/python", "--no-deps", "-e", "."]],
         "imports": ["mulacover", "mlx.core", "torch", "mido"],
         "weights": [(repo, rev, "{ckpt}/" + name) for name, (repo, rev) in mulacover.WEIGHTS.items()],
     },
@@ -61,8 +75,7 @@ ENGINES = {
         "title": "MelBand RoFormer vocal separation (MIT) — gb_stem separate {model: \"roformer\"}", "repo": None, "commit": None,
         "dir_env": "GB_MCP_ROFORMER", "dir": "roformer", "gb": 0.9, "licence": None, "gbmodels_env": "roformer", "tool": "gb_stem",
         "venv": [["uv", "venv", "--python", "3.12", ".venv"],
-                 ["uv", "pip", "install", "--python", ".venv/bin/python", f"audio-separator[cpu]=={roformer.AUDIO_SEPARATOR}",
-                  "audioread==3.1.0", "torch==2.14.1", "huggingface_hub==1.33.0"]],  # audio-separator 0.47.0 imports audioread
+                 *locked("roformer")],  # audio-separator[cpu] (roformer.AUDIO_SEPARATOR), audioread, torch, huggingface_hub
         "imports": ["audio_separator.separator", "soundfile", "huggingface_hub"],  # without declaring it; the hub fetches the weights
         "weights": [(roformer.WEIGHTS_REPO, roformer.WEIGHTS_REVISION, "{code}/models")],
     },
@@ -70,12 +83,9 @@ ENGINES = {
         "title": "all-in-one song sections (MIT) — gb_analyze map", "repo": None, "commit": None, "tool": "gb_analyze map",
         "dir_env": "GB_MCP_SECTIONS", "dir": "sections", "gb": 0.1, "licence": None, "gbmodels_env": "sections",
         "venv": [["uv", "venv", "--python", "3.12", ".venv"],
-                 ["uv", "pip", "install", "--python", ".venv/bin/python", "torch==2.14.1", "numpy==1.26.4", "demucs==4.1.0",
-                  "librosa==0.11.0", "hydra-core==1.3.7", "omegaconf==2.3.1", "matplotlib==3.11.2", "huggingface_hub==1.33.0",
-                  "soundfile==0.14.0", "cython", "setuptools", "wheel"],
-                 ["uv", "pip", "install", "--python", ".venv/bin/python", "--no-build-isolation",
-                  f"git+https://github.com/CPJKU/madmom@{sections.MADMOM_COMMIT}"],
-                 ["uv", "pip", "install", "--python", ".venv/bin/python", "--no-deps", f"allin1=={sections.ALLIN1}"]],
+                 *locked("sections"),  # allin1 (sections.ALLIN1) and its packages, cython/setuptools/wheel for madmom; no natten
+                 ["uv", "pip", "install", "--python", ".venv/bin/python", "--no-build-isolation", "--no-deps",
+                  f"git+https://github.com/CPJKU/madmom@{sections.MADMOM_COMMIT}"]],
         "imports": ["madmom", "hydra", "huggingface_hub", "demucs"],  # allin1 itself imports natten: checked by the ready step
         "weights": [(sections.WEIGHTS_REPO, sections.WEIGHTS_REVISION, "{code}/models")],
     },

@@ -88,6 +88,27 @@ describe("BuildBandHandler", () => {
     expect(linkedAudio(pd.value).map((l) => l.filename)).toEqual(["a.wav", "b.wav"]);
   });
 
+  // GarageBand writes an Alchemy synth's local sample folder into ProjectData ("DataLoc = /Users/<name>/…"): a built
+  // .band must not carry the user's name and folders (found 2026-10-06 when publishing examples)
+  it("writes no local folder into the built project: a donor's DataLoc is scrubbed, same size", async () => {
+    const leaky = join(dir, "leaky-donor.band");
+    cpSync(midiPlusAudio, leaky, { recursive: true });
+    const pdPath = join(leaky, "Alternatives", "000", "ProjectData");
+    const bytes = new Uint8Array(readFileSync(pdPath));
+    const line = "DataLoc = /Users/someone/Music/leaky.band/Media/Alchemy Samples".padEnd(90, "X");
+    bytes.set(new TextEncoder().encode(line), 105833); // over a 90-character text run of the fixture: same size
+    writeFileSync(pdPath, bytes);
+    const a = join(dir, "tabla.wav");
+    writeFileSync(a, bareWav(44100));
+    const out = join(dir, "song.band");
+    const r = await new BuildBandHandler().execute({ donor: leaky, out, regions: [{ wav: a, tick: 0, track: 1 }] });
+    expect(r.ok).toBe(true);
+    const written = new TextDecoder("latin1").decode(readFileSync(join(out, "Alternatives", "000", "ProjectData")));
+    expect(written).not.toContain("someone");
+    expect(written).toContain("/Users/Shared/gb-mcp");
+    expect(parseProjectData(new Uint8Array(readFileSync(join(out, "Alternatives", "000", "ProjectData")))).ok).toBe(true);
+  });
+
   it("places stems on the empty audio track of a MIDI import (slots grafted) and keeps its MIDI track", async () => {
     const a = join(dir, "tabla.wav"), b = join(dir, "voice.wav");
     writeFileSync(a, bareWav(44100));

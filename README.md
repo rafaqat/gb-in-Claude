@@ -358,6 +358,9 @@ Install the engines once — each at a reviewed version, in its own environment,
 ./scripts/install-engines.sh all --dry-run   # the plan, nothing changed
 ```
 
+Every Python package comes from a hash lock in `models/locks/` (`--require-hashes`): a file that differs from the
+reviewed one stops the install. `scripts/lock-models.sh` rebuilds a lock from a tested environment.
+
 Before Claude Code writes a caption or lyrics, it calls `gb_generate examples {query}`: ACE-Step's own example songs
 (200, MIT; read from the installed engine) that fit the request best, with caption, lyrics, bpm, key and length. The
 server's instructions tell it to write in their style, with new words. Captions can be up to 1000 characters.

@@ -9,6 +9,20 @@ describe("wavInfo", () => {
     expect(wavInfo(bareWav(176400))).toEqual({ ok: true, value: { channels: 2, rate: 44100, bits: 16, frames: 176400, hasOverview: false } });
   });
 
+  // security review 2026-10-06 (C3): chunks() listed every chunk, so a file of empty 8-byte chunks cost ~16 bytes of
+  // heap per byte (a 256 MB build input ~4 GB) and crashed the process instead of returning WAV errors
+  it("refuses a WAV with more chunks than any real WAV has (thousands of empty ones)", () => {
+    const base = bareWav(10);
+    const empty = Uint8Array.from([0x6a, 0x75, 0x6e, 0x6b, 0, 0, 0, 0]); // "junk", size 0
+    const n = 5000;
+    const b = new Uint8Array(base.length + n * 8);
+    b.set(base.subarray(0, 36));
+    for (let i = 0; i < n; i++) b.set(empty, 36 + i * 8);
+    b.set(base.subarray(36), 36 + n * 8);
+    const r = wavInfo(b);
+    expect(r).toMatchObject({ ok: false, error: { code: "NOT_WAV" } });
+  });
+
   it("refuses bytes that are not a RIFF/WAVE file", () => {
     const r = wavInfo(new TextEncoder().encode("this is not a wav file at all, honestly"));
     expect(r.ok).toBe(false);

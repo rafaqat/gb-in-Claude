@@ -8,6 +8,7 @@ import os
 from huggingface_hub import snapshot_download
 
 REPO = "musetric/skey-onnx"
+REVISION = "9d90d2a9ff6679df1d64000f4fa750643f247643"  # pinned
 SR = 22050
 
 
@@ -18,7 +19,7 @@ def load(device: str, compiled_cache: bool = False):
     """compiled_cache: keep Core ML's compiled model on disk (MLProgram, all compute units incl. the Neural Engine),
     so the compile (~14 s) happens once per machine instead of once per process."""
     import onnxruntime as ort
-    root = snapshot_download(REPO)
+    root = snapshot_download(REPO, revision=REVISION)
     coreml = "CoreMLExecutionProvider"
     if compiled_cache:
         os.makedirs(CACHE_DIR, exist_ok=True)

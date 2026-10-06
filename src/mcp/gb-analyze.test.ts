@@ -5,6 +5,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, realpathSync, readdirSync, symli
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createGbAnalyze } from "./gb-analyze.js";
+import { recordSource, sourceOf } from "../workspace/stem-source.js";
 import type { AnalyzerPort, AnalyzeRequest, AnalysisResult } from "../analysis/analyzer.js";
 import type { Result } from "../result.js";
 import { bareWav } from "../band/testing.js";
@@ -259,10 +260,41 @@ describe("gb_analyze map (M13.6): the bar structure of a recording", () => {
     const { port, calls } = sidecar();
     mkdirSync(join(ws, "stems"));
     for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+    recordSource(join(ws, "stems"), "mix", join(ws, "exports", "mix.wav")); // these stems are exports/mix.wav's
     mkdirSync(join(ws, "analysis"));
     writeFileSync(join(ws, "analysis", "mix-map.json"), "{}");
     await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: port })({ command: "map", path: "exports/mix.wav" });
     expect(calls.map((c) => [c.model, c.inputs.out])).toEqual([["map", join(ws, "analysis", "mix-map-2.json")]]);
+  });
+
+  // security review 2026-10-06 (A1): stems were reused by file name only, so another recording with the same name got
+  // the wrong stems and a "verified" map. A source record (path, size, time) now decides.
+  it("writes a source record after separating, so the stems are reused for this recording only", async () => {
+    const { port } = sidecar();
+    mkdirSync(join(ws, "stems"));
+    await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: port })({ command: "map", path: "exports/mix.wav" });
+    expect(sourceOf(join(ws, "stems"), "mix", join(ws, "exports", "mix.wav"))).toBe("match");
+  });
+
+  it("refuses stems that belong to another recording with the same name (FILE_EXISTS), never reuses them", async () => {
+    const { port, calls } = sidecar();
+    mkdirSync(join(ws, "stems"));
+    mkdirSync(join(ws, "gen"), { recursive: true });
+    writeFileSync(join(ws, "gen", "mix.wav"), "another recording");
+    for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+    recordSource(join(ws, "stems"), "mix", join(ws, "gen", "mix.wav"));
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: port })({ command: "map", path: "exports/mix.wav" });
+    expect(r).toMatchObject({ status: "failed", error: "FILE_EXISTS" });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("refuses stems with no source record (made before the record existed): it cannot tell whose they are", async () => {
+    const { port, calls } = sidecar();
+    mkdirSync(join(ws, "stems"));
+    for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: port })({ command: "map", path: "exports/mix.wav" });
+    expect(r).toMatchObject({ status: "failed", error: "FILE_EXISTS" });
+    expect(calls).toHaveLength(0);
   });
 
   it("names the four stems it mapped (M13.14: gb_song transcribe reads them)", async () => {
@@ -288,6 +320,7 @@ describe("gb_analyze map with sections (M13.13): all-in-one when its engine is i
     const sections: ModelSidecar = { run: async (model, inputs) => { calls.push({ model, inputs }); return sectionsAnswer() as never; }, close() {} };
     mkdirSync(join(ws, "stems"));
     for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+    recordSource(join(ws, "stems"), "mix", join(ws, "exports", "mix.wav")); // these stems are exports/mix.wav's
     return { listener, sections, calls };
   };
   const analyze = (deps: { listener: ModelSidecar; sections?: ModelSidecar }) =>
@@ -328,6 +361,7 @@ describe("gb_analyze never writes outside the workspace", () => {
     const outside = linkAnalysisOut();
     mkdirSync(join(ws, "stems"));
     for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+    recordSource(join(ws, "stems"), "mix", join(ws, "exports", "mix.wav")); // these stems are exports/mix.wav's
     const calls: string[] = [];
     const listener: ModelSidecar = { run: async (m) => { calls.push(m); return { ok: true as const, value: {} }; }, close() {} };
     const r = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener })({ command: "map", path: "exports/mix.wav" });

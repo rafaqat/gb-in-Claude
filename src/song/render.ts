@@ -91,17 +91,16 @@ function renderPart(role: Role, part: Part, beatsPerBar: number): Result<Pattern
 }
 
 /** Loop a pattern from `startBeat` to fill `lengthBeats`, truncating (and clipping) at the section end. */
-function placeLooped(pattern: Pattern, startBeat: number, lengthBeats: number, beatsPerBar: number): PatternNote[] {
+/** The pattern repeated to fill the section, one note at a time: the caller counts and can stop early (MAX_NOTES). */
+function* placeLooped(pattern: Pattern, startBeat: number, lengthBeats: number, beatsPerBar: number): Generator<PatternNote> {
   const patternBeats = pattern.bars * beatsPerBar;
-  const placed: PatternNote[] = [];
   for (let offset = 0; offset < lengthBeats; offset += patternBeats) {
     for (const n of pattern.notes) {
       const local = offset + n.startBeat;
       if (local >= lengthBeats) continue;
-      placed.push({ ...n, startBeat: startBeat + local, durationBeats: Math.min(n.durationBeats, lengthBeats - local) });
+      yield { ...n, startBeat: startBeat + local, durationBeats: Math.min(n.durationBeats, lengthBeats - local) };
     }
   }
-  return placed;
 }
 
 const toTicks = (beats: number) => Math.round(beats * PPQ);
@@ -111,6 +110,10 @@ function melodicChannels(): number[] {
 }
 
 /** Song (already parsed) → SMF description. Pure and deterministic. */
+/** Notes one song may render: a short pattern loops to fill its section, so string limits alone do not bound the work
+ * (commit security review 2026-10-06). A dense 70-minute song stays far below. */
+export const MAX_NOTES = 200_000;
+
 export function renderSong(song: Song): Result<SmfSong, RenderError> {
   const beatsPerBar = song.timeSignature[0];
   const sectionStart = new Map<string, { startBeat: number; lengthBeats: number }>();
@@ -121,6 +124,7 @@ export function renderSong(song: Song): Result<SmfSong, RenderError> {
   }
 
   const channels = melodicChannels();
+  let rendered = 0;
   const tracks: SmfTrack[] = [];
   for (const track of song.tracks) {
     const channel = track.role === "drums" ? DRUM_CHANNEL : channels.shift()!;
@@ -133,6 +137,9 @@ export function renderSong(song: Song): Result<SmfSong, RenderError> {
       }
       for (const pattern of patterns.value) {
         for (const n of placeLooped(pattern, section.startBeat, section.lengthBeats, beatsPerBar)) {
+          if (++rendered > MAX_NOTES) {
+            return err({ code: "RENDER_FAILED", path: `tracks.${track.name}.parts.${sectionName}`, message: `the song renders more than ${MAX_NOTES} notes` });
+          }
           notes.push({ pitch: n.pitch, startTick: toTicks(n.startBeat), durationTicks: Math.max(1, toTicks(n.durationBeats)), velocity: n.velocity,
             ...(n.slide ? { slide: n.slide } : {}), ...(n.cents !== undefined ? { cents: n.cents } : {}) });
         }

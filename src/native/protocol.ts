@@ -83,6 +83,8 @@ export const ConvergeResult = z.object({
 export const MenuResult = z.object({ path: z.array(z.string()), enabled: z.boolean(), mark: z.string().nullable(), pressed: z.boolean() });
 export const WaitResult = z.object({
   satisfied: z.boolean(), waited_ms: z.number(), count: z.number(), condition: z.string(), match: AxNode.optional(),
+  /** the whole tree under the root was searched (an "absent" from a cut-off search is never satisfied) */
+  complete: z.boolean().optional(),
 });
 export const SnapshotResult = z.object({ root: AxNode.nullable(), node_count: z.number(), truncated: z.boolean() });
 export const ActivateResult = z.object({ frontmost: z.boolean(), changed: z.boolean() });

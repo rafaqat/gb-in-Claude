@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { describe, it, expect } from "vitest";
-import { existsSync, mkdtempSync, realpathSync, writeFileSync, utimesSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createMutationGate } from "./gate.js";
@@ -49,6 +49,28 @@ describe("cross-process lock", () => {
   });
 
   const ok = async () => ({ status: "verified" as const, op: "x", data: {} });
+
+  // security review 2026-10-06 (B3): two processes that both judged a lock stale could both unlink-and-link, the second
+  // deleting the first one's fresh lock. Only the holder of the takeover lock (an atomic mkdir) may remove a stale lock.
+  it("never removes a stale lock while another process is taking it over", async () => {
+    const lockPath = join(dir(), ".gb-mcp.lock");
+    writeFileSync(lockPath, JSON.stringify({ pid: 999_999, op: "dead" }));
+    mkdirSync(`${lockPath}.takeover`); // another contender is mid-takeover (fresh)
+    const r = await createMutationGate({ lockPath }).run("gb_tracks.select", async () => verified("x", {}));
+    expect(r).toMatchObject({ status: "failed", error: "MUTATION_IN_PROGRESS", safe_to_retry: true });
+    expect(JSON.parse(readFileSync(lockPath, "utf8")).op).toBe("dead"); // untouched: the other contender owns the takeover
+  });
+
+  it("an abandoned takeover lock (its owner died mid-takeover) does not block forever", async () => {
+    const lockPath = join(dir(), ".gb-mcp.lock");
+    writeFileSync(lockPath, JSON.stringify({ pid: 999_999, op: "dead" }));
+    mkdirSync(`${lockPath}.takeover`);
+    const old = new Date(Date.now() - 60_000);
+    utimesSync(`${lockPath}.takeover`, old, old);
+    const r = await createMutationGate({ lockPath }).run("gb_tracks.select", async () => verified("x", {}));
+    expect(r).toMatchObject({ status: "verified" });
+    expect(existsSync(`${lockPath}.takeover`)).toBe(false);
+  });
 
   it("names the lock file in the refusal (so a human can inspect it)", async () => {
     const lockPath = join(dir(), ".gb-mcp.lock");

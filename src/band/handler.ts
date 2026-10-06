@@ -7,6 +7,7 @@
  * unless the plan succeeds. Never overwrites, never throws: every failure is a BuildBandResult.
  */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { scrubLocalPaths } from "./local-paths.js";
 import { execFile } from "node:child_process";
 import { basename, join } from "node:path";
 import { err, ok } from "../result.js";
@@ -254,7 +255,8 @@ export class BuildBandHandler implements BuildBandSpec {
         }
         await plutil(["-replace", "AudioFiles", "-json", JSON.stringify(samples.map((s) => `${AUDIO_FOLDER}/${s.file}`)), join(input.out, ...META_DATA)]);
         // last: without ProjectData GarageBand cannot open a half-built package
-        writeFileSync(join(input.out, ...PROJECT_DATA), projectData, { flag: "wx" });
+        // no local folders in the built project: an Alchemy synth's DataLoc names the user's home
+        writeFileSync(join(input.out, ...PROJECT_DATA), scrubLocalPaths(projectData).bytes, { flag: "wx" });
       } catch (e) {
         return fail("WRITE_FAILED", "the build stopped while writing; a partial project is left under the new name", false, {
           written: true, detail: e instanceof Error ? e.name : typeof e, // the raw message can hold paths

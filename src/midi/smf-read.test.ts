@@ -22,3 +22,23 @@ describe("readSmfSummary", () => {
     expect(readSmfSummary(Buffer.from("hello")).ok).toBe(false);
   });
 });
+
+// security review 2026-10-06 (C1): readVlq read past the buffer (undefined < 0x80 is false) and looped for ever; a
+// track length past the file's end was never checked. A crafted .mid hung the whole server in open_midi.
+describe("readSmfSummary on truncated or lying files", () => {
+  const header = [0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 1, 0, 1, 0x01, 0xe0];
+  it("a track whose length runs past the end of the file is an error, not a hang", () => {
+    const b = Uint8Array.from([...header, 0x4d, 0x54, 0x72, 0x6b, 0x7f, 0xff, 0xff, 0xff, 0x80]);
+    expect(readSmfSummary(b)).toMatchObject({ ok: false });
+  });
+  it("a variable-length number that never ends is an error", () => {
+    const body = [0x00, 0xff, 0x03, 0x81, 0x81, 0x81, 0x81, 0x81]; // a meta length with five continuation bytes
+    const b = Uint8Array.from([...header, 0x4d, 0x54, 0x72, 0x6b, 0, 0, 0, body.length, ...body]);
+    expect(readSmfSummary(b)).toMatchObject({ ok: false });
+  });
+  it("a meta event whose text runs past the track is an error", () => {
+    const body = [0x00, 0xff, 0x03, 0x7f, 0x41];
+    const b = Uint8Array.from([...header, 0x4d, 0x54, 0x72, 0x6b, 0, 0, 0, body.length, ...body]);
+    expect(readSmfSummary(b)).toMatchObject({ ok: false });
+  });
+});

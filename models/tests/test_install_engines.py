@@ -5,6 +5,7 @@ order (code → venv → weights), a wrong or changed checkout stops the install
 No test downloads anything."""
 import io
 import os
+import re
 import subprocess
 import tempfile
 import unittest
@@ -22,6 +23,85 @@ def repo():
     git("add", "a.py")
     git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "one")
     return d, git("rev-parse", "HEAD")
+
+
+def lock_pins(name: str) -> list[str]:
+    """The `name==version` lines of models/locks/<name>.lock (names normalised as uv writes them)."""
+    with open(ie.lock_path(name)) as f:
+        return [line.split()[0].split(";")[0] for line in f if line[:1].isalnum()]
+
+
+class HashLocks(unittest.TestCase):
+    """Security review 2026-10-06 (E2): every package from an index is installed from a lock with its SHA-256
+    (`--require-hashes`), so a changed or substituted file on the index stops the install; the only other sources are
+    a git URL at a full commit and the engine's own checkout, each installed with --no-deps."""
+
+    LOCKED = ["mulacover", "roformer", "sections", "sidecar"]
+
+    def test_each_lock_pins_every_package_with_a_hash(self):
+        for name in self.LOCKED:
+            with open(ie.lock_path(name)) as f:
+                blocks = [b for b in re.split(r"\n(?=[A-Za-z0-9])", f.read()) if b[:1].isalnum()]
+            self.assertGreater(len(blocks), 10, name)
+            for b in blocks:
+                self.assertRegex(b.split()[0], r"^[a-z0-9._-]+==[^=\s]+$", f"{name}: {b.split()[0]}")
+                self.assertIn("--hash=sha256:", b, f"{name}: {b.split()[0]}")
+
+    def test_every_engine_install_is_hash_checked_or_a_pinned_source(self):
+        for name, e in ie.ENGINES.items():
+            for argv in e["venv"]:
+                if argv[:3] != ["uv", "pip", "install"]:
+                    self.assertIn(argv[:2], (["uv", "venv"], ["uv", "sync"]), name)
+                    if argv[:2] == ["uv", "sync"]:
+                        self.assertIn("--frozen", argv)  # ACE-Step's own uv.lock carries the hashes
+                    continue
+                if "--require-hashes" in argv:
+                    self.assertIn(argv[argv.index("-r") + 1], (ie.lock_path(name), ie.lock_path(f"{name}-build")), name)
+                    self.assertIn("--no-deps", argv)
+                    continue
+                self.assertIn("--no-deps", argv, name)
+                sources = argv[argv.index(".venv/bin/python") + 1:]
+                for a in sources:
+                    if a.startswith("-"):
+                        continue
+                    self.assertTrue(a == "." or re.fullmatch(r"git\+https://\S+@[0-9a-f]{40}", a), f"{name}: {a}")
+
+    def test_source_releases_build_only_with_locked_tools(self):
+        # a package without a wheel (diffq, antlr4, progressbar, wget) is built: with build isolation uv would fetch its
+        # build tools (setuptools...) from the index unchecked; they come from <venv>-build.lock first instead
+        for name in ("mulacover", "roformer", "sections"):
+            installs = [a for a in ie.ENGINES[name]["venv"] if "--require-hashes" in a]
+            self.assertEqual([a[a.index("-r") + 1] for a in installs], [ie.lock_path(f"{name}-build"), ie.lock_path(name)])
+            self.assertIn("--no-build-isolation", installs[1])
+
+    def test_each_build_lock_is_part_of_its_lock(self):
+        for name in self.LOCKED:
+            with open(ie.lock_path(name)) as f:
+                full = {b.split("==")[0]: b.rstrip() for b in re.split(r"\n(?=[a-z0-9])", f.read()) if b[:1].isalnum()}
+            with open(ie.lock_path(f"{name}-build")) as f:
+                build = [b.rstrip() for b in re.split(r"\n(?=[a-z0-9])", f.read()) if b[:1].isalnum()]
+            self.assertIn("setuptools", [b.split("==")[0] for b in build], name)
+            for b in build:
+                self.assertEqual(b, full[b.split("==")[0]], name)
+
+    def test_each_engine_lock_keeps_the_reviewed_pins(self):
+        from gbmodels import roformer, sections
+        self.assertIn(ie.MLX, lock_pins("mulacover"))
+        self.assertIn("torch==2.10.0", lock_pins("mulacover"))
+        self.assertIn(f"audio-separator=={roformer.AUDIO_SEPARATOR}", lock_pins("roformer"))
+        self.assertIn(f"allin1=={sections.ALLIN1}", lock_pins("sections"))
+        self.assertFalse(any(p.split("==")[0] in ("natten", "madmom") for p in lock_pins("sections")))
+
+    def test_the_sidecar_lock_matches_its_requirements(self):
+        locked = set(lock_pins("sidecar"))
+        with open(os.path.join(ie.MODELS_DIR, "requirements.txt")) as f:
+            reqs = [line.split("#")[0].strip() for line in f if line.split("#")[0].strip()]
+        for r in reqs:
+            if " @ git+" in r:
+                self.assertRegex(r, r"@[0-9a-f]{40}$")
+            else:
+                name, version = r.split("==")
+                self.assertIn(re.sub(r"[_.]", "-", name.lower()) + "==" + version, locked)
 
 
 class States(unittest.TestCase):
@@ -114,14 +194,14 @@ class Roformer(unittest.TestCase):
         e = ie.ENGINES["roformer"]
         self.assertIsNone(e["repo"])
         self.assertEqual(e["weights"], [(roformer.WEIGHTS_REPO, roformer.WEIGHTS_REVISION, "{code}/models")])
-        self.assertIn(f"audio-separator[cpu]=={roformer.AUDIO_SEPARATOR}", [a for argv in e["venv"] for a in argv])
+        self.assertIn(f"audio-separator=={roformer.AUDIO_SEPARATOR}", lock_pins("roformer"))
         self.assertEqual((e["gbmodels_env"], len(roformer.WEIGHTS_REVISION)), ("roformer", 40))
 
     def test_its_venv_can_download_its_weights(self):
         # the weights step runs snapshot_download with the engine's own python (it was missing)
         e = ie.ENGINES["roformer"]
         self.assertIn("huggingface_hub", e["imports"])
-        self.assertTrue(any(a.startswith("huggingface_hub==") for argv in e["venv"] for a in argv))
+        self.assertTrue(any(p.startswith("huggingface-hub==") for p in lock_pins("roformer")))
 
     def test_code_state_without_a_repository_is_the_folder(self):
         d = tempfile.mkdtemp()
@@ -148,9 +228,9 @@ class Sections(unittest.TestCase):
         argv = [a for c in e["venv"] for a in c]
         self.assertIsNone(e["repo"])
         self.assertEqual(e["weights"], [(sections.WEIGHTS_REPO, sections.WEIGHTS_REVISION, "{code}/models")])
-        self.assertIn(f"allin1=={sections.ALLIN1}", argv)
+        self.assertIn(f"allin1=={sections.ALLIN1}", lock_pins("sections"))
         self.assertIn(f"git+https://github.com/CPJKU/madmom@{sections.MADMOM_COMMIT}", argv)
-        self.assertFalse(any(a.startswith("natten") for a in argv))
+        self.assertFalse(any(p.startswith("natten") for p in lock_pins("sections")))
         self.assertIn("huggingface_hub", e["imports"])
 
     def test_pytorch_weights_count_as_weights(self):

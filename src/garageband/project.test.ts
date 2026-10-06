@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { describe, it, expect, beforeEach } from "vitest";
-import { cpSync, mkdtempSync, mkdirSync, existsSync, writeFileSync, realpathSync, readdirSync, symlinkSync } from "node:fs";
+import { cpSync, mkdtempSync, mkdirSync, existsSync, readFileSync, writeFileSync, realpathSync, readdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -358,6 +358,23 @@ describe("backups are never ambiguous, never overwritten", () => {
     expect(opened).toEqual([]);
   });
 
+  // security review 2026-10-06 (B1): AppleScript finds a document by name among ALL open documents, so a clean
+  // "Song" could be the one backed up while the modified "Song" lost its edits to "Don't Save"
+  it("an unsaved project sharing its name with a saved one: refuses before backing up or opening anything", async () => {
+    docs = [{ name: "Song", modified: false }, { name: "Song", modified: true }];
+    const r = await createGbProject(deps())({ command: "open_midi", path: "ascent-v2.mid" });
+    expect(r).toMatchObject({ status: "failed", error: "WRITE_FAILED", write_attempted: false });
+    expect(backups).toEqual([]);
+    expect(opened).toEqual([]);
+  });
+
+  it("two saved projects with one name and no unsaved project still open fine (nothing to back up)", async () => {
+    docs = [{ name: "Song", modified: false }, { name: "Song", modified: false }];
+    const r = await createGbProject(deps())({ command: "open_midi", path: "ascent-v2.mid" });
+    expect(r.status).not.toBe("failed");
+    expect(backups).toEqual([]);
+  });
+
   it("two backups of the same project within one second get distinct files", async () => {
     docs = [{ name: "Untitled 3", modified: true }];
     await createGbProject(deps())({ command: "open_midi", path: "ascent-v2.mid" });
@@ -532,6 +549,25 @@ describe("gb_project save_copy (M11b): the open project as a donor for gb_band",
     ]);
     expect(backups).toHaveLength(1);
   });
+  it("scrubs a local folder GarageBand wrote into the copy (an Alchemy DataLoc), keeping the file's size", async () => {
+    const leaky = scripts({
+      backupDocument: async (name, path) => {
+        backups.push({ name, path });
+        cpSync(fixture, path, { recursive: true });
+        const pd = join(path, "Alternatives", "000", "ProjectData");
+        const bytes = new Uint8Array(readFileSync(pd));
+        bytes.set(new TextEncoder().encode("DataLoc = /Users/someone/Music/x.band/Media/Alchemy Samples".padEnd(90, "X")), 105833);
+        writeFileSync(pd, bytes);
+        return { ok: true, value: undefined };
+      },
+    });
+    const r = await createGbProject(deps({ scripts: leaky }))({ command: "save_copy", filename: "leaky-donor.band" });
+    expect(r).toMatchObject({ status: "verified" });
+    const written = new TextDecoder("latin1").decode(readFileSync(join(ws, "donors", "leaky-donor.band", "Alternatives", "000", "ProjectData")));
+    expect(written).not.toContain("someone");
+    expect(written).toContain("/Users/Shared/gb-mcp");
+  });
+
   it("never overwrites: an existing donors/<name> (or a link there) is FILE_EXISTS and nothing is saved", async () => {
     mkdirSync(join(ws, "donors", "taken.band"), { recursive: true });
     const r = await createGbProject(deps({ scripts: copying() }))({ command: "save_copy", filename: "taken.band" });

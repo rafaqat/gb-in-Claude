@@ -132,7 +132,11 @@ function instrumentTrack(track: SmfTrack): number[] {
 /** Same-pitch notes may touch (off and on at one tick) but never overlap: MIDI would swallow one. */
 function findSamePitchOverlap(track: SmfTrack): string | undefined {
   const byPitch = new Map<number, SmfNote[]>();
-  for (const n of track.notes) byPitch.set(n.pitch, [...(byPitch.get(n.pitch) ?? []), n]);
+  for (const n of track.notes) {
+    // appended in place: copying the list for every note was quadratic
+    const list = byPitch.get(n.pitch);
+    if (list) list.push(n); else byPitch.set(n.pitch, [n]);
+  }
   for (const [pitch, notes] of byPitch) {
     const sorted = [...notes].sort((a, b) => a.startTick - b.startTick);
     for (let i = 1; i < sorted.length; i++) {

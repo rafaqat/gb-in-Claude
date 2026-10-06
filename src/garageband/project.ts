@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { z } from "zod";
-import { existsSync, lstatSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { AxCore } from "../ax/core.js";
 import { GB_10_4_14, parseSavePrompt, type RootSpec } from "../ax/locators.js";
@@ -35,6 +35,7 @@ export function openFailureCode(reason: string): ErrorCode {
   return "INTERNAL_ERROR";
 }
 import { bandDifferences, inspectBand } from "../band/inspect.js";
+import { scrubLocalPaths } from "../band/local-paths.js";
 import { parseProjectData } from "../band/projectdata.js";
 import { visibleTracks } from "../band/tracks.js";
 import { mutationGate } from "./gate.js";
@@ -182,11 +183,13 @@ export function createGbProject(deps: GbProjectDeps) {
     const backups: string[] = [];
     const backedUp = new Set<string>();
     const dirty = docs.filter((x) => x.modified);
-    // AppleScript addresses documents by name: two unsaved projects with one name cannot be backed up unambiguously.
-    const names = dirty.map((d) => d.name);
-    const dup = names.find((n, i) => names.indexOf(n) !== i);
+    // AppleScript addresses documents by name among ALL open documents: an unsaved project that shares its name with
+    // any other open project (saved or not) cannot be backed up unambiguously — the save could hit the other one and
+    // "Don't Save" would then discard the real edits.
+    const all = docs.map((d) => d.name);
+    const dup = dirty.map((d) => d.name).find((n) => all.indexOf(n) !== all.lastIndexOf(n));
     if (dup !== undefined) {
-      return err(failed(op, "WRITE_FAILED", "two unsaved projects share a name, so they cannot be backed up unambiguously; nothing opened", {
+      return err(failed(op, "WRITE_FAILED", "an unsaved project shares its name with another open project, so it cannot be backed up unambiguously; nothing opened", {
         hint: "save (or close) one of them in GarageBand yourself, then retry", context: { document: dup },
       }));
     }
@@ -411,6 +414,15 @@ export function createGbProject(deps: GbProjectDeps) {
       }
       const pd = parseProjectData(bytes);
       if (!pd.ok) return failed(op, "WRITE_FAILED", `the copy cannot be read: ${pd.error.message}`, { write_attempted: true, safe_to_retry: false });
+      // GarageBand wrote an Alchemy synth's local sample folder (the user's home) into the copy: same-size scrub, so a
+      // donor and every .band built from it carry no local folder
+      const scrubbed = scrubLocalPaths(bytes);
+      if (scrubbed.replaced > 0) {
+        const pdPath = join(path, "Alternatives", "000", "ProjectData");
+        const tmp = `${pdPath}.${process.pid}.scrub`;
+        writeFileSync(tmp, scrubbed.bytes, { flag: "wx" }); // a new file, then a rename: never written through a link
+        renameSync(tmp, pdPath);
+      }
       return verified(op, { document, path, tracks: visibleTracks(pd.value).map(({ number, kind, name }) => ({ number, kind, name: cleanText(name) })) });
     });
   }

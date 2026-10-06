@@ -32,6 +32,19 @@ describe("model sidecar client (M8): one long-lived process, JSON lines", () => 
     expect(await make(150).run("slow", {})).toMatchObject({ ok: false, error: { code: "SIDECAR_TIMEOUT" } });
   });
 
+  // security review 2026-10-06 (D4): the Python server is single-threaded, so a timed-out job kept blocking every later
+  // request (and still wrote its files). A timeout now ends the process; the next request starts a new one.
+  it("ends the stuck process on a timeout, and the next request runs in a new process", async () => {
+    const s = make(150);
+    const first = await s.run("echo", {});
+    const oldPid = (first as { value: { pid: number } }).value.pid;
+    expect(await s.run("slow", {})).toMatchObject({ ok: false, error: { code: "SIDECAR_TIMEOUT" } });
+    const again = await s.run("echo", {});
+    expect(again.ok).toBe(true);
+    expect((again as { value: { pid: number } }).value.pid).not.toBe(oldPid);
+    expect(() => process.kill(oldPid, 0)).toThrow(); // the stuck process is gone
+  });
+
   it("reports a crash (SIDECAR_CRASHED), then starts a new process on the next request", async () => {
     const s = make();
     const first = await s.run("echo", {});

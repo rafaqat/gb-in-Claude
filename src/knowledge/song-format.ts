@@ -13,7 +13,8 @@ title (string) · tempo (20–300) · timeSignature [2–7, 4] (default [4,4]) �
 key (optional, e.g. "F minor", "Ab major") — gb_analyze checks the audio against it
 style: "club-trance" | "acoustic" | "orbit-ambient" (sets GM programs per role; see gb://knowledge/styles)
 humanize: "off" | "tight" | "natural" (default) | "loose"
-sections: [{ name, bars }] in play order, names unique
+sections: [{ name, bars }] in play order, names unique (at most 256 sections and 2048 bars in total)
+limits: at most 32 tracks, 32768 characters per notes/chords/grid string, 8192 tempoMap entries, 200000 rendered notes
 tracks: [{ name (ASCII, becomes the GarageBand region name), role, program? (0–127 override),
            level? (dB, -24…+6: velocity scaling, -6 ≈ half as loud), parts: { <section>: Part } }]
 roles: drums · bass · pad · arp · lead · lead-high · fx   (max 15 non-drum tracks)

@@ -190,3 +190,42 @@ describe("parseSong: expression fields (M11)", () => {
     expect(drums({ dynamics: "p<f" }).ok).toBe(false);
   });
 });
+
+// security review 2026-10-06 (A2): sections and total bars were unbounded, so one small Song JSON could keep the server busy
+describe("parseSong: size limits", () => {
+  const base = { title: "t", tempo: 120, tracks: [{ name: "Lead", role: "lead", parts: { s0: { notes: "c5" } } }] };
+  it("refuses more than 256 sections", () => {
+    const sections = Array.from({ length: 257 }, (_, i) => ({ name: `s${i}`, bars: 1 }));
+    expect(parseSong({ ...base, sections })).toMatchObject({ ok: false, error: { path: "sections" } });
+  });
+  it("refuses more than 2048 bars in total", () => {
+    const sections = Array.from({ length: 9 }, (_, i) => ({ name: `s${i}`, bars: 256 })); // 2304 bars
+    expect(parseSong({ ...base, sections })).toMatchObject({ ok: false, error: { path: "sections" } });
+  });
+  it("accepts 2048 bars in total", () => {
+    const sections = Array.from({ length: 8 }, (_, i) => ({ name: `s${i}`, bars: 256 }));
+    expect(parseSong({ ...base, sections }).ok).toBe(true);
+  });
+});
+
+// commit security review 2026-10-06: the size limits were incomplete — tracks (drum tracks are not counted by the
+// 15-melodic limit), tempo-map entries and part strings were unbounded
+describe("parseSong: the rest of the size limits", () => {
+  const sections = [{ name: "a", bars: 1 }];
+  const lead = (notes: string) => ({ name: "Lead", role: "lead", parts: { a: { notes } } });
+  it("refuses more than 32 tracks (drums included)", () => {
+    const tracks = Array.from({ length: 33 }, (_, i) => ({ name: `D${i}`, role: "drums", parts: { a: { grid: { kick: "x..." } } } }));
+    expect(parseSong({ title: "t", tempo: 120, sections, tracks })).toMatchObject({ ok: false, error: { path: "tracks" } });
+  });
+  it("refuses a part string longer than 32768 characters", () => {
+    expect(parseSong({ title: "t", tempo: 120, sections, tracks: [lead("c5 ".repeat(11_000))] }).ok).toBe(false);
+  });
+  it("refuses a tempo map with more than 8192 entries (each one valid: rising positions inside the song)", () => {
+    const tempoMap = Array.from({ length: 8193 }, (_, i) => ({ bar: 1 + Math.floor(i / 65), beat: 1 + (i % 65) * 0.04, bpm: 120 }));
+    const r = parseSong({ title: "t", tempo: 120, sections: [{ name: "a", bars: 128 }], tracks: [lead("c5")], tempoMap });
+    expect(r).toMatchObject({ ok: false, error: { path: "tempoMap" } });
+    expect(r.ok === false && r.error.message).toMatch(/8192/);
+    tempoMap.pop(); // 8192 rising entries are fine
+    expect(parseSong({ title: "t", tempo: 120, sections: [{ name: "a", bars: 128 }], tracks: [lead("c5")], tempoMap }).ok).toBe(true);
+  });
+});

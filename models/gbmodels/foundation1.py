@@ -8,6 +8,7 @@ import os
 from huggingface_hub import snapshot_download
 
 REPO = "RoyalCities/Foundation-1"
+REVISION = "7b10fbbbc1be2f54cbc5540aab89ee383bc94e4a"  # pinned
 STEPS = 100  # the usual Stable Audio Open setting; stable-audio-tools defaults to 250
 
 
@@ -34,7 +35,7 @@ def load(device: str, dtype: str = "float32"):
     from stable_audio_tools.models.factory import create_model_from_config
     from stable_audio_tools.models.utils import load_ckpt_state_dict
 
-    root = snapshot_download(REPO, allow_patterns=["Foundation_1.safetensors", "model_config.json"])
+    root = snapshot_download(REPO, revision=REVISION, allow_patterns=["Foundation_1.safetensors", "model_config.json"])
     config = json.load(open(os.path.join(root, "model_config.json")))
     model = create_model_from_config(config)
     model.load_state_dict(load_ckpt_state_dict(os.path.join(root, "Foundation_1.safetensors")))

@@ -80,7 +80,12 @@ export function createModelSidecar(opts: SidecarOptions): ModelSidecar {
       return new Promise((resolve) => {
         const timer = setTimeout(() => {
           pending.delete(id);
-          resolve(err({ code: "SIDECAR_TIMEOUT", message: `${model} did not answer within ${opts.timeoutMs} ms` }));
+          resolve(err({ code: "SIDECAR_TIMEOUT", message: `${model} did not answer within ${opts.timeoutMs} ms; the sidecar was restarted` }));
+          // The server runs one request at a time: a stuck job would block every later request and still write its
+          // files. End the process (its exit fails any other request in flight); the next request starts a new one
+          //.
+          if (proc === child) { proc = null; ready = null; }
+          child.kill("SIGKILL");
         }, opts.timeoutMs);
         pending.set(id, { resolve, timer });
         child.stdin!.write(JSON.stringify({ id, op: "run", model, inputs }) + "\n");

@@ -66,6 +66,15 @@ describe("gb_project from_audio (M13.8): a recording → a GarageBand project in
     expect(calls.map((c) => c.input.command)).toEqual(["map", "render_midi", "open_midi"]);
   });
 
+  // security review 2026-10-06 (A3): a dot passed the .band name check but not the derived guide .mid name, so the
+  // map and the separation ran before the name failed
+  it("refuses a name its derived guide and donor files could not use, before any step runs", async () => {
+    const { steps, calls } = fakeSteps();
+    const r = await createFromAudio(steps, ws)({ command: "from_audio", path: "gen/song.wav", filename: "song.v1.band" });
+    expect(r).toMatchObject({ status: "failed", error: "INPUT_INVALID" });
+    expect(calls).toHaveLength(0);
+  });
+
   it("never overwrites: a taken guide, donor or band name stops it before the map", async () => {
     const { steps, calls } = fakeSteps();
     mkdirSync(join(ws, "donors"));

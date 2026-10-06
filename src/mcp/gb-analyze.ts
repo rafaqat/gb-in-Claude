@@ -6,6 +6,7 @@ import { basename, extname, join } from "node:path";
 import { parseSong } from "../song/schema.js";
 import { sectionTimes } from "../song/expression.js";
 import { resolveWorkspaceFile, workspaceOutputDir } from "../workspace/paths.js";
+import { recordSource, sourceOf } from "../workspace/stem-source.js";
 import { wavInfo } from "../band/wav.js";
 import { compareAnalyses } from "../analysis/compare.js";
 import type { AnalysisResult, AnalyzerError, AnalyzerPort } from "../analysis/analyzer.js";
@@ -133,11 +134,22 @@ export function createGbAnalyze(deps: GbAnalyzeDeps) {
       if (!dir.ok) return { ok: false, envelope: failed(op, dir.error.code, dir.error.message) };
       const base = basename(wav, extname(wav));
       const stems = Object.fromEntries(MAP_STEMS.map((s) => [s, join(dir.value, `${base}-${s}.wav`)])) as Record<(typeof MAP_STEMS)[number], string>;
-      if (!MAP_STEMS.every((s) => existsSync(stems[s]))) {
-        const sep = await deps.listener!.run("stems", { op: "separate", wav, out_dir: dir.value });
-        if (!sep.ok) return { ok: false, envelope: sidecarFailure(sep.error) };
-        if (!MAP_STEMS.every((s) => existsSync(stems[s]))) return { ok: false, envelope: failed(op, "ANALYSIS_FAILED", "the separation wrote no stems") };
+      if (MAP_STEMS.every((s) => existsSync(stems[s]))) {
+        // reused only when they were made from THIS recording
+        const whose = sourceOf(dir.value, base, wav);
+        if (whose !== "match") {
+          return { ok: false, envelope: failed(op, "FILE_EXISTS", whose === "other"
+            ? `stems/${base}-*.wav were made from another recording (or this one changed); nothing analysed`
+            : `stems/${base}-*.wav exist but gb-mcp cannot tell which recording they came from; nothing analysed`, {
+            hint: "move or delete those stems (or give the recording another name), then retry",
+          }) };
+        }
+        return { ok: true, stems };
       }
+      const sep = await deps.listener!.run("stems", { op: "separate", wav, out_dir: dir.value });
+      if (!sep.ok) return { ok: false, envelope: sidecarFailure(sep.error) };
+      if (!MAP_STEMS.every((s) => existsSync(stems[s]))) return { ok: false, envelope: failed(op, "ANALYSIS_FAILED", "the separation wrote no stems") };
+      recordSource(dir.value, base, wav);
       return { ok: true, stems };
     };
 

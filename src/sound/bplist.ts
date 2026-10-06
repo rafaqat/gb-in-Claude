@@ -8,6 +8,11 @@ import { ok, err, type Result } from "../result.js";
  * Supports null/bool, int (1–8 bytes), real (4/8), date, data, ASCII and UTF-16 strings, UID, array, set, dict.
  */
 const MAX_DEPTH = 32;
+/** Objects one parse may produce: shared references are expanded again for every reference, so depth alone does not
+ * bound the work (121 bytes expanded to 67 million objects; security review 2026-10-06, C2). Patch metadata is tiny. */
+const MAX_OBJECTS = 200_000;
+/** Decoded bytes one parse may produce (data and strings are decoded again for every reference to them). */
+const MAX_BYTES = 8 * 1024 * 1024;
 const TRAILER_SIZE = 32;
 
 class PlistError extends Error {}
@@ -25,6 +30,14 @@ class Reader {
   private readonly offsets: number[] = [];
   private readonly refSize: number;
   private readonly top: number;
+  private produced = 0;
+  private bytes = 0;
+
+  /** Count decoded bytes against MAX_BYTES (commit security review 2026-10-06). */
+  private spend(n: number): void {
+    this.bytes += n;
+    if (this.bytes > MAX_BYTES) throw new PlistError(`more than ${MAX_BYTES} decoded bytes`);
+  }
 
   constructor(private readonly buf: Uint8Array) {
     if (buf.length < 8 + TRAILER_SIZE || new TextDecoder("latin1").decode(buf.subarray(0, 8)) !== "bplist00") {
@@ -64,6 +77,7 @@ class Reader {
 
   private object(ref: number, depth: number): unknown {
     if (depth > MAX_DEPTH) throw new PlistError("nesting too deep");
+    if (++this.produced > MAX_OBJECTS) throw new PlistError(`more than ${MAX_OBJECTS} objects`);
     const at = this.offsets[ref];
     if (at === undefined) throw new PlistError(`bad object ref ${ref}`);
     const marker = this.buf[at];
@@ -93,16 +107,19 @@ class Reader {
       case 0x4: {
         const [n, p] = this.length(info, at);
         if (p + n > this.buf.length) throw new PlistError("read past end");
+        this.spend(n);
         return this.buf.slice(p, p + n);
       }
       case 0x5: {
         const [n, p] = this.length(info, at);
         if (p + n > this.buf.length) throw new PlistError("read past end");
+        this.spend(n);
         return new TextDecoder("latin1").decode(this.buf.subarray(p, p + n));
       }
       case 0x6: {
         const [n, p] = this.length(info, at);
         if (p + 2 * n > this.buf.length) throw new PlistError("read past end");
+        this.spend(2 * n);
         let s = "";
         for (let i = 0; i < n; i++) s += String.fromCharCode(this.view.getUint16(p + 2 * i));
         return s;
@@ -112,10 +129,12 @@ class Reader {
       case 0xa:
       case 0xc: {
         const [n, p] = this.length(info, at);
+        if (p + n * this.refSize > this.buf.length) throw new PlistError("read past end");
         return Array.from({ length: n }, (_, i) => this.object(this.uint(p + i * this.refSize, this.refSize), depth + 1));
       }
       case 0xd: {
         const [n, p] = this.length(info, at);
+        if (p + 2 * n * this.refSize > this.buf.length) throw new PlistError("read past end");
         const dict: Record<string, unknown> = {};
         for (let i = 0; i < n; i++) {
           const key = this.object(this.uint(p + i * this.refSize, this.refSize), depth + 1);

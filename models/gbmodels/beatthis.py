@@ -1,11 +1,41 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 rafaqat
 """beat_this: beat and downbeat times of a recording (in seconds), without a DBN post-processor."""
+import os
+
+# The "final0" checkpoint, pinned: beat_this would download it on first use with no hash check and load it with
+# pickle; gb-mcp checks it first and hands beat_this the local path, which it loads with weights_only=True
+#.
+URL = "https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/final0.ckpt"
+FILE = "beat_this-final0.ckpt"
+SHA256 = "8c328b45f59d8dd3dff219253ff6a8d6482be57d0133a29140e2febbf8eb8331"
+
+
+def checkpoint() -> str:
+    """The pinned checkpoint in torch's cache, hash-checked; downloaded to a temp file and checked before it is kept."""
+    import tempfile
+    import torch
+    from gbmodels.weights import verify
+    folder = os.path.join(torch.hub.get_dir(), "checkpoints")
+    path = os.path.join(folder, FILE)
+    if os.path.exists(path):
+        return verify(path, SHA256)
+    os.makedirs(folder, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=folder, prefix=".beat_this-", suffix=".part")
+    os.close(fd)
+    try:
+        torch.hub.download_url_to_file(URL, tmp, progress=False)
+        verify(tmp, SHA256)
+        os.replace(tmp, path)
+        return path
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
 
 
 def load(device: str, float16: bool = False):
     from beat_this.inference import File2Beats
-    return {"model": File2Beats(checkpoint_path="final0", device=device, dbn=False, float16=float16), "device": device}
+    return {"model": File2Beats(checkpoint_path=checkpoint(), device=device, dbn=False, float16=float16), "device": device}
 
 
 def run(handle, inputs: dict) -> dict:

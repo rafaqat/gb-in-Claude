@@ -14,7 +14,7 @@ import numpy as np
 import torch
 from huggingface_hub import snapshot_download
 
-from gbmodels.amt import REPO
+from gbmodels.amt import REPO, REVISION
 
 
 class Block(nn.Module):
@@ -60,7 +60,7 @@ class GPT2(nn.Module):
 
 def load(device: str = "mlx", dtype: str = "float16"):
     """device is always MLX's default (the GPU); dtype float16 or float32."""
-    sd = torch.load(f"{snapshot_download(REPO)}/pytorch_model.bin", map_location="cpu", weights_only=True)
+    sd = torch.load(f"{snapshot_download(REPO, revision=REVISION)}/pytorch_model.bin", map_location="cpu", weights_only=True)
     # the checkpoint also stores non-tensor entries (old GPT-2 attention buffers); only weights are converted
     sd = {k.removeprefix("transformer."): v.float().numpy() for k, v in sd.items() if isinstance(v, torch.Tensor)}
     t = lambda a: mx.array(a.T)  # GPT-2's Conv1D stores weights as (in, out); mlx Linear wants (out, in)

@@ -48,8 +48,12 @@ const Expression = {
 };
 export type PartExpression = { dynamics?: string; pedal?: "bar" | "half" | "beat"; pan?: z.infer<typeof Pan>; brightness?: z.infer<typeof Ramp>; volume?: z.infer<typeof Ramp> };
 
+/** A part's notes, chords or one drum voice's grid (commit security review 2026-10-06: part strings were unbounded). */
+export const MAX_PART_CHARS = 32_768;
+const PartText = z.string().min(1).max(MAX_PART_CHARS);
+
 const ChordsPart = z.object({
-  chords: z.string().min(1),
+  chords: PartText,
   style: z.string().min(1),
   octave: z.number().int().min(0).max(8).optional(),
   ...Expression,
@@ -59,7 +63,7 @@ const ChordsPart = z.object({
 export const LevelDb = z.number().min(-24).max(6);
 
 const GridPart = z.object({
-  grid: z.record(z.enum(DRUM_VOICE_NAMES), z.string().min(1)),
+  grid: z.record(z.enum(DRUM_VOICE_NAMES), PartText),
   /** Per-voice level in dB, e.g. { kick: -6 } to tame a thumpy kick without touching the hats. */
   levels: z.record(z.enum(DRUM_VOICE_NAMES), LevelDb).optional(),
   /** Kit volume (CC7) — fades; drums take levels, not dynamics. */
@@ -71,7 +75,7 @@ const GridPart = z.object({
 });
 
 const NotesPart = z.object({
-  notes: z.string().min(1),
+  notes: PartText,
   ...Expression,
 }).strict();
 
@@ -137,6 +141,13 @@ const Section = z.object({ name: z.string().min(1).max(32), bars: z.number().int
 
 /** 15 melodic channels (1–16 minus drum channel 10). */
 export const MAX_MELODIC_TRACKS = 15;
+/** Size limits far above any real song (2048 bars ≈ 70 minutes at 120 BPM). */
+export const MAX_SECTIONS = 256;
+export const MAX_TOTAL_BARS = 2048;
+/** All tracks, drums included (the 15-track MIDI channel limit counts melodic tracks only). */
+export const MAX_TRACKS = 32;
+/** One entry per beat of the longest song. */
+export const MAX_TEMPO_MAP = 8192;
 
 export const SongSchema = z
   .object({
@@ -154,11 +165,14 @@ export const SongSchema = z
     /** Swing: every second 16th (or 8th, swingUnit) is delayed — 50 straight, 58 light, 66 triplet feel, 75 hard. */
     swing: z.number().min(50).max(75).optional(),
     swingUnit: z.enum(["16th", "8th"]).default("16th"),
-    sections: z.array(Section).min(1),
-    tracks: z.array(Track).min(1),
+    // bounded: one small Song JSON must not keep the single-threaded server busy
+    sections: z.array(Section).min(1).max(MAX_SECTIONS)
+      .refine((ss) => ss.reduce((n, x) => n + x.bars, 0) <= MAX_TOTAL_BARS, { message: `at most ${MAX_TOTAL_BARS} bars in total` }),
+    tracks: z.array(Track).min(1).max(MAX_TRACKS),
     /** M13.7: a tempo from a bar (and beat) on, absolute bars from the song's start — a project whose bar lines
      *  follow a recording that drifts (gb_analyze map). Not together with section tempo / tempoTo. */
-    tempoMap: z.array(z.object({ bar: z.number().int().min(1), beat: z.number().min(1).max(7.999).default(1), bpm: Tempo }).strict()).min(1).optional(),
+    tempoMap: z.array(z.object({ bar: z.number().int().min(1), beat: z.number().min(1).max(7.999).default(1), bpm: Tempo }).strict()).min(1)
+      .max(MAX_TEMPO_MAP, `at most ${MAX_TEMPO_MAP} tempo changes`).optional(),
   })
   .strict()
   .superRefine((song, ctx) => {

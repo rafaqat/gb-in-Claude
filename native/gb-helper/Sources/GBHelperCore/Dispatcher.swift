@@ -427,19 +427,26 @@ extension Dispatcher {
     let start = backend.nowMs()
     while true {
       var matches: [Match<B.Node>] = []
+      // complete: the whole tree under the root was searched. A root that no longer resolves is complete (a vanished
+      // dialog root IS absent); a search cut off by its node cap or the deadline proves nothing about absence
+      // (security review 2026-10-06, B5).
+      var complete = true
       if let (_, root) = try? resolveRootParam(p["root"], d) {
-        matches = findAll(tree: backend, root: root, selector: selector, options: options, isExpired: d.isExpired).matches
+        let found = findAll(tree: backend, root: root, selector: selector, options: options, isExpired: d.isExpired)
+        matches = found.matches
+        complete = !found.truncated && !found.deadlineExceeded
       }
       let satisfied: Bool
       switch condition {
       case "present": satisfied = !matches.isEmpty
-      case "absent": satisfied = matches.isEmpty
+      case "absent": satisfied = matches.isEmpty && complete
       default: satisfied = matches.count == 1 && backend.value(matches[0].node) == p["value"]
       }
       let waited = backend.nowMs() - start
       if satisfied || d.remainingMs() < Double(poll) + 25 {
         var o: [String: JSONValue] = ["satisfied": .bool(satisfied), "waited_ms": .number(waited.rounded()),
-                                      "count": .number(Double(matches.count)), "condition": .string(condition)]
+                                      "count": .number(Double(matches.count)), "condition": .string(condition),
+                                      "complete": .bool(complete)]
         if let m = matches.first { o["match"] = .object(compact(m.node, path: m.path)) }
         return .object(o)
       }

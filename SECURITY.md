@@ -13,6 +13,13 @@ effect of what it did, and refuses rather than guesses.
 - **Processes** — no shell. Subprocesses (`osascript`, `open`, `ioreg`, `python3`, the native helpers) get argument
   arrays and deadlines. AppleScripts are constants; values travel as arguments, never inside the script text.
 - **Network** — none. MCP runs over stdio; there is no telemetry.
+- **Installs and model files** — Python packages are installed from hash locks (`models/locks/`, `--require-hashes`),
+  and packages without a wheel are built from locked build tools, never from tools fetched unchecked. Model weights
+  are downloaded at pinned revisions; checkpoints are checked against a SHA-256 and loaded without pickle code.
+- **Shared projects** — the local folders GarageBand writes into a project (the Alchemy sample folder, audio file
+  folders: `/Users/<name>/…`) are replaced by a neutral path of the same length in every `.band` gb-mcp writes.
+- **Untrusted files** — the MIDI, WAV and binary plist readers are bounded (no endless loop on a truncated file, caps
+  on chunks, objects and decoded bytes); Song JSON has size limits; audio above 192 kHz or 20 minutes is refused.
 - **GarageBand only** — the native helper talks to `com.apple.garageband10` only (a constant, never taken from a
   request). Targets must match exactly one element; identity is re-checked right before acting.
 - **Input** — no keystrokes are ever sent. Real mouse clicks are used only where GarageBand ignores Accessibility
@@ -36,6 +43,10 @@ effect of what it did, and refuses rather than guesses.
 - Sanitising removes hidden characters, not visible text that reads like an instruction — the agent must treat tool
   results as data.
 - Changes made inside GarageBand (mute, volume, instrument …) edit the open project directly; use GarageBand's Undo.
+- A save prompt GarageBand shows late (after the backup of an unsaved project) is answered from that backup; changes
+  made in between are only in GarageBand's own document.
+- The export inbox is found by its folder name in the save panel; give it a name no other recent folder has
+  (`GB_MCP_EXPORT_INBOX`).
 
 ## Reporting a vulnerability
 

@@ -21,6 +21,10 @@ PINNED_FILES = {
 }
 WEIGHTS = ("sander-wood/clamp3", "weights_clamp3_c2_h_size_768_t_model_FacebookAI_xlm-roberta-base_t_length_128_"
            "a_size_768_a_layers_12_a_length_128_s_size_768_s_layers_12_p_size_64_p_length_512.pth")
+WEIGHTS_REVISION = "355625cc1c6f73726bbcd0eb9276ac7152d56426"  # pinned
+# the text model the authors load by name inside CLaMP3Model: downloaded pinned and handed over as a local folder
+TEXT_MODEL = ("FacebookAI/xlm-roberta-base", "e73636d4f797dec63c3081bb6ed5c7b0bb3f2089")
+TEXT_FILES = ["config.json", "model.safetensors", "sentencepiece.bpe.model", "tokenizer_config.json", "tokenizer.json"]
 SKIPPED_META = {"text", "copyright", "track_name", "instrument_name", "lyrics", "marker", "cue_marker", "device_name"}
 
 
@@ -67,14 +71,16 @@ def load(device: str = "mps"):
     bert = lambda hidden, layers, length: BertConfig(vocab_size=1, hidden_size=hidden, num_hidden_layers=layers,
                                                      num_attention_heads=hidden // 64, intermediate_size=hidden * 4,
                                                      max_position_embeddings=length)
+    # file by file (works from the cache offline; a filtered snapshot_download needs the repo listing from the network)
+    text_dir = os.path.dirname([hf_hub_download(TEXT_MODEL[0], f, revision=TEXT_MODEL[1]) for f in TEXT_FILES][0])
     model = CLaMP3Model(audio_config=bert(C.AUDIO_HIDDEN_SIZE, C.AUDIO_NUM_LAYERS, C.MAX_AUDIO_LENGTH),
                         symbolic_config=bert(C.M3_HIDDEN_SIZE, C.PATCH_NUM_LAYERS, C.PATCH_LENGTH),
-                        text_model_name=C.TEXT_MODEL_NAME, hidden_size=C.CLAMP3_HIDDEN_SIZE, load_m3=False)
-    state = torch.load(hf_hub_download(*WEIGHTS), map_location="cpu", weights_only=True)["model"]
+                        text_model_name=text_dir, hidden_size=C.CLAMP3_HIDDEN_SIZE, load_m3=False)
+    state = torch.load(hf_hub_download(*WEIGHTS, revision=WEIGHTS_REVISION), map_location="cpu", weights_only=True)["model"]
     model.load_state_dict(state)
     model = model.to(device).eval()
-    return {"model": model, "device": device, "config": C, "tokenizer": AutoTokenizer.from_pretrained(C.TEXT_MODEL_NAME),
-            "patchilizer": M3Patchilizer()}
+    tokenizer = AutoTokenizer.from_pretrained(text_dir)  # a local folder, pinned above
+    return {"model": model, "device": device, "config": C, "tokenizer": tokenizer, "patchilizer": M3Patchilizer()}
 
 
 def _global(handle, data, max_len, pad_value, features):

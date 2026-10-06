@@ -20,7 +20,9 @@ export type FromAudioSteps = { analyze: Step; song: Step; project: Step; tracks:
 export const FromAudioInput = z.object({
   command: z.literal("from_audio"),
   path: z.string().min(1),
-  filename: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9 _.-]{0,70}\.band$/, "a .band file name such as song-v1.band (no folders)"),
+  // no dots before .band: the derived <name>-guide.mid and <name>-donor.band take the same characters as gb_song's
+  // file names, so a name that passes here never fails late, after the map and the separation
+  filename: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9 _-]{0,70}\.band$/, "a .band file name such as song-v1.band: letters, digits, space, _ or - (no dots or folders)"),
   dry_run: z.boolean().optional(),
 }).strict();
 

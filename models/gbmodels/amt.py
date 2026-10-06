@@ -5,12 +5,13 @@ generate() treats the input events after `start` as anticipated controls, so the
 from huggingface_hub import snapshot_download
 
 REPO = "stanford-crfm/music-medium-800k"
+REVISION = "93b6eb7e09bad33be6cb2ebd50ce5279cbfde7f6"  # pinned
 
 
 def load(device: str, dtype: str = "float32"):
     import torch
     from transformers import AutoModelForCausalLM
-    model = AutoModelForCausalLM.from_pretrained(snapshot_download(REPO), dtype=getattr(torch, dtype)).to(device).eval()
+    model = AutoModelForCausalLM.from_pretrained(snapshot_download(REPO, revision=REVISION), dtype=getattr(torch, dtype)).to(device).eval()
     return {"model": model, "device": device, "dtype": dtype}
 
 

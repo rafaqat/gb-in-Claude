@@ -443,17 +443,20 @@ export class FakeHelper implements HelperPort {
     const start = this.clockMs;
     for (;;) {
       let matches: { node: TreeNode; path: string }[] = [];
+      let complete = true; // as the helper: a vanished root is complete; a cut-off search is not
       try {
         const { node, prune } = this.resolveRoot(p.root, d);
-        matches = findAll(node, sel, this.options(p, prune, 24, 20_000)).matches;
+        const found = findAll(node, sel, this.options(p, prune, 24, 20_000));
+        matches = found.matches;
+        complete = !found.truncated;
       } catch {
         matches = []; // a missing root counts as zero matches
       }
       const satisfied = condition === "present" ? matches.length > 0
-        : condition === "absent" ? matches.length === 0
+        : condition === "absent" ? matches.length === 0 && complete
         : matches.length === 1 && matches[0]!.node.value === p.value;
       if (satisfied || d.remainingMs() < poll + 25) {
-        return { satisfied, waited_ms: this.clockMs - start, count: matches.length, condition, ...(matches[0] ? { match: compact(matches[0].node, matches[0].path) } : {}) };
+        return { satisfied, waited_ms: this.clockMs - start, count: matches.length, condition, complete, ...(matches[0] ? { match: compact(matches[0].node, matches[0].path) } : {}) };
       }
       this.sleep(poll);
     }

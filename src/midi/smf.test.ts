@@ -134,3 +134,15 @@ describe("vlq (MIDI variable-length quantity)", () => {
     expect(vlq(n)).toEqual(bytes);
   });
 });
+
+// security review 2026-10-06 (A2): the overlap check copied the whole per-pitch list for every note (quadratic): a
+// small Song JSON blocked the single-threaded server for seconds (200 sections of 256 bars: 9.2 s, 355 MB)
+describe("writeSmf stays linear in the note count", () => {
+  it("60 000 notes on one pitch are checked and written in well under 1.5 s (the quadratic check took 4.4 s)", () => {
+    const notes = Array.from({ length: 60_000 }, (_, i) => ({ pitch: 60, startTick: i * 10, durationTicks: 10, velocity: 90 }));
+    const t = performance.now();
+    const r = writeSmf({ ppq: 480, tempoBpm: 120, timeSignature: [4, 4], tracks: [{ name: "Lead", channel: 1, notes }] });
+    expect(r.ok).toBe(true);
+    expect(performance.now() - t).toBeLessThan(1500);
+  });
+});

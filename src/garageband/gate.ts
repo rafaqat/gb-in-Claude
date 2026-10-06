@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
-import { linkSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { linkSync, mkdirSync, readFileSync, rmdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomBytes } from "node:crypto";
 import { failed, type Envelope } from "../mcp/envelope.js";
@@ -17,6 +17,34 @@ export type GateOptions = {
 const MAX_LOCK_AGE_MS = 15 * 60_000;
 /** An unreadable lock this young may be a contender mid-write (defensive: creation is atomic anyway). */
 const YOUNG_MS = 10_000;
+/** A takeover takes milliseconds: a takeover lock this old was left by a process that died mid-takeover. */
+const TAKEOVER_STALE_MS = 10_000;
+
+/**
+ * Remove a stale lock only while holding `<lock>.takeover` (an atomic mkdir), re-checking staleness under it: two
+ * contenders that both judged the lock stale could otherwise both unlink-and-link, the second deleting the first one's
+ * fresh lock. Returns false when another process is taking it over.
+ */
+function takeOverStale(lockPath: string): boolean {
+  const mutex = `${lockPath}.takeover`;
+  try {
+    mkdirSync(mutex);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== "EEXIST") return false;
+    let age = 0;
+    try { age = Date.now() - statSync(mutex).mtimeMs; } catch { /* gone meanwhile */ }
+    if (age <= TAKEOVER_STALE_MS) return false;
+    try { rmdirSync(mutex); mkdirSync(mutex); } catch { return false; }
+  }
+  try {
+    if (!lockHolder(lockPath)) {
+      try { unlinkSync(lockPath); } catch { /* already gone */ }
+    }
+    return true;
+  } finally {
+    try { rmdirSync(mutex); } catch { /* removed by a stale-takeover cleanup */ }
+  }
+}
 
 const alive = (pid: number) => {
   try { process.kill(pid, 0); return true; } catch (e) { return (e as NodeJS.ErrnoException).code === "EPERM"; }
@@ -58,7 +86,7 @@ function acquire(lockPath: string, op: string): Acquired {
         if ((e as NodeJS.ErrnoException).code !== "EEXIST") return { ok: false, error: (e as NodeJS.ErrnoException).code ?? "unknown" };
         const holder = lockHolder(lockPath);
         if (holder) return { ok: false, holder };
-        try { unlinkSync(lockPath); } catch { /* a contender took it over first: retry once */ }
+        if (!takeOverStale(lockPath)) return { ok: false, holder: { pid: -1, op: "(being taken over)" } };
       }
     }
     const holder = lockHolder(lockPath);

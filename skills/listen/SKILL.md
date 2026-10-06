@@ -1,7 +1,7 @@
 ---
 name: listen
 description: Use when the user asks what a GarageBand export sounds like, whether it is too loud/thin/bright/thumpy, or to check a mix — analyzes the audio with gb_analyze and explains it in plain words with the spectrogram.
-version: 0.9.1
+version: 0.9.2
 ---
 
 # Listen to an export (gb-mcp)

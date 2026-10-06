@@ -13,6 +13,10 @@ import sys
 import warnings
 
 MAX_SECONDS = 20 * 60
+# Memory, not only duration: a FLAC at 655350 Hz passed the 20-minute check and took
+# gigabytes. At most 192 kHz, and at most as many samples as 20 minutes of 48 kHz stereo (10 minutes at 96 kHz).
+MAX_RATE = 192_000
+MAX_SAMPLES = 20 * 60 * 48_000 * 2
 
 
 class CliError(Exception):
@@ -68,8 +72,12 @@ def _load(path):
         raise CliError("AUDIO_INVALID", "not a readable audio file (use WAV, AIFF or FLAC)") from None
     if info.channels > 2:
         raise CliError("NOT_SUPPORTED", f"{info.channels} channels; only mono or stereo")
+    if info.samplerate > MAX_RATE:
+        raise CliError("NOT_SUPPORTED", f"sample rate {info.samplerate} Hz; at most {MAX_RATE} Hz")
     if info.frames / info.samplerate > MAX_SECONDS:
         raise CliError("NOT_SUPPORTED", "audio longer than 20 minutes")
+    if info.frames * info.channels > MAX_SAMPLES:
+        raise CliError("NOT_SUPPORTED", "too many samples to analyse (at most 20 minutes of 48 kHz stereo, or 10 at 96 kHz)")
     x, rate = sf.read(path, always_2d=True, dtype="float64")
     if len(x) == 0:
         raise CliError("AUDIO_INVALID", "audio file is empty")
