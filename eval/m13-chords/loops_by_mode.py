@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 rafaqat
 """Per gb-mcp genre and mode: songs, and the 4-chord loops (rotation classes, 4 different diatonic triads with the
-tonic among them) in verses and choruses, plus chorus openings to choose each loop's start. '_all' pools every genre."""
+tonic among them) in verses and choruses, plus chorus openings to choose each loop's start. '_all' pools the songs of
+the 20 M8 genres (M14 added genres but kept the pool, so the pooled loops of the first 20 did not change)."""
 import collections, json, sys
 import pandas as pd
-from stats import GENRES, SEC, chord, key_of, roman, changes, loop_class
+from stats import GENRES, M8_GENRES, SEC, chord, key_of, roman, changes, loop_class
 
 DIATONIC = {"major": {"I", "ii", "iii", "IV", "V", "vi"}, "minor": {"i", "III", "iv", "v", "V", "VI", "VII"}}
 TONIC = {"major": "I", "minor": "i"}
@@ -24,7 +25,7 @@ def main(csv, out):
             if c: parts[cur].append(c); allch.append(c)
         if len(allch) < 4: continue
         t, mode = key_of(allch)
-        for g in hit + ["_all"]:
+        for g in hit + (["_all"] if any(g in M8_GENRES for g in hit) else []):
             s = st[g][mode]; s["songs"] += 1
             for sec, seq in parts.items():
                 bucket = "chorus" if sec in ("chorus", "drop", "hook") else "verse" if sec in ("verse", "intro", "prechorus", "pre-chorus") else None

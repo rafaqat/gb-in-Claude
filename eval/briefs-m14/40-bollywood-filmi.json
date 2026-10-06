@@ -1,0 +1,180 @@
+{
+  "id": "40-bollywood-filmi",
+  "genre": "Bollywood (filmi)",
+  "bpm": 100,
+  "key": "C minor",
+  "meter": "4/4",
+  "form": "intro 4 · mukhda 8 · interlude 4 · antara 8 · mukhda2 8",
+  "description": "Bollywood: keherwa on tabla-like congas and bongo, film strings, a bansuri-like flute.",
+  "song": {
+    "title": "eval bollywood-filmi",
+    "tempo": 100,
+    "key": "C minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "mukhda",
+        "bars": 8
+      },
+      {
+        "name": "interlude",
+        "bars": 4
+      },
+      {
+        "name": "antara",
+        "bars": 8
+      },
+      {
+        "name": "mukhda2",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "mukhda": {
+            "grid": {
+              "kick": "x.......x......."
+            }
+          },
+          "antara": {
+            "grid": {
+              "kick": "x.......x......."
+            }
+          },
+          "mukhda2": {
+            "grid": {
+              "kick": "x.......x......."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "mukhda": {
+            "grid": {
+              "conga-low": "x.x.......x.....",
+              "conga-high": "x.......x.......",
+              "bongo-high": "....x.x.x...x.x."
+            }
+          },
+          "interlude": {
+            "grid": {
+              "conga-high": "x.......x.......",
+              "bongo-high": "....x.x.x...x.x."
+            }
+          },
+          "antara": {
+            "grid": {
+              "conga-low": "x.x.......x.....",
+              "conga-high": "x.......x.......",
+              "bongo-high": "....x.x.x...x.x."
+            }
+          },
+          "mukhda2": {
+            "grid": {
+              "conga-low": "x.x.......x.....",
+              "conga-high": "x.......x.......",
+              "bongo-high": "....x.x.x...x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 48,
+        "parts": {
+          "intro": {
+            "chords": "Cm | Ab | Bb | Cm",
+            "style": "sustain"
+          },
+          "mukhda": {
+            "chords": "Cm | Ab | Bb | Cm",
+            "style": "sustain"
+          },
+          "interlude": {
+            "chords": "Cm | Ab | Bb | Cm",
+            "style": "sustain"
+          },
+          "antara": {
+            "chords": "Fm | Bb | Eb | Cm",
+            "style": "sustain"
+          },
+          "mukhda2": {
+            "chords": "Cm | Ab | Bb | Cm",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 46,
+        "level": -3,
+        "parts": {
+          "interlude": {
+            "chords": "Cm | Ab | Bb | Cm",
+            "style": "broken",
+            "octave": 4
+          },
+          "antara": {
+            "chords": "Fm | Bb | Eb | Cm",
+            "style": "broken",
+            "octave": 4
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "mukhda": {
+            "chords": "Cm | Ab | Bb | Cm",
+            "style": "sustain"
+          },
+          "antara": {
+            "chords": "Fm | Bb | Eb | Cm",
+            "style": "sustain"
+          },
+          "mukhda2": {
+            "chords": "Cm | Ab | Bb | Cm",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 73,
+        "parts": {
+          "intro": {
+            "notes": "g5 eb5 d5 c5 | bb5@2 c6 eb6 | g6 f6 d6 c6 | c5@4"
+          },
+          "mukhda": {
+            "notes": "g5 eb5 d5 c5 | bb5@2 c6 eb6 | g6 f6 d6 c6 | c5@4"
+          },
+          "mukhda2": {
+            "notes": "g5 eb5 d5 c5 | bb5@2 c6 eb6 | g6 f6 d6 c6 | c5@4"
+          }
+        }
+      }
+    ]
+  }
+}

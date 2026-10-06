@@ -1,0 +1,133 @@
+{
+  "id": "37-dabke",
+  "genre": "dabke",
+  "bpm": 125,
+  "key": "D minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · dabke 8 · outro 4",
+  "description": "Dabke: the tabl's dabke beat, hand claps, a reed (clarinet) line in repeated notes.",
+  "song": {
+    "title": "eval dabke",
+    "tempo": 125,
+    "key": "D minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "dabke",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "verse": {
+            "grid": {
+              "tom-low": "x...x.x.x...x.x.",
+              "rim": "..x.....x.....x.",
+              "clap": "....x.......x..."
+            }
+          },
+          "dabke": {
+            "grid": {
+              "tom-low": "x...x.x.x...x.x.",
+              "rim": "..x.....x.....x.",
+              "clap": "....x.......x..."
+            }
+          },
+          "outro": {
+            "grid": {
+              "tom-low": "x...x.x.x...x.x.",
+              "rim": "..x.....x.....x.",
+              "clap": "....x.......x..."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "verse": {
+            "grid": {
+              "conga-high": "..x.x...x.x...x."
+            }
+          },
+          "dabke": {
+            "grid": {
+              "conga-high": "..x.x...x.x...x."
+            }
+          },
+          "outro": {
+            "grid": {
+              "conga-high": "..x.x...x.x...x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 48,
+        "level": -6,
+        "parts": {
+          "dabke": {
+            "chords": "Gm | Dm | A | Dm",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "verse": {
+            "chords": "Dm | Dm | C | Dm",
+            "style": "octave"
+          },
+          "dabke": {
+            "chords": "Gm | Dm | A | Dm",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 71,
+        "parts": {
+          "intro": {
+            "notes": "a5 a5 g5 f5 g5 g5 f5 e5 | f5 f5 e5 d5 e5@2 ~@2 | g5 g5 f#5 e5 f#5 f#5 e5 d5 | f5 e5 d5 d5 d5@4"
+          },
+          "verse": {
+            "notes": "a5 a5 g5 f5 g5 g5 f5 e5 | f5 f5 e5 d5 e5@2 ~@2 | g5 g5 f#5 e5 f#5 f#5 e5 d5 | f5 e5 d5 d5 d5@4"
+          },
+          "dabke": {
+            "notes": "d6 d6 c6 bb5 c6 c6 bb5 a5 | f5 f5 e5 d5 e5@2 ~@2 | e6 e6 eb6 c#6 eb6 eb6 c#6 b5 | f5 e5 d5 d5 d5@4"
+          }
+        }
+      }
+    ]
+  }
+}

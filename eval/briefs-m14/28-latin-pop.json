@@ -1,0 +1,145 @@
+{
+  "id": "28-latin-pop",
+  "genre": "Latin pop",
+  "bpm": 100,
+  "key": "B minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · pre 4 · chorus 8 · outro 4",
+  "description": "Latin pop: a light reggaeton beat, nylon guitar, warm pad, a bright synth hook.",
+  "song": {
+    "title": "eval latin-pop",
+    "tempo": 100,
+    "key": "B minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "pre",
+        "bars": 4
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 24,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x.......",
+              "shaker": "xxxxxxxxxxxxxxxx"
+            }
+          },
+          "pre": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "...x..x....x..x.",
+              "hat": "x.x.x.x.x.x.x.x.",
+              "shaker": "xxxxxxxxxxxxxxxx"
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "...x..x....x..x.",
+              "hat": "x.x.x.x.x.x.x.x.",
+              "shaker": "xxxxxxxxxxxxxxxx"
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 90,
+        "level": -6,
+        "parts": {
+          "pre": {
+            "chords": "Bm | G | D | A",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "G | A | Bm | Bm",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 24,
+        "parts": {
+          "intro": {
+            "chords": "Bm | G | D | A",
+            "style": "broken",
+            "octave": 3
+          },
+          "verse": {
+            "chords": "Bm | G | D | A",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus": {
+            "chords": "G | A | Bm | Bm",
+            "style": "broken",
+            "octave": 3
+          },
+          "outro": {
+            "chords": "Bm | G | D | A",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 38,
+        "parts": {
+          "verse": {
+            "chords": "Bm | G | D | A",
+            "style": "octave"
+          },
+          "pre": {
+            "chords": "Bm | G | D | A",
+            "style": "octave"
+          },
+          "chorus": {
+            "chords": "G | A | Bm | Bm",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 80,
+        "parts": {
+          "chorus": {
+            "notes": "b5 d6 d6 b5 | a5@2 c#6 e6 | b6 b5 f#6 d6 | f#6@4"
+          }
+        }
+      }
+    ]
+  }
+}

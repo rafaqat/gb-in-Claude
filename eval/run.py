@@ -10,7 +10,7 @@ MCP server, so all of gb-mcp's safety rules apply), then score the exported WAV:
     pass rate = beats within ±70 ms of the grid; tempo ratio records half/double-time readings
   - key: S-KEY's key vs the brief's key → "exact" | "relative" | "other"
   - genre: LAION CLAP similarity to "<genre> music" (raw, for ranking and before/after only — never a threshold) and the
-    rank of the brief's genre among all 20 genre prompts (1 = best)
+    rank of the brief's genre among all 20 genre prompts (1 = best); --set m14: the 27 M14 briefs, ranked among all 47
 Writes eval/results/<label>/scores.json and scores.md. The briefs are frozen; compare labels, never edit a brief.
 """
 import argparse
@@ -28,9 +28,22 @@ from gbmodels import beatthis, clap, skey  # noqa: E402
 from gbmodels.scoring import grid_score, key_match  # noqa: E402,F401
 
 
-def load_briefs():
-    d = os.path.join(ROOT, "eval", "briefs")
+SETS = {"m8": "briefs", "m14": "briefs-m14"}  # M14: the 27 new genres' briefs, frozen the same way
+
+
+def load_briefs(set_name="m8"):
+    d = os.path.join(ROOT, "eval", SETS[set_name])
     return [json.load(open(os.path.join(d, f))) for f in sorted(os.listdir(d)) if f.endswith(".json")]
+
+
+def rank_space(set_name, briefs):
+    """The genre labels a render is ranked among, and CLAP's text for each: m8 — its own 20 briefs with "<genre> music"
+    (unchanged since M8, so its scores stay comparable); m14 — all of gb-mcp's genres with their CLAP prompts."""
+    if set_name == "m8":
+        labels = [b["genre"] for b in briefs]
+        return labels, [f"{g} music" for g in labels]
+    from gbmodels.genres import GENRES, clap_prompt
+    return list(GENRES), [clap_prompt(g) for g in GENRES]
 
 
 # ---------- rendering through gb-mcp ----------
@@ -79,15 +92,14 @@ async def render_all(briefs, label, attempt=1, compose="brief"):
 
 # ---------- scoring ----------
 
-def score_all(briefs, renders):
+def score_all(briefs, renders, set_name="m8"):
     import numpy as np
     beat_h, key_h, clap_h = beatthis.load("mps"), skey.load("cpu"), clap.load("mps")
-    genres = [b["genre"] for b in briefs]
-    prompts = [f"{g} music" for g in genres]
+    genres, prompts = rank_space(set_name, briefs)
     text = clap_h["model"].get_text_embedding(prompts, use_tensor=False)
     text = text / np.linalg.norm(text, axis=1, keepdims=True)
     scores = {}
-    for i, b in enumerate(briefs):
+    for b in briefs:
         wav = renders.get(b["id"], {}).get("wav")
         if not wav or not os.path.exists(wav):
             scores[b["id"]] = {"genre": b["genre"], "scored": False}
@@ -96,13 +108,14 @@ def score_all(briefs, renders):
         key = skey.run(key_h, {"wav": wav})
         audio, _ = clap.embed_audio(clap_h, wav)
         sims = text @ audio
+        i = genres.index(b["genre"])
         rank = int(1 + np.sum(sims > sims[i]))
         scores[b["id"]] = {"genre": b["genre"], "bpm": b["bpm"], "key": b["key"], "scored": True,
                            "grid": grid_score(list(map(float, beats)), b["bpm"], swing=renders[b["id"]].get("swing"), swing_unit=renders[b["id"]].get("swing_unit", "16th")),
                            "key_found": key["key"], "key_match": key_match(key["key"], b["key"]),
                            "clap_similarity": round(float(sims[i]), 4), "clap_genre_rank": rank,
                            "clap_top_genre": genres[int(np.argmax(sims))]}
-        print(f"  scored {b['id']}: grid {scores[b['id']]['grid']['pass_rate']} · key {key['key']} ({scores[b['id']]['key_match']}) · genre rank {rank}/20", flush=True)
+        print(f"  scored {b['id']}: grid {scores[b['id']]['grid']['pass_rate']} · key {key['key']} ({scores[b['id']]['key_match']}) · genre rank {rank}/{len(genres)}", flush=True)
     return scores
 
 
@@ -119,12 +132,12 @@ def summary(scores):
             "clap_genre_top1": sum(v["clap_genre_rank"] == 1 for v in s)}
 
 
-def markdown(label, scores, summ):
+def markdown(label, scores, summ, n=20):
     rows = [f"# Evaluation — {label}", "", "CLAP numbers rank candidates and compare before/after; they are not grades.", "",
             f"Scored {summ.get('scored', 0)}/{summ.get('of', len(scores))} · grid recall (median / min) {summ.get('grid_recall_median')} / {summ.get('grid_recall_min')} · grid precision (median) {summ.get('grid_pass_rate_median')} · "
             f"key exact {summ.get('key_exact')} + relative {summ.get('key_relative')} · CLAP genre rank median {summ.get('clap_genre_rank_median')} "
             f"(top-1: {summ.get('clap_genre_top1')})", "",
-            "| Brief | Genre | BPM | Grid recall | Grid precision | Detected BPM (ratio) | Key wanted → found | Key | CLAP sim | Genre rank /20 | CLAP's top genre |",
+            f"| Brief | Genre | BPM | Grid recall | Grid precision | Detected BPM (ratio) | Key wanted → found | Key | CLAP sim | Genre rank /{n} | CLAP's top genre |",
             "|---|---|---|---|---|---|---|---|---|---|---|"]
     for bid, v in scores.items():
         if not v.get("scored"):
@@ -136,10 +149,10 @@ def markdown(label, scores, summ):
     return "\n".join(rows) + "\n"
 
 
-def comparison(base_label, base, label, new):
+def comparison(base_label, base, label, new, n=20):
     """Per brief: grid, key and genre rank before → after (rank: lower is better)."""
     rows = [f"# {label} vs {base_label}", "", f"{base_label}: {json.dumps(base['summary'])}", f"{label}: {json.dumps(new['summary'])}", "",
-            "| Brief | Grid recall | Grid precision | Key | Genre rank /20 | Rank change |", "|---|---|---|---|---|---|"]
+            f"| Brief | Grid recall | Grid precision | Key | Genre rank /{n} | Rank change |", "|---|---|---|---|---|---|"]
     for bid, v in new["scores"].items():
         o = base["scores"].get(bid, {})
         if not (v.get("scored") and o.get("scored")):
@@ -159,8 +172,9 @@ def main():
     ap.add_argument("--attempt", type=int, default=1, help="retry renders under new file names (-r2, -r3 …)")
     ap.add_argument("--compose", choices=["brief", "template"], default="brief", help="template: answer each brief with gb_song template (M9)")
     ap.add_argument("--compare", help="another label: print how each score moved")
+    ap.add_argument("--set", choices=list(SETS), default="m8", help="m14: the 27 genres added in M14, ranked among all 47")
     a = ap.parse_args()
-    briefs = load_briefs()
+    briefs = load_briefs(a.set)
     out = os.path.join(ROOT, "eval", "results", a.label)
     os.makedirs(out, exist_ok=True)
     todo = [b for b in briefs if not a.only or b["id"] in a.only]
@@ -169,14 +183,15 @@ def main():
     if not a.score_only:
         renders.update(asyncio.run(render_all(todo, a.label, a.attempt, a.compose)))
         json.dump(renders, open(renders_path, "w"), indent=2)
-    scores = score_all(briefs, renders)  # every brief, so genre ranks always compare against all 20 prompts
+    scores = score_all(briefs, renders, a.set)  # every brief, so genre ranks always compare against the whole set
     summ = summary(scores)
     json.dump({"label": a.label, "summary": summ, "scores": scores}, open(os.path.join(out, "scores.json"), "w"), indent=2)
-    open(os.path.join(out, "scores.md"), "w").write(markdown(a.label, scores, summ))
-    print(markdown(a.label, scores, summ))
+    n = len(rank_space(a.set, briefs)[0])
+    open(os.path.join(out, "scores.md"), "w").write(markdown(a.label, scores, summ, n))
+    print(markdown(a.label, scores, summ, n))
     if a.compare:
         other = json.load(open(os.path.join(ROOT, "eval", "results", a.compare, "scores.json")))
-        text = comparison(a.compare, other, a.label, {"summary": summ, "scores": scores})
+        text = comparison(a.compare, other, a.label, {"summary": summ, "scores": scores}, n)
         open(os.path.join(out, f"vs-{a.compare}.md"), "w").write(text)
         print(text)
 

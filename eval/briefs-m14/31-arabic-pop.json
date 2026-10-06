@@ -1,0 +1,152 @@
+{
+  "id": "31-arabic-pop",
+  "genre": "Arabic pop",
+  "bpm": 100,
+  "key": "D minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · outro 4",
+  "description": "Arabic pop: maqam Hijaz in chords, maqsum on the darbuka, strings and harp.",
+  "song": {
+    "title": "eval arabic-pop",
+    "tempo": 100,
+    "key": "D minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 24,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x.......",
+              "clap": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.......x.......",
+              "clap": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "verse": {
+            "grid": {
+              "conga-low": "x.......x.......",
+              "conga-high": "..x...x.....x..."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "conga-low": "x.......x.......",
+              "conga-high": "..x...x.....x..."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 48,
+        "parts": {
+          "intro": {
+            "chords": "D | Eb | D | Gm",
+            "style": "sustain"
+          },
+          "verse": {
+            "chords": "D | Eb | D | Gm",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Gm | Eb | D | D",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "D | Eb | D | Gm",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 46,
+        "level": -3,
+        "parts": {
+          "verse": {
+            "chords": "D | Eb | D | Gm",
+            "style": "broken",
+            "octave": 4
+          },
+          "chorus": {
+            "chords": "Gm | Eb | D | D",
+            "style": "broken",
+            "octave": 4
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 38,
+        "parts": {
+          "verse": {
+            "chords": "D | Eb | D | Gm",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Gm | Eb | D | D",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead-high",
+        "program": 48,
+        "parts": {
+          "intro": {
+            "notes": "d5 e5 f#5 ab5 | bb5@2 a5 g5 | e5 d5 e5 f#5 | g5@4"
+          },
+          "chorus": {
+            "notes": "g5 a5 bb5 c6 | bb5@2 a5 g5 | e5 d5 e5 f#5 | d5@4"
+          },
+          "outro": {
+            "notes": "d5 e5 f#5 ab5 | bb5@2 a5 g5 | e5 d5 e5 f#5 | g5@4"
+          }
+        }
+      }
+    ]
+  }
+}

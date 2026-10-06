@@ -1,0 +1,132 @@
+{
+  "id": "44-celtic-folk",
+  "genre": "Celtic folk",
+  "bpm": 110,
+  "key": "D major",
+  "meter": "4/4",
+  "form": "intro 4 · A 8 · B 8 · A2 8",
+  "description": "Celtic folk: a jig's triplet drive on the bodhrán, mixolydian chords, a tin-whistle tune.",
+  "song": {
+    "title": "eval celtic-folk",
+    "tempo": 110,
+    "key": "D major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "A",
+        "bars": 8
+      },
+      {
+        "name": "B",
+        "bars": 8
+      },
+      {
+        "name": "A2",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "intro": {
+            "grid": {
+              "tom-low": "x.....x....."
+            }
+          },
+          "A": {
+            "grid": {
+              "tom-low": "x..x..x..x..",
+              "tom-mid": ".x..x..x..x."
+            }
+          },
+          "B": {
+            "grid": {
+              "tom-low": "x..x..x..x..",
+              "tom-mid": ".x..x..x..x."
+            }
+          },
+          "A2": {
+            "grid": {
+              "tom-low": "x..x..x..x..",
+              "tom-mid": ".x..x..x..x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 25,
+        "parts": {
+          "intro": {
+            "chords": "D | C | D | A",
+            "style": "broken",
+            "octave": 3
+          },
+          "A": {
+            "chords": "D | C | D | A",
+            "style": "broken",
+            "octave": 3
+          },
+          "B": {
+            "chords": "G | D | C | D",
+            "style": "broken",
+            "octave": 3
+          },
+          "A2": {
+            "chords": "D | C | D | A",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 32,
+        "parts": {
+          "A": {
+            "chords": "D | C | D | A",
+            "style": "octave"
+          },
+          "B": {
+            "chords": "G | D | C | D",
+            "style": "octave"
+          },
+          "A2": {
+            "chords": "D | C | D | A",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 78,
+        "parts": {
+          "A": {
+            "notes": "d5 f#5 a5 d6 a5 f#5 | d5 e5 f#5 g5 f#5 e5 | d5 f#5 a5 f#5 e5 d5 | e6 c#6 b5 a5@3"
+          },
+          "B": {
+            "notes": "g5 b5 d6 g6 d6 b5 | e5 f#5 ab5 a5 ab5 f#5 | c5 e5 g5 e5 d5 c5 | a5 f#5 e5 d5@3"
+          },
+          "A2": {
+            "notes": "d5 f#5 a5 d6 a5 f#5 | d5 e5 f#5 g5 f#5 e5 | d5 f#5 a5 f#5 e5 d5 | e6 c#6 b5 a5@3"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -21,6 +21,10 @@ roles: drums · bass · pad · arp · lead · lead-high · fx   (max 15 non-drum
 ## Parts (a part loops to fill its section; longer patterns are truncated)
 drums only — grid: { <voice>: "x...x...x...x..." }  x hit · X accent · o ghost · . rest · | bar
   voices: kick rim snare clap hat pedal-hat open-hat tom-low tom-mid tom-high crash ride shaker
+  Latin/world: tambourine cowbell bongo-high bongo-low conga-mute conga-high conga-low timbale-high timbale-low
+    agogo-high agogo-low cabasa guiro-short guiro-long claves woodblock-high woodblock-low triangle-mute triangle
+    On GarageBand only the Orchestral Kit ("program": 40) plays the hand percussion (congas … triangles): give it its
+    own drums track; every kit plays tambourine, cowbell and claves (gb_song validate warns: PERCUSSION_NEEDS_ORCHESTRAL_KIT)
   steps per bar must be a multiple of the beats (4/4: 8, 12, 16, 32)
   levels: { <voice>: dB } per voice, e.g. { "kick": -6 } tames a thumpy kick without touching the hats
 bass/pad/arp — chords: "Fm | Db | Ab | Eb", style, octave?   (chords in one bar share it: "Am F")

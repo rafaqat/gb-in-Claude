@@ -5,13 +5,14 @@ import { patchFor } from "../knowledge/gm-patch-map.js";
 import { bendRangeFor } from "../knowledge/bend-ranges.js";
 import { renderSong, PPQ, type ExpressiveNote } from "./render.js";
 import { voiceLeading } from "./voice-leading.js";
+import { ORCHESTRAL_KIT_ONLY, type DrumVoice } from "../composition/drums.js";
 import type { PartExpression, Song } from "./schema.js";
 
 export type Issue = {
   severity: "error" | "warning";
   code: "OUT_OF_INSTRUMENT_RANGE" | "RENDER_FAILED" | "ROLE_REGISTER" | "EMPTY_SECTION" | "HUMANIZE_OFF"
     | "BEND_RANGE" | "BEND_NEEDS_MONO" | "BEND_RANGE_UNMEASURED" | "NO_PITCH_BEND" | "BRIGHTNESS_SYNTH_ONLY"
-    | "PARALLEL_FIFTHS" | "PARALLEL_OCTAVES" | "LARGE_LEAP" | "VOICE_CROSSING";
+    | "PARALLEL_FIFTHS" | "PARALLEL_OCTAVES" | "LARGE_LEAP" | "VOICE_CROSSING" | "PERCUSSION_NEEDS_ORCHESTRAL_KIT";
   path: string;
   message: string;
 };
@@ -44,6 +45,17 @@ export function validateSong(song: Song, opts: ValidateOptions = {}): Issue[] {
     if (!song.tracks.some((t) => s.name in t.parts)) {
       issues.push({ severity: "warning", code: "EMPTY_SECTION", path: `sections.${s.name}`,
         message: `section "${s.name}" (${s.bars} bars) has no parts: silence. Add parts or remove the section.` });
+    }
+  }
+  // M14 live probe: hand percussion sounds only on the Orchestral Kit (40/48): other kits are silent or play one pitched sound
+  for (const t of song.tracks) {
+    if (t.role !== "drums" || t.program === 40 || t.program === 48) continue;
+    const hand = [...new Set(Object.values(t.parts).flatMap((p) => "grid" in p ? Object.keys(p.grid) : []))]
+      .filter((v) => ORCHESTRAL_KIT_ONLY.has(v as DrumVoice));
+    if (hand.length > 0) {
+      issues.push({ severity: "warning", code: "PERCUSSION_NEEDS_ORCHESTRAL_KIT", path: `tracks.${t.name}`,
+        message: `${hand.join(", ")}: on GarageBand only the Orchestral Kit plays these (SoCal, Retro Rock and Roots are silent; ` +
+          `Boutique 808 and Electro play one pitched sound). Move them to their own drums track with "program": 40.` });
     }
   }
   for (const [i, track] of rendered.value.tracks.entries()) {

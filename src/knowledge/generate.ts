@@ -25,7 +25,8 @@ songs that fit the request best (caption, lyrics, bpm, key, length, language). W
 write new words. ACE-Step reads about 256 tokens of the caption (≈ 1000 characters of English).
 
 - **Caption — one paragraph, in this order:** genre and mood; the instruments and how they play; the voice (gender,
-  timbre, range, delivery); the arrangement (builds, solos, breaks); the production and the overall mood.
+  timbre, range, delivery); the arrangement (builds, solos, breaks); the production and the overall mood. The words
+  for each of gb-mcp's 47 genres (instruments, voice, production, tempo): gb://knowledge/genres.
 - **Lyrics — one [Section] tag per line**, a blank line between sections: [Intro], [Verse 1], [Pre-Chorus], [Chorus],
   [Bridge], [Outro], [Build-Up], [Drop]. A tag may direct the part: [Intro - Guitar Riff], [Verse 1 - Female],
   [Chorus - Both], [Instrumental Break: Saxophone Solo], [whispered]. A part with no voice: [Verse 2 - Instrumental].

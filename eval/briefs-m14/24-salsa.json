@@ -1,0 +1,167 @@
+{
+  "id": "24-salsa",
+  "genre": "salsa",
+  "bpm": 95,
+  "key": "C minor",
+  "meter": "4/4",
+  "form": "intro 4 · verso 8 · coro 8 · mambo 8",
+  "description": "Salsa dura: 3-2 son clave, cáscara, conga tumbao, piano montuno, a brass mambo line.",
+  "song": {
+    "title": "eval salsa",
+    "tempo": 95,
+    "key": "C minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verso",
+        "bars": 8
+      },
+      {
+        "name": "coro",
+        "bars": 8
+      },
+      {
+        "name": "mambo",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "intro": {
+            "grid": {
+              "claves": "x..x..x...x.x..."
+            }
+          },
+          "verso": {
+            "grid": {
+              "claves": "x..x..x...x.x...",
+              "cowbell": "x...x...x...x..."
+            }
+          },
+          "coro": {
+            "grid": {
+              "claves": "x..x..x...x.x...",
+              "cowbell": "x...x...x...x..."
+            }
+          },
+          "mambo": {
+            "grid": {
+              "claves": "x..x..x...x.x...",
+              "cowbell": "x...x...x...x..."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "verso": {
+            "grid": {
+              "timbale-high": "x.x.xx.x.xx.x.x.",
+              "conga-mute": "x...x...x...x...",
+              "conga-high": "......xx......xx"
+            }
+          },
+          "coro": {
+            "grid": {
+              "timbale-high": "x.x.xx.x.xx.x.x.",
+              "conga-mute": "x...x...x...x...",
+              "conga-high": "......xx......xx"
+            }
+          },
+          "mambo": {
+            "grid": {
+              "timbale-high": "x.x.xx.x.xx.x.x.",
+              "conga-mute": "x...x...x...x...",
+              "conga-high": "......xx......xx"
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 0,
+        "parts": {
+          "intro": {
+            "chords": "Cm | Fm | G7 | Cm",
+            "style": "stabs"
+          },
+          "verso": {
+            "chords": "Cm | Fm | G7 | Cm",
+            "style": "stabs"
+          },
+          "coro": {
+            "chords": "Fm | G7 | Cm | Cm",
+            "style": "stabs"
+          },
+          "mambo": {
+            "chords": "Fm | G7 | Cm | Cm",
+            "style": "stabs"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 0,
+        "parts": {
+          "coro": {
+            "chords": "Fm | G7 | Cm | Cm",
+            "style": "broken",
+            "octave": 4
+          },
+          "mambo": {
+            "chords": "Fm | G7 | Cm | Cm",
+            "style": "broken",
+            "octave": 4
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 32,
+        "parts": {
+          "verso": {
+            "chords": "Cm | Fm | G7 | Cm",
+            "style": "offbeat"
+          },
+          "coro": {
+            "chords": "Fm | G7 | Cm | Cm",
+            "style": "offbeat"
+          },
+          "mambo": {
+            "chords": "Fm | G7 | Cm | Cm",
+            "style": "offbeat"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 61,
+        "parts": {
+          "mambo": {
+            "notes": "c5 c5 ~ ab4 | g4@2 b4 d5 | c5 c4 g4 eb4 | g4@4"
+          }
+        }
+      }
+    ]
+  }
+}

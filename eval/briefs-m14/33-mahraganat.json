@@ -1,0 +1,141 @@
+{
+  "id": "33-mahraganat",
+  "genre": "mahraganat",
+  "bpm": 128,
+  "key": "E minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · drop 8 · outro 4",
+  "description": "Mahraganat: a pounding electro-shaabi beat, fast darbuka loops, a maqam synth riff.",
+  "song": {
+    "title": "eval mahraganat",
+    "tempo": 128,
+    "key": "E minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "tight",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "drop",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 24,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x..x..x.x..x..x.",
+              "clap": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "drop": {
+            "grid": {
+              "kick": "x..x..x.x..x..x.",
+              "clap": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x..x..x.x..x..x.",
+              "clap": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "intro": {
+            "grid": {
+              "conga-high": "x.xxx.x.x.xxx.x."
+            }
+          },
+          "verse": {
+            "grid": {
+              "conga-high": "x.xxx.x.x.xxx.x.",
+              "conga-low": "x.......x......."
+            }
+          },
+          "drop": {
+            "grid": {
+              "conga-high": "x.xxx.x.x.xxx.x.",
+              "conga-low": "x.......x......."
+            }
+          },
+          "outro": {
+            "grid": {
+              "conga-high": "x.xxx.x.x.xxx.x.",
+              "conga-low": "x.......x......."
+            }
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 81,
+        "level": -4,
+        "parts": {
+          "drop": {
+            "chords": "Am | F | E | E",
+            "style": "gated"
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 38,
+        "parts": {
+          "verse": {
+            "chords": "E | F | E | F",
+            "style": "offbeat"
+          },
+          "drop": {
+            "chords": "Am | F | E | E",
+            "style": "offbeat"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 81,
+        "parts": {
+          "intro": {
+            "notes": "e5 f#5 g#5 f#5 e5 f#5 g#5 bb5 | c6 b5 a5 g5 f5@2 ~@2 | e5 f#5 g#5 f#5 e5 f#5 g#5 bb5 | a5 g5 f5 f5 f5@4"
+          },
+          "verse": {
+            "notes": "e5 f#5 g#5 f#5 e5 f#5 g#5 bb5 | c6 b5 a5 g5 f5@2 ~@2 | e5 f#5 g#5 f#5 e5 f#5 g#5 bb5 | a5 g5 f5 f5 f5@4"
+          },
+          "drop": {
+            "notes": "a5 b5 c6 b5 a5 b5 c6 d6 | c6 b5 a5 g5 f5@2 ~@2 | e5 f#5 g#5 f#5 e5 f#5 g#5 bb5 | g#5 f#5 e5 e5 e5@4"
+          }
+        }
+      }
+    ]
+  }
+}

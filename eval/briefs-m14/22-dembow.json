@@ -1,0 +1,142 @@
+{
+  "id": "22-dembow",
+  "genre": "dembow",
+  "bpm": 118,
+  "key": "G minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · coro 8 · outro 4",
+  "description": "Dominican dembow: the stuttering dembow snare over four on the floor, a synth stab, timbale fills.",
+  "song": {
+    "title": "eval dembow",
+    "tempo": 118,
+    "key": "G minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "tight",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "coro",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 24,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "...x..x.x..x..x.",
+              "clap": "...x.......x....",
+              "hat": "xxxxxxxxxxxxxxxx"
+            }
+          },
+          "coro": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "...x..x.x..x..x.",
+              "clap": "...x.......x....",
+              "hat": "xxxxxxxxxxxxxxxx"
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "snare": "...x..x.x..x..x.",
+              "clap": "...x.......x....",
+              "hat": "xxxxxxxxxxxxxxxx"
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "verse": {
+            "grid": {
+              "timbale-high": "..............xx"
+            }
+          },
+          "coro": {
+            "grid": {
+              "timbale-high": "..............xx"
+            }
+          },
+          "outro": {
+            "grid": {
+              "timbale-high": "..............xx"
+            }
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 81,
+        "level": -3,
+        "parts": {
+          "intro": {
+            "chords": "Gm | F | Eb | F",
+            "style": "gated"
+          },
+          "verse": {
+            "chords": "Gm | F | Eb | F",
+            "style": "gated"
+          },
+          "coro": {
+            "chords": "Gm | Eb | F | Dm",
+            "style": "gated"
+          },
+          "outro": {
+            "chords": "Gm | F | Eb | F",
+            "style": "gated"
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 38,
+        "parts": {
+          "verse": {
+            "chords": "Gm | F | Eb | F",
+            "style": "octave"
+          },
+          "coro": {
+            "chords": "Gm | Eb | F | Dm",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 80,
+        "parts": {
+          "coro": {
+            "notes": "g5 g5 bb5 g5 | bb5@2 g5 eb5 | f5 f5 a5 c6 | f5@4"
+          }
+        }
+      }
+    ]
+  }
+}

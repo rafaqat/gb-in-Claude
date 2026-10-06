@@ -20,7 +20,7 @@ Waiting for the user: if a GarageBand call returns SCREEN_LOCKED, ask them to un
 ml.beats: beats, downbeats and BPM (beat_this); with a song, grid.pass_rate = share of beats within 70 ms of its grid
   (grid_multiple 2 or 0.5 = the tracker counted double or half time: recorded, not a failure)
 ml.key: the key (S-KEY); with a song, vs_song = exact | relative (major↔minor) | other
-ml.genre.ranking: the closest of gb-mcp's 20 genres (LAION CLAP). A ranking, never a grade: use it to compare
+ml.genre.ranking: the closest of gb-mcp's 47 genres (LAION CLAP). A ranking, never a grade: use it to compare
   versions or candidates, not as a pass mark. ml.unavailable = the model sidecar is not running (the rest still works).
 
 ## Metrics

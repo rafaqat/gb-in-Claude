@@ -1,0 +1,157 @@
+{
+  "id": "34-rai",
+  "genre": "raï",
+  "bpm": 110,
+  "key": "A minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · outro 4",
+  "description": "Raï: the Andalusian cadence, darbuka and drum machine, wah guitar, a synth lead.",
+  "song": {
+    "title": "eval rai",
+    "tempo": 110,
+    "key": "A minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x.....x...x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "verse": {
+            "grid": {
+              "conga-high": "..x.x...x.x...xx",
+              "conga-low": "x.......x......."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "conga-high": "..x.x...x.x...xx",
+              "conga-low": "x.......x......."
+            }
+          },
+          "outro": {
+            "grid": {
+              "conga-high": "..x.x...x.x...xx",
+              "conga-low": "x.......x......."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 50,
+        "level": -6,
+        "parts": {
+          "intro": {
+            "chords": "Am | G | F | E",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Am | Dm | E | Am",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 27,
+        "parts": {
+          "verse": {
+            "chords": "Am | G | F | E",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus": {
+            "chords": "Am | Dm | E | Am",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 38,
+        "parts": {
+          "verse": {
+            "chords": "Am | G | F | E",
+            "style": "offbeat"
+          },
+          "chorus": {
+            "chords": "Am | Dm | E | Am",
+            "style": "offbeat"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 80,
+        "parts": {
+          "intro": {
+            "notes": "a5 b5 c6 b5 | g5@2 g5 g5 | g5 a5 b5 a5 | f#5@4"
+          },
+          "chorus": {
+            "notes": "a5 b5 c6 b5 | d5@2 d5 d5 | f#5 g#5 bb5 g#5 | b5@4"
+          },
+          "outro": {
+            "notes": "a5 b5 c6 b5 | g5@2 g5 g5 | g5 a5 b5 a5 | f#5@4"
+          }
+        }
+      }
+    ]
+  }
+}

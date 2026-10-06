@@ -1,0 +1,110 @@
+{
+  "id": "29-brazilian-funk",
+  "genre": "Brazilian funk",
+  "bpm": 130,
+  "key": "F minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · drop 8 · outro 4",
+  "description": "Brazilian funk: the tamborzão, claps and atabaque slaps, a sliding 808 bass.",
+  "song": {
+    "title": "eval brazilian-funk",
+    "tempo": 130,
+    "key": "F minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "tight",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "drop",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 24,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x..x..x...x..x..",
+              "clap": "....x..x....x..."
+            }
+          },
+          "drop": {
+            "grid": {
+              "kick": "x..x..x...x..x..",
+              "clap": "....x..x....x..."
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x..x..x...x..x.."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "verse": {
+            "grid": {
+              "conga-high": "..x...x...x..xx.",
+              "conga-low": "x.......x......."
+            }
+          },
+          "drop": {
+            "grid": {
+              "conga-high": "..x...x...x..xx.",
+              "conga-low": "x.......x......."
+            }
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 38,
+        "glide": true,
+        "parts": {
+          "verse": {
+            "notes": "f1@2 ~ f1 | ~ f1 ~ f2 | f1@2 ~ c2 | ~ f1 f1 c2"
+          },
+          "drop": {
+            "notes": "f1@2 ~ f1 | ~ db1 ~ db2 | f1@2 ~ c2 | ~ eb1 eb1 bb1"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 81,
+        "parts": {
+          "intro": {
+            "notes": "f5 ~ f5 ab5 | ~ c6 ab5 f5 | f5 ~ f5 ab5 | f5@2 c6@2"
+          },
+          "drop": {
+            "notes": "f5 ~ f5 ab5 | ~ ab5 f5 db5 | f5 ~ f5 ab5 | eb5@2 bb5@2"
+          }
+        }
+      }
+    ]
+  }
+}

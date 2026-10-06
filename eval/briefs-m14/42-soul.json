@@ -1,0 +1,153 @@
+{
+  "id": "42-soul",
+  "genre": "soul",
+  "bpm": 92,
+  "key": "F major",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · outro 4",
+  "description": "Soul: a mined soul groove with tambourine, organ, electric piano, a horn line.",
+  "song": {
+    "title": "eval soul",
+    "tempo": 92,
+    "key": "F major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "groove": "soul",
+    "swing": 54,
+    "swingUnit": "16th",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 32,
+        "parts": {
+          "intro": {
+            "grid": {
+              "kick": "x.......x.......",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "verse": {
+            "grid": {
+              "kick": "x.......o.x.....",
+              "snare": "....X....o..X...",
+              "hat": "x.x.x.xox.x.x.x.",
+              "tambourine": "....x.......x..."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.......o.x.....",
+              "snare": "....X....o..X...",
+              "hat": "x.x.x.xox.x.x.x.",
+              "tambourine": "....x.......x..."
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x.......o.x.....",
+              "snare": "....X....o..X...",
+              "hat": "x.x.x.xox.x.x.x.",
+              "tambourine": "....x.......x..."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 16,
+        "level": -4,
+        "parts": {
+          "intro": {
+            "chords": "F | Dm | Bb | C",
+            "style": "sustain"
+          },
+          "verse": {
+            "chords": "F | Dm | Bb | C",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Bb | C | Am7 | Dm7",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "Bb | C | Am7 | Dm7",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 4,
+        "parts": {
+          "verse": {
+            "chords": "F | Dm | Bb | C",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus": {
+            "chords": "Bb | C | Am7 | Dm7",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "verse": {
+            "chords": "F | Dm | Bb | C",
+            "style": "rolling"
+          },
+          "chorus": {
+            "chords": "Bb | C | Am7 | Dm7",
+            "style": "rolling"
+          },
+          "outro": {
+            "chords": "Bb | C | Am7 | Dm7",
+            "style": "rolling"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 61,
+        "parts": {
+          "chorus": {
+            "notes": "f5 ~ f5 d5 | g4@2 c5@2 | g5 e5 c5 e5 | d4@4"
+          },
+          "outro": {
+            "notes": "f5 ~ f5 d5 | g4@2 c5@2 | g5 e5 c5 e5 | d4@4"
+          }
+        }
+      }
+    ]
+  }
+}

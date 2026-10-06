@@ -1,0 +1,169 @@
+{
+  "id": "38-country",
+  "genre": "country",
+  "bpm": 96,
+  "key": "G major",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · bridge 4 · chorus2 8",
+  "description": "Modern country: a backbeat with tambourine, strummed acoustic guitar, a twangy electric lead.",
+  "song": {
+    "title": "eval country",
+    "tempo": 96,
+    "key": "G major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "groove": "country",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "bridge",
+        "bars": 4
+      },
+      {
+        "name": "chorus2",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 32,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x.......",
+              "rim": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.......x.x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x.",
+              "tambourine": "....x.......x..."
+            }
+          },
+          "bridge": {
+            "grid": {
+              "kick": "x.......x.......",
+              "rim": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "chorus2": {
+            "grid": {
+              "kick": "x.......x.x.....",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x.",
+              "tambourine": "....x.......x..."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 48,
+        "level": -6,
+        "parts": {
+          "chorus": {
+            "chords": "C | G | D | Em",
+            "style": "sustain"
+          },
+          "chorus2": {
+            "chords": "C | G | D | Em",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 25,
+        "parts": {
+          "intro": {
+            "chords": "G | C | G | D",
+            "style": "broken",
+            "octave": 3
+          },
+          "verse": {
+            "chords": "G | C | G | D",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus": {
+            "chords": "C | G | D | Em",
+            "style": "broken",
+            "octave": 3
+          },
+          "bridge": {
+            "chords": "G | C | G | D",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus2": {
+            "chords": "C | G | D | Em",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "verse": {
+            "chords": "G | C | G | D",
+            "style": "octave"
+          },
+          "chorus": {
+            "chords": "C | G | D | Em",
+            "style": "octave"
+          },
+          "bridge": {
+            "chords": "G | C | G | D",
+            "style": "octave"
+          },
+          "chorus2": {
+            "chords": "C | G | D | Em",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 27,
+        "parts": {
+          "intro": {
+            "notes": "b4 d5 d5 e5 | g4@2 e4 c4 | a4 b4 d5 b4 | d4@4"
+          },
+          "chorus": {
+            "notes": "e4 g4 g4 a4 | d5@2 b4 g4 | e4 f#4 a4 f#4 | e4@4"
+          },
+          "chorus2": {
+            "notes": "e4 g4 g4 a4 | d5@2 b4 g4 | e4 f#4 a4 f#4 | e4@4"
+          }
+        }
+      }
+    ]
+  }
+}

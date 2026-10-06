@@ -1,0 +1,132 @@
+{
+  "id": "39-americana",
+  "genre": "Americana",
+  "bpm": 88,
+  "key": "D major",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · outro 4",
+  "description": "Americana: fingerpicked guitar, upright bass on root and fifth, cross-stick, organ.",
+  "song": {
+    "title": "eval americana",
+    "tempo": 88,
+    "key": "D major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "loose",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 32,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x.......",
+              "rim": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.......x.......",
+              "snare": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 16,
+        "level": -8,
+        "parts": {
+          "chorus": {
+            "chords": "Bm | G | D | A",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "D | G | D | A",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 25,
+        "parts": {
+          "intro": {
+            "chords": "D | G | D | A",
+            "style": "broken",
+            "octave": 3
+          },
+          "verse": {
+            "chords": "D | G | D | A",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus": {
+            "chords": "Bm | G | D | A",
+            "style": "broken",
+            "octave": 3
+          },
+          "outro": {
+            "chords": "D | G | D | A",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 32,
+        "parts": {
+          "verse": {
+            "chords": "D | G | D | A",
+            "style": "octave"
+          },
+          "chorus": {
+            "chords": "Bm | G | D | A",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 25,
+        "parts": {
+          "verse": {
+            "notes": "a4 f#4 e4 d4 | b4@3 a4 | d4 e4 f#4 a4 | c#5@2 b4@2"
+          },
+          "chorus": {
+            "notes": "f#5 d5 c#5 b4 | b4@3 a4 | d4 e4 f#4 a4 | c#5@2 b4@2"
+          }
+        }
+      }
+    ]
+  }
+}

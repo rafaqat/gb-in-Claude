@@ -1,0 +1,132 @@
+{
+  "id": "43-blues",
+  "genre": "blues",
+  "bpm": 80,
+  "key": "E major",
+  "meter": "4/4",
+  "form": "head 12 · solo 12 · out 12",
+  "description": "Blues: three twelve-bar choruses with a shuffle, walking bass, organ, an overdriven guitar.",
+  "song": {
+    "title": "eval blues",
+    "tempo": 80,
+    "key": "E major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "loose",
+    "groove": "blues",
+    "swing": 66,
+    "swingUnit": "8th",
+    "sections": [
+      {
+        "name": "head",
+        "bars": 12
+      },
+      {
+        "name": "solo",
+        "bars": 12
+      },
+      {
+        "name": "out",
+        "bars": 12
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 32,
+        "parts": {
+          "head": {
+            "grid": {
+              "kick": "x.......x.......",
+              "snare": "....x.......x...",
+              "ride": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "solo": {
+            "grid": {
+              "kick": "x.......x.......",
+              "snare": "....x.......x...",
+              "ride": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "out": {
+            "grid": {
+              "kick": "x.......x.......",
+              "snare": "....x.......x...",
+              "ride": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 16,
+        "level": -6,
+        "parts": {
+          "head": {
+            "chords": "E7 | A7 | E7 | E7 | A7 | A7 | E7 | E7 | B7 | A7 | E7 | B7",
+            "style": "sustain"
+          },
+          "solo": {
+            "chords": "E7 | A7 | E7 | E7 | A7 | A7 | E7 | E7 | B7 | A7 | E7 | B7",
+            "style": "sustain"
+          },
+          "out": {
+            "chords": "E7 | A7 | E7 | E7 | A7 | A7 | E7 | E7 | B7 | A7 | E7 | B7",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 0,
+        "level": -3,
+        "parts": {
+          "solo": {
+            "chords": "E7 | A7 | E7 | E7 | A7 | A7 | E7 | E7 | B7 | A7 | E7 | B7",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "head": {
+            "chords": "E7 | A7 | E7 | E7 | A7 | A7 | E7 | E7 | B7 | A7 | E7 | B7",
+            "style": "rolling"
+          },
+          "solo": {
+            "chords": "E7 | A7 | E7 | E7 | A7 | A7 | E7 | E7 | B7 | A7 | E7 | B7",
+            "style": "rolling"
+          },
+          "out": {
+            "chords": "E7 | A7 | E7 | E7 | A7 | A7 | E7 | E7 | B7 | A7 | E7 | B7",
+            "style": "rolling"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 29,
+        "parts": {
+          "head": {
+            "notes": "e5 d5 b4 g#4 | a4@3 ~ | g#4 bb4 b4 d5 | e5@2 ~@2 | a5 g5 e5 c#5 | a4@3 ~ | g#4 bb4 b4 d5 | e5@2 ~@2 | b5 a5 f#5 d#5 | a4@3 ~ | g#4 bb4 b4 d5 | b5@2 ~@2"
+          },
+          "out": {
+            "notes": "e5 d5 b4 g#4 | a4@3 ~ | g#4 bb4 b4 d5 | e5@2 ~@2 | a5 g5 e5 c#5 | a4@3 ~ | g#4 bb4 b4 d5 | e5@2 ~@2 | b5 a5 f#5 d#5 | a4@3 ~ | g#4 bb4 b4 d5 | b5@2 ~@2"
+          }
+        }
+      }
+    ]
+  }
+}

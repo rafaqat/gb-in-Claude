@@ -1,0 +1,141 @@
+{
+  "id": "47-amapiano",
+  "genre": "amapiano",
+  "bpm": 112,
+  "key": "F minor",
+  "meter": "4/4",
+  "form": "intro 8 · groove 8 · lift 8 · outro 8",
+  "description": "Amapiano: shakers and sparse kicks, a sliding log-drum bass, jazzy electric piano.",
+  "song": {
+    "title": "eval amapiano",
+    "tempo": 112,
+    "key": "F minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "swing": 56,
+    "swingUnit": "16th",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 8
+      },
+      {
+        "name": "groove",
+        "bars": 8
+      },
+      {
+        "name": "lift",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 24,
+        "parts": {
+          "intro": {
+            "grid": {
+              "shaker": "xxxxxxxxxxxxxxxx",
+              "hat": "..x...x...x...x."
+            }
+          },
+          "groove": {
+            "grid": {
+              "kick": "x.......x.......",
+              "shaker": "xxxxxxxxxxxxxxxx",
+              "hat": "..x...x...x...x.",
+              "rim": "....x.......x..x"
+            }
+          },
+          "lift": {
+            "grid": {
+              "kick": "x.......x.......",
+              "shaker": "xxxxxxxxxxxxxxxx",
+              "hat": "..x...x...x...x.",
+              "rim": "....x.......x..x"
+            }
+          },
+          "outro": {
+            "grid": {
+              "shaker": "xxxxxxxxxxxxxxxx",
+              "hat": "..x...x...x...x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "groove": {
+            "grid": {
+              "cabasa": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "lift": {
+            "grid": {
+              "cabasa": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 4,
+        "parts": {
+          "intro": {
+            "chords": "Fm7 | Bbm7 | Ebmaj7 | Abmaj7",
+            "style": "sustain"
+          },
+          "groove": {
+            "chords": "Fm7 | Bbm7 | Ebmaj7 | Abmaj7",
+            "style": "sustain"
+          },
+          "lift": {
+            "chords": "Dbmaj7 | Cm7 | Fm7 | Fm7",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "Fm7 | Bbm7 | Ebmaj7 | Abmaj7",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 38,
+        "glide": true,
+        "parts": {
+          "groove": {
+            "notes": "f1 ~ ~ f1 ~ ~ c2 ~ | bb1 ~ ~ bb2 ~ f2 ~ ~ | eb1 ~ ~ eb1 ~ ~ bb1 ~ | ~ ~ ab1 ~ g2 ~ eb2 ~"
+          },
+          "lift": {
+            "notes": "db1 ~ ~ db1 ~ ~ ab1 ~ | c1 ~ ~ c2 ~ g1 ~ ~ | f1 ~ ~ f1 ~ ~ c2 ~ | ~ ~ f1 ~ eb2 ~ c2 ~"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 4,
+        "parts": {
+          "lift": {
+            "notes": "ab5 ~ f5 ~ | c5 ~ ~ ~ | c6 ~ eb6 ~ | f6@4"
+          }
+        }
+      }
+    ]
+  }
+}

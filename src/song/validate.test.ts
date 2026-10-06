@@ -30,6 +30,19 @@ describe("validateSong: production warnings", () => {
       .toContainEqual(["warning", "HUMANIZE_OFF", "humanize"]);
   });
 
+  // M14 live probe: only the Orchestral Kit (40/48) plays hand percussion; other kits are silent or play one pitched sound
+  it.each([[undefined, "the default kit"], [0, "SoCal"], [24, "Boutique 808"]])("warns that hand percussion on kit %s (%s) will not sound as written", (program, _kit) => {
+    expect(codes({ ...base, tracks: [{ name: "Perc", role: "drums", ...(program === undefined ? {} : { program }),
+      parts: { a: { grid: { kick: "x...", "conga-high": "..x." } } } }] }))
+      .toContainEqual(["warning", "PERCUSSION_NEEDS_ORCHESTRAL_KIT", "tracks.Perc"]);
+  });
+
+  it.each([40, 48])("hand percussion on the Orchestral Kit (%s), and claves or cowbell on any kit, raise no percussion warning", (program) => {
+    const found = (tracks: object[]) => codes({ ...base, tracks }).filter(([, c]) => c === "PERCUSSION_NEEDS_ORCHESTRAL_KIT");
+    expect(found([{ name: "Perc", role: "drums", program, parts: { a: { grid: { "conga-high": "..x." } } } }])).toEqual([]);
+    expect(found([{ name: "Kit", role: "drums", program: 0, parts: { a: { grid: { claves: "x..x", cowbell: "x...", tambourine: "..x." } } } }])).toEqual([]);
+  });
+
   it("raises no warnings for a well-formed song", () => {
     expect(validateSong(song({ ...base, tracks: [
       { name: "Bass", role: "bass", parts: { a: { chords: "Fm", style: "offbeat" } } },

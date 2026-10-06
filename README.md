@@ -210,7 +210,7 @@ Every changing command accepts `dry_run: true` (plan only); every reading comman
 Inputs are strict: a misspelled parameter is rejected before anything runs.
 
 Resources: `gb://knowledge/song-format` (read first), `gb://knowledge/analysis`, `gb://knowledge/production`,
-`gb://knowledge/styles`, `gb://knowledge/gm-patch-map`, `gb://knowledge/band-files`, `gb://knowledge/generate`, and the JSON Schemas `gb://schema/song` and
+`gb://knowledge/styles`, `gb://knowledge/gm-patch-map`, `gb://knowledge/band-files`, `gb://knowledge/generate`, `gb://knowledge/genres`, and the JSON Schemas `gb://schema/song` and
 `gb://schema/tools`.
 
 ### The workspace
@@ -300,10 +300,21 @@ stems) — `gb_analyze lyrics` checks the sung words line by line (Whisper on ML
 
 ### Genre drafts, grooves, swing and glide
 
-`gb_song template {genre, key, bpm}` returns a complete Song JSON draft for one of 20 genres — form, chord
+`gb_song template {genre, key, bpm}` returns a complete Song JSON draft for one of 47 genres — form, chord
 progressions in any key, the genre's GarageBand drum kit and instruments, a hook, and drums — for Claude to develop:
 lo-fi hip-hop, R&B, ambient, jazz ballad, reggaeton, synthwave, pop, afrobeats, funk, indie rock, deep house, techno,
-UK garage, trap, drum and bass, EDM, classical/pop crossover, ambient trance, Levantine strings and epic orchestral.
+UK garage, trap, drum and bass, EDM, classical/pop crossover, ambient trance, Levantine strings, epic orchestral;
+Latin trap, dembow, bachata, salsa, cumbia, bossa nova, corridos tumbados, Latin pop, Brazilian funk, merengue;
+Arabic pop, Khaleeji, mahraganat, raï, gnawa, Moroccan chaabi, dabke; country, Americana, Bollywood (filmi), gospel,
+soul, blues, Celtic folk, lullaby, K-pop and amapiano.
+
+Drum grids take Latin and world percussion too (conga, bongo, timbale, cowbell, claves, güiro, agogo, cabasa,
+tambourine, woodblock, triangle). On GarageBand only the Orchestral Kit (GM kit 40) plays the hand percussion — the
+acoustic kits are silent on those notes and Boutique 808 plays one pitched boom — so templates give it its own
+drums track there, and `gb_song validate` warns about any other kit. GM cannot reach some signature instruments in
+GarageBand (sitar, oud, banjo, pedal steel, accordion): a draft carries the genre's rhythm and harmony, and
+`gb_generate` gives its real sound. `gb://knowledge/genres` has the caption words (instruments, voice, production,
+tempo) for each of the 47 genres.
 `variant: 1`–`3` gives the same draft on the genre's most common 4-chord loops in verses and choruses, counted in
 the Chordonomicon dataset (see Credits).
 
@@ -332,7 +343,8 @@ into `.band` files. `eval/m11` is the live check: one Song JSON, every feature m
 from Hugging Face on first use (~4 GB). gb-mcp starts one long-lived model process and keeps the models loaded:
 
 - `gb_analyze` adds a field `ml`: beats and a grid check (beat_this), the key (S-KEY) and a ranking of the closest of
-  the 20 genres (LAION CLAP — a ranking for comparing versions, not a grade). About 3 s per analysis once loaded.
+  the 47 genres (LAION CLAP — a ranking for comparing versions, not a grade). About 3 s per analysis once loaded. For
+  27 of the genres CLAP compares with a wording calibrated on generated clips (`eval/m14/calibration`).
 - `gb_song infill {song, section, tracks}` lets the Anticipatory Music Transformer rewrite chosen melodic tracks of
   one section on the song's own instruments: `exact` ≈ 1–1.5 min per 8 bars, `fast` ≈ 20 s (shorter context — listen
   before trusting it). The model hears the song before and after the section. With `candidates: 2–4` and a `judge`
@@ -350,7 +362,8 @@ from Hugging Face on first use (~4 GB). gb-mcp starts one long-lived model proce
 
 Without the models everything else works; `ml` says so `infill` and `gb_stem` answer `DEPENDENCY_MISSING`. Measured speeds,
 memory and what each optimisation bought (an exact KV-cache sampler, float16, an MLX port): `models/bench/results.md`.
-`eval/` holds 20 frozen genre briefs and `eval/run.py`, which renders, exports and scores them to compare versions.
+`eval/` holds 20 frozen genre briefs and `eval/run.py`, which renders, exports and scores them to compare versions;
+`eval/briefs-m14` adds 27 more, one per genre added in v0.9.0 (`eval/run.py --set m14` ranks them among all 47).
 Scores made before v0.7.0 include GarageBand's metronome click, which it renders into exports; gb_export now switches
 it off for an export, and v0.8.0's run is the first clean baseline.
 

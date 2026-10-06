@@ -1,0 +1,90 @@
+{
+  "id": "35-gnawa",
+  "genre": "gnawa",
+  "bpm": 100,
+  "key": "D minor",
+  "meter": "4/4",
+  "form": "call 8 · trance 8 · lila 8 · release 4",
+  "description": "Gnawa: a guembri bass riff in a minor pentatonic, qraqeb triplets, hand claps.",
+  "song": {
+    "title": "eval gnawa",
+    "tempo": 100,
+    "key": "D minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "loose",
+    "sections": [
+      {
+        "name": "call",
+        "bars": 8
+      },
+      {
+        "name": "trance",
+        "bars": 8
+      },
+      {
+        "name": "lila",
+        "bars": 8
+      },
+      {
+        "name": "release",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "call": {
+            "grid": {
+              "hat": "x.xx.xx.xx.x"
+            }
+          },
+          "trance": {
+            "grid": {
+              "hat": "x.xx.xx.xx.x",
+              "rim": "x..x..x..x..",
+              "clap": "...x.....x.."
+            }
+          },
+          "lila": {
+            "grid": {
+              "hat": "x.xx.xx.xx.x",
+              "rim": "x..x..x..x..",
+              "clap": "...x.....x.."
+            }
+          },
+          "release": {
+            "grid": {
+              "hat": "x.xx.xx.xx.x"
+            }
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 32,
+        "parts": {
+          "call": {
+            "notes": "d2 ~ f2 g2 a2 ~ | d2 a2 g2 f2 d2 ~ | d2 ~ f2 g2 a2 d3 | d2 a2 g2 f2 d2 ~"
+          },
+          "trance": {
+            "notes": "d2 ~ f2 g2 a2 ~ | d2 a2 g2 f2 d2 ~ | d2 ~ f2 g2 a2 d3 | d2 a2 g2 f2 d2 ~"
+          },
+          "lila": {
+            "notes": "d2 ~ f2 g2 a2 ~ | d2 a2 g2 f2 d2 ~ | c2 ~ e2 f#2 g2 c3 | d2 a2 g2 f2 d2 ~"
+          },
+          "release": {
+            "notes": "d2 ~ f2 g2 a2 ~ | d2 a2 g2 f2 d2 ~ | d2 ~ f2 g2 a2 d3 | d2 a2 g2 f2 d2 ~"
+          }
+        }
+      }
+    ]
+  }
+}

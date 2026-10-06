@@ -1,0 +1,161 @@
+{
+  "id": "23-bachata",
+  "genre": "bachata",
+  "bpm": 128,
+  "key": "E minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · mambo 8 · outro 4",
+  "description": "Modern bachata: requinto arpeggios, bongos in martillo, güira 16ths, syncopated bass.",
+  "song": {
+    "title": "eval bachata",
+    "tempo": 128,
+    "key": "E minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "mambo",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x......."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.......x......."
+            }
+          },
+          "mambo": {
+            "grid": {
+              "kick": "x.......x......."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "verse": {
+            "grid": {
+              "bongo-high": "x.x.x.x.x.x.x.x.",
+              "bongo-low": "...x.......x....",
+              "guiro-short": "x.xxx.xxx.xxx.xx"
+            }
+          },
+          "chorus": {
+            "grid": {
+              "bongo-high": "x.x.x.x.x.x.x.x.",
+              "bongo-low": "...x.......x....",
+              "guiro-short": "x.xxx.xxx.xxx.xx"
+            }
+          },
+          "mambo": {
+            "grid": {
+              "bongo-high": "x.x.x.x.x.x.x.x.",
+              "bongo-low": "...x.......x....",
+              "guiro-short": "x.xxx.xxx.xxx.xx"
+            }
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 24,
+        "parts": {
+          "intro": {
+            "chords": "Em | Am | B7 | Em",
+            "style": "broken",
+            "octave": 3
+          },
+          "verse": {
+            "chords": "Em | Am | B7 | Em",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus": {
+            "chords": "C | D | Em | B7",
+            "style": "broken",
+            "octave": 3
+          },
+          "mambo": {
+            "chords": "Em | Am | B7 | Em",
+            "style": "broken",
+            "octave": 3
+          },
+          "outro": {
+            "chords": "Em | Am | B7 | Em",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "verse": {
+            "chords": "Em | Am | B7 | Em",
+            "style": "offbeat"
+          },
+          "chorus": {
+            "chords": "C | D | Em | B7",
+            "style": "offbeat"
+          },
+          "mambo": {
+            "chords": "Em | Am | B7 | Em",
+            "style": "offbeat"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 24,
+        "parts": {
+          "intro": {
+            "notes": "b4 g4 b4 e5 e4 b4 g4 b4 | c5@2 a4@2 | f#5 d#5 f#5 b5 a5 f#5 d#5 c#5 | e4@4"
+          },
+          "chorus": {
+            "notes": "g4 e4 g4 c5 c4 g4 e4 g4 | f#4@2 d4@2 | b4 g4 b4 e5 e4 b4 g4 f#4 | b4@4"
+          },
+          "mambo": {
+            "notes": "b4 g4 b4 e5 e4 b4 g4 b4 | c5@2 a4@2 | f#5 d#5 f#5 b5 a5 f#5 d#5 c#5 | e4@4"
+          }
+        }
+      }
+    ]
+  }
+}

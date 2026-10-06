@@ -89,4 +89,112 @@ export const COMMON_LOOPS: Record<string, { major: CommonLoops; minor: CommonLoo
     major: { verse: ["I | vi | IV | V", "I | vi | V | IV", "I | IV | ii | V"], chorus: ["IV | I | vi | V", "I | vi | IV | V", "I | IV | vi | V"], pooled: false },
     minor: { verse: ["i | VI | VII | III", "i | III | VI | VII", "i | VII | VI | V"], chorus: ["VI | VII | i | III", "i | VI | VII | III", "VI | VII | v | i"], pooled: false },
   },
+  "Latin trap": {
+    major: { verse: ["I | vi | IV | V", "I | vi | V | IV", "I | IV | ii | V"], chorus: ["IV | I | vi | V", "I | vi | IV | V", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VII | iv | VI", "i | VII | VI | iv", "i | VII | VI | III"], chorus: ["VI | iv | i | VII", "iv | VI | i | VII", "iv | i | III | VII"], pooled: false },
+  },
+  "dembow": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "bachata": {
+    major: { verse: ["I | V | vi | IV", "I | vi | V | IV", "I | IV | ii | V"], chorus: ["IV | I | vi | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "salsa": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "cumbia": {
+    major: { verse: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | ii | V"], chorus: ["I | V | vi | IV", "I | vi | IV | V", "I | IV | V | vi"], pooled: false },
+    minor: { verse: ["i | iv | VII | III", "i | VII | III | V", "i | iv | VII | V"], chorus: ["i | VI | III | VII", "III | V | i | VI", "i | VII | VI | V"], pooled: false },
+  },
+  "bossa nova": {
+    major: { verse: ["I | IV | ii | V", "I | vi | ii | V", "I | vi | IV | V"], chorus: ["I | vi | IV | V", "IV | ii | V | I", "vi | IV | I | V"], pooled: false },
+    minor: { verse: ["i | iv | VII | III", "i | iv | VII | V", "i | III | VI | V"], chorus: ["III | VI | V | i", "III | i | iv | VII", "i | iv | VII | V"], pooled: false },
+  },
+  "corridos tumbados": {
+    major: { verse: ["I | IV | ii | V", "I | iii | IV | V", "I | vi | ii | V"], chorus: ["ii | V | I | vi", "IV | ii | V | I", "ii | IV | V | I"], pooled: false },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "Latin pop": {
+    major: { verse: ["I | vi | IV | V", "I | IV | ii | V", "I | vi | ii | V"], chorus: ["I | IV | ii | V", "I | vi | IV | V", "vi | V | IV | I"], pooled: false },
+    minor: { verse: ["i | iv | VII | III", "i | VI | VII | III", "i | iv | VII | V"], chorus: ["VI | VII | III | i", "iv | VII | III | i", "i | VII | VI | V"], pooled: false },
+  },
+  "Brazilian funk": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "merengue": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "Arabic pop": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "Khaleeji": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "mahraganat": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "ra\u00ef": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "gnawa": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "Moroccan chaabi": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "dabke": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "country": {
+    major: { verse: ["I | vi | IV | V", "I | vi | V | IV", "I | IV | ii | V"], chorus: ["IV | I | vi | V", "I | vi | IV | V", "I | IV | vi | V"], pooled: false },
+    minor: { verse: ["i | VII | VI | III", "i | VI | VII | III", "i | VII | III | VI"], chorus: ["III | i | VI | VII", "VI | III | i | VII", "i | III | VII | VI"], pooled: false },
+  },
+  "Americana": {
+    major: { verse: ["I | vi | IV | V", "I | vi | V | IV", "I | IV | vi | V"], chorus: ["IV | I | vi | V", "IV | V | I | vi", "IV | V | vi | I"], pooled: false },
+    minor: { verse: ["i | VI | III | VII", "i | VII | VI | III", "i | VI | VII | III"], chorus: ["VI | III | i | VII", "i | VI | III | VII", "VI | VII | i | III"], pooled: false },
+  },
+  "Bollywood (filmi)": {
+    major: { verse: ["I | IV | ii | V", "I | vi | V | IV", "I | ii | IV | V"], chorus: ["vi | V | IV | I", "I | IV | ii | V", "I | V | vi | IV"], pooled: false },
+    minor: { verse: ["i | v | VI | VII", "i | VI | VII | III", "i | VI | III | VII"], chorus: ["i | VII | VI | V", "i | VI | III | VII", "III | i | VI | VII"], pooled: false },
+  },
+  "gospel": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | IV | ii | V"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "IV | I | vi | V"], pooled: false },
+    minor: { verse: ["i | VI | III | VII", "i | VI | VII | III", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "III | VI | i | VII"], pooled: false },
+  },
+  "soul": {
+    major: { verse: ["I | IV | ii | V", "I | vi | ii | V", "I | V | vi | IV"], chorus: ["I | vi | ii | V", "ii | V | I | IV", "I | vi | V | IV"], pooled: false },
+    minor: { verse: ["i | VI | III | VII", "i | iv | VII | III", "i | VII | VI | III"], chorus: ["III | i | iv | VII", "i | VI | III | VII", "i | VII | VI | V"], pooled: false },
+  },
+  "blues": {
+    major: { verse: ["I | vi | IV | V", "I | IV | ii | V", "I | V | vi | IV"], chorus: ["I | V | vi | IV", "I | vi | IV | V", "vi | V | IV | I"], pooled: false },
+    minor: { verse: ["i | VII | VI | V", "i | VI | VII | III", "i | VI | III | VII"], chorus: ["i | VI | III | VII", "i | VII | VI | V", "III | i | VI | VII"], pooled: false },
+  },
+  "Celtic folk": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["IV | V | I | vi", "I | V | vi | IV", "IV | ii | V | I"], pooled: false },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VI | VII | III"], chorus: ["III | i | VI | VII", "III | VII | i | VI", "III | VII | v | i"], pooled: false },
+  },
+  "lullaby": {
+    major: { verse: ["I | vi | IV | V", "I | IV | ii | V", "I | ii | V | IV"], chorus: ["I | IV | ii | V", "I | vi | IV | V", "I | vi | ii | V"], pooled: false },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
+  "K-pop": {
+    major: { verse: ["I | IV | ii | V", "I | vi | IV | V", "I | vi | ii | V"], chorus: ["ii | V | I | vi", "ii | V | I | IV", "I | vi | IV | V"], pooled: false },
+    minor: { verse: ["i | v | VI | VII", "i | VI | VII | III", "i | VII | VI | V"], chorus: ["VI | VII | i | III", "VI | VII | i | v", "i | iv | VII | III"], pooled: false },
+  },
+  "amapiano": {
+    major: { verse: ["I | V | vi | IV", "I | vi | IV | V", "I | vi | V | IV"], chorus: ["I | vi | IV | V", "I | V | vi | IV", "I | IV | vi | V"], pooled: true },
+    minor: { verse: ["i | VI | III | VII", "i | III | VI | VII", "i | VII | VI | III"], chorus: ["VI | VII | i | III", "i | VI | III | VII", "i | VII | III | VI"], pooled: true },
+  },
 };

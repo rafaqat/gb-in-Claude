@@ -1,0 +1,165 @@
+{
+  "id": "30-merengue",
+  "genre": "merengue",
+  "bpm": 150,
+  "key": "G major",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · jaleo 8",
+  "description": "Merengue: tambora and güira at 150 BPM, piano, a saxophone line.",
+  "song": {
+    "title": "eval merengue",
+    "tempo": 150,
+    "key": "G major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "jaleo",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "intro": {
+            "grid": {
+              "tom-low": "x.......x..x.x..",
+              "rim": "....x.......x...",
+              "kick": "x...x...x...x..."
+            }
+          },
+          "verse": {
+            "grid": {
+              "tom-low": "x.......x..x.x..",
+              "rim": "....x.......x...",
+              "kick": "x...x...x...x..."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "tom-low": "x.......x..x.x..",
+              "rim": "....x.......x...",
+              "kick": "x...x...x...x..."
+            }
+          },
+          "jaleo": {
+            "grid": {
+              "tom-low": "x.......x..x.x..",
+              "rim": "....x.......x...",
+              "kick": "x...x...x...x..."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "intro": {
+            "grid": {
+              "guiro-short": "x.xxx.xxx.xxx.xx"
+            }
+          },
+          "verse": {
+            "grid": {
+              "guiro-short": "x.xxx.xxx.xxx.xx"
+            }
+          },
+          "chorus": {
+            "grid": {
+              "guiro-short": "x.xxx.xxx.xxx.xx"
+            }
+          },
+          "jaleo": {
+            "grid": {
+              "guiro-short": "x.xxx.xxx.xxx.xx"
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 0,
+        "parts": {
+          "intro": {
+            "chords": "G | D7 | D7 | G",
+            "style": "stabs"
+          },
+          "verse": {
+            "chords": "G | D7 | D7 | G",
+            "style": "stabs"
+          },
+          "chorus": {
+            "chords": "C | G | D7 | G",
+            "style": "stabs"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 0,
+        "parts": {
+          "jaleo": {
+            "chords": "G | D7 | D7 | G",
+            "style": "broken",
+            "octave": 4
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "verse": {
+            "chords": "G | D7 | D7 | G",
+            "style": "octave"
+          },
+          "chorus": {
+            "chords": "C | G | D7 | G",
+            "style": "octave"
+          },
+          "jaleo": {
+            "chords": "G | D7 | D7 | G",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 65,
+        "parts": {
+          "chorus": {
+            "notes": "c4 e4 g4 e4 c4 e4 g4 e4 | d5@2 b4@2 | a4 f#4 d4 f#4 a4 f#4 e4 d4 | g4@4"
+          },
+          "jaleo": {
+            "notes": "g4 b4 d5 b4 g4 b4 d5 b4 | a4@2 f#4@2 | a4 f#4 d4 f#4 a4 f#4 e4 d4 | g4@4"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -110,7 +110,7 @@ describe("gb-mcp server", () => {
   it("serves agent knowledge resources: song format, styles, GM patch map, analysis guide, production rubric, band files", async () => {
     const { resources } = await client.listResources();
     expect(resources.map((r) => r.uri).sort()).toEqual([
-      "gb://knowledge/analysis", "gb://knowledge/band-files", "gb://knowledge/generate", "gb://knowledge/gm-patch-map", "gb://knowledge/production",
+      "gb://knowledge/analysis", "gb://knowledge/band-files", "gb://knowledge/generate", "gb://knowledge/genres", "gb://knowledge/gm-patch-map", "gb://knowledge/production",
       "gb://knowledge/song-format", "gb://knowledge/styles", "gb://schema/song", "gb://schema/tools",
     ]);
     const styles = await client.readResource({ uri: "gb://knowledge/styles" });
@@ -119,6 +119,8 @@ describe("gb-mcp server", () => {
     expect((band.contents[0] as { text: string }).text).toMatch(/## Make a donor/);
     const generate = await client.readResource({ uri: "gb://knowledge/generate" });
     expect((generate.contents[0] as { text: string }).text).toMatch(/non-commercial/);
+    const genres = await client.readResource({ uri: "gb://knowledge/genres" }); // M14
+    expect((genres.contents[0] as { text: string }).text).toMatch(/### dembow[\s\S]*### Bollywood \(filmi\)/);
     const format = await client.readResource({ uri: "gb://knowledge/song-format" });
     expect((format.contents[0] as { text: string }).text).toMatch(/## From a recording \(M13\.14\)[\s\S]*gb_song transcribe/); // M13.14
   });

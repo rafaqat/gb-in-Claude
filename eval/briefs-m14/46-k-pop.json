@@ -1,0 +1,159 @@
+{
+  "id": "46-k-pop",
+  "genre": "K-pop",
+  "bpm": 120,
+  "key": "C# minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · pre 4 · chorus 8 · dance break 8",
+  "description": "K-pop: four on the floor, a pre-chorus, a big chorus and a dance break, synth leads.",
+  "song": {
+    "title": "eval k-pop",
+    "tempo": 120,
+    "key": "C# minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "tight",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "pre",
+        "bars": 4
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "dance break",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 16,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x.......",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "pre": {
+            "grid": {
+              "kick": "x.......x.......",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "clap": "....x.......x...",
+              "hat": "x.xxx.xxx.xxx.xx",
+              "open-hat": "..x...x...x...x."
+            }
+          },
+          "dance break": {
+            "grid": {
+              "kick": "x...x...x...x...",
+              "clap": "....x.......x...",
+              "hat": "x.xxx.xxx.xxx.xx",
+              "open-hat": "..x...x...x...x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 90,
+        "level": -3,
+        "parts": {
+          "pre": {
+            "chords": "C#m | A | E | B",
+            "style": "stabs"
+          },
+          "chorus": {
+            "chords": "A | B | G#m | C#m",
+            "style": "stabs"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 81,
+        "level": -4,
+        "parts": {
+          "intro": {
+            "chords": "C#m | A | E | B",
+            "style": "gated"
+          },
+          "verse": {
+            "chords": "C#m | A | E | B",
+            "style": "gated"
+          },
+          "pre": {
+            "chords": "C#m | A | E | B",
+            "style": "gated"
+          },
+          "chorus": {
+            "chords": "A | B | G#m | C#m",
+            "style": "gated"
+          },
+          "dance break": {
+            "chords": "C#m | A | E | B",
+            "style": "gated"
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 38,
+        "parts": {
+          "verse": {
+            "chords": "C#m | A | E | B",
+            "style": "octave"
+          },
+          "pre": {
+            "chords": "C#m | A | E | B",
+            "style": "octave"
+          },
+          "chorus": {
+            "chords": "A | B | G#m | C#m",
+            "style": "octave"
+          },
+          "dance break": {
+            "chords": "C#m | A | E | B",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 81,
+        "parts": {
+          "chorus": {
+            "notes": "a5 a5 c#6 e6 | b6@2 b5 f#6 | b5 b5 d#6 b5 | c#5@4"
+          },
+          "dance break": {
+            "notes": "c#5 c#5 e5 g#5 | a6@2 a5 e6 | g#5 g#5 b5 g#5 | b5@4"
+          }
+        }
+      }
+    ]
+  }
+}

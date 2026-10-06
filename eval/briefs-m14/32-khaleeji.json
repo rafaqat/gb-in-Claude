@@ -1,0 +1,154 @@
+{
+  "id": "32-khaleeji",
+  "genre": "Khaleeji",
+  "bpm": 100,
+  "key": "C minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · outro 4",
+  "description": "Khaleeji: the Gulf's triplet groove with hand claps and frame drums, strings, an oud-like guitar.",
+  "song": {
+    "title": "eval khaleeji",
+    "tempo": 100,
+    "key": "C minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "verse": {
+            "grid": {
+              "clap": "..x..x..x..x",
+              "tom-low": "x.....x....."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "clap": "..x..x..x..x",
+              "tom-low": "x.....x....."
+            }
+          },
+          "outro": {
+            "grid": {
+              "clap": "..x..x..x..x",
+              "tom-low": "x.....x....."
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "verse": {
+            "grid": {
+              "conga-low": "x.....x.x...",
+              "conga-high": "...x.x...x.x"
+            }
+          },
+          "chorus": {
+            "grid": {
+              "conga-low": "x.....x.x...",
+              "conga-high": "...x.x...x.x"
+            }
+          },
+          "outro": {
+            "grid": {
+              "conga-low": "x.....x.x...",
+              "conga-high": "...x.x...x.x"
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 48,
+        "level": -3,
+        "parts": {
+          "intro": {
+            "chords": "Cm | Fm | Bb | Cm",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Ab | Bb | Cm | Cm",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 25,
+        "parts": {
+          "verse": {
+            "chords": "Cm | Fm | Bb | Cm",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus": {
+            "chords": "Ab | Bb | Cm | Cm",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "verse": {
+            "chords": "Cm | Fm | Bb | Cm",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Ab | Bb | Cm | Cm",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead-high",
+        "program": 48,
+        "parts": {
+          "intro": {
+            "notes": "c5 d5 eb5 | g5 f5 f5 | bb5@2 d6 | d5@3"
+          },
+          "chorus": {
+            "notes": "ab5 bb5 c6 | c6 bb5 bb5 | c5@2 eb5 | d5@3"
+          },
+          "outro": {
+            "notes": "c5 d5 eb5 | g5 f5 f5 | bb5@2 d6 | d5@3"
+          }
+        }
+      }
+    ]
+  }
+}

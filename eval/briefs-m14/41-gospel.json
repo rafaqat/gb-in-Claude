@@ -1,0 +1,151 @@
+{
+  "id": "41-gospel",
+  "genre": "gospel",
+  "bpm": 76,
+  "key": "Ab major",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · vamp 8",
+  "description": "Gospel: organ and piano, I7 to IV and the minor four, claps on two and four, a choir line.",
+  "song": {
+    "title": "eval gospel",
+    "tempo": 76,
+    "key": "Ab major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "groove": "gospel",
+    "swing": 58,
+    "swingUnit": "16th",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "vamp",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 32,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x.......",
+              "clap": "....x.......x..."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.....x.x.......",
+              "snare": "....x.......x...",
+              "clap": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x.",
+              "tambourine": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "vamp": {
+            "grid": {
+              "kick": "x.....x.x.......",
+              "snare": "....x.......x...",
+              "clap": "....x.......x...",
+              "hat": "x.x.x.x.x.x.x.x.",
+              "tambourine": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 16,
+        "parts": {
+          "intro": {
+            "chords": "Ab | Ab7 | Db | Dbm",
+            "style": "sustain"
+          },
+          "verse": {
+            "chords": "Ab | Ab7 | Db | Dbm",
+            "style": "sustain"
+          },
+          "chorus": {
+            "chords": "Bbm7 | Eb7 | Cm7 Fm7 | Bbm7 Eb7",
+            "style": "sustain"
+          },
+          "vamp": {
+            "chords": "Bbm7 | Eb7 | Cm7 Fm7 | Bbm7 Eb7",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 0,
+        "parts": {
+          "intro": {
+            "chords": "Ab | Ab7 | Db | Dbm",
+            "style": "broken",
+            "octave": 3
+          },
+          "verse": {
+            "chords": "Ab | Ab7 | Db | Dbm",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus": {
+            "chords": "Bbm7 | Eb7 | Cm7 Fm7 | Bbm7 Eb7",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "verse": {
+            "chords": "Ab | Ab7 | Db | Dbm",
+            "style": "rolling"
+          },
+          "chorus": {
+            "chords": "Bbm7 | Eb7 | Cm7 Fm7 | Bbm7 Eb7",
+            "style": "rolling"
+          },
+          "vamp": {
+            "chords": "Bbm7 | Eb7 | Cm7 Fm7 | Bbm7 Eb7",
+            "style": "rolling"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 52,
+        "parts": {
+          "chorus": {
+            "notes": "bb4@2 db5 f5 | c5@3 bb4 | eb4 g4 a4 c5 | f5@4"
+          },
+          "vamp": {
+            "notes": "bb4@2 db5 f5 | c5@3 bb4 | eb4 g4 a4 c5 | f5@4"
+          }
+        }
+      }
+    ]
+  }
+}

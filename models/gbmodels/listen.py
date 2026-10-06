@@ -5,13 +5,13 @@
 import numpy as np
 
 from gbmodels import beatthis, clap, skey
-from gbmodels.genres import GENRES
+from gbmodels.genres import GENRES, clap_prompt
 from gbmodels.scoring import grid_score, key_match
 
 
 def load(device: str = "mps"):
     clap_h = clap.load(device)
-    text = clap_h["model"].get_text_embedding([f"{g} music" for g in GENRES], use_tensor=False)
+    text = clap_h["model"].get_text_embedding([clap_prompt(g) for g in GENRES], use_tensor=False)
     return {"beats": beatthis.load(device), "key": skey.load("cpu"), "clap": clap_h,
             "genre_text": text / np.linalg.norm(text, axis=1, keepdims=True), "device": device}
 
@@ -32,5 +32,9 @@ def run(handle, inputs: dict) -> dict:
     sims = handle["genre_text"] @ audio
     order = np.argsort(sims)[::-1][: int(inputs.get("top", 3))]
     out["genre"] = {"ranking": [{"genre": GENRES[i], "similarity": round(float(sims[i]), 4)} for i in order],
-                    "note": "a ranking among gb-mcp's 20 genres, not a grade"}
+                    "note": ranking_note()}
     return out
+
+
+def ranking_note() -> str:
+    return f"a ranking among gb-mcp's {len(GENRES)} genres, not a grade"

@@ -13,6 +13,8 @@ import { err, ok, type Result } from "../result.js";
 import { parseSong, type Song } from "../song/schema.js";
 
 export const BRIEFS_DIR = fileURLToPath(new URL("../../eval/briefs", import.meta.url));
+/** M14: one brief per genre added in M14 (ids 21–47), frozen the same way. */
+export const BRIEFS_M14_DIR = fileURLToPath(new URL("../../eval/briefs-m14", import.meta.url));
 
 const BriefMeta = z.object({
   id: z.string().regex(/^\d{2}-[a-z0-9-]+$/),

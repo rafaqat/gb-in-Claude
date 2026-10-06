@@ -1,0 +1,153 @@
+{
+  "id": "25-cumbia",
+  "genre": "cumbia",
+  "bpm": 95,
+  "key": "D minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · chorus 8 · outro 4",
+  "description": "Cumbia: güiro on every eighth, congas on the off-beats, bass on one and three, a gaita-like flute.",
+  "song": {
+    "title": "eval cumbia",
+    "tempo": 95,
+    "key": "D minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "natural",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "chorus",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 0,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x.......x.......",
+              "shaker": "xxxxxxxxxxxxxxxx"
+            }
+          },
+          "chorus": {
+            "grid": {
+              "kick": "x.......x.......",
+              "shaker": "xxxxxxxxxxxxxxxx"
+            }
+          },
+          "outro": {
+            "grid": {
+              "kick": "x.......x.......",
+              "shaker": "xxxxxxxxxxxxxxxx"
+            }
+          }
+        }
+      },
+      {
+        "name": "Percussion",
+        "role": "drums",
+        "program": 40,
+        "parts": {
+          "intro": {
+            "grid": {
+              "guiro-long": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "verse": {
+            "grid": {
+              "guiro-long": "x.x.x.x.x.x.x.x.",
+              "conga-high": "..x...x...x...x.",
+              "conga-low": "......x.......x."
+            }
+          },
+          "chorus": {
+            "grid": {
+              "guiro-long": "x.x.x.x.x.x.x.x.",
+              "conga-high": "..x...x...x...x.",
+              "conga-low": "......x.......x."
+            }
+          },
+          "outro": {
+            "grid": {
+              "guiro-long": "x.x.x.x.x.x.x.x.",
+              "conga-high": "..x...x...x...x.",
+              "conga-low": "......x.......x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 25,
+        "parts": {
+          "intro": {
+            "chords": "Dm | C | C | Dm",
+            "style": "broken",
+            "octave": 3
+          },
+          "verse": {
+            "chords": "Dm | C | C | Dm",
+            "style": "broken",
+            "octave": 3
+          },
+          "chorus": {
+            "chords": "Gm | Dm | A7 | Dm",
+            "style": "broken",
+            "octave": 3
+          },
+          "outro": {
+            "chords": "Dm | C | C | Dm",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 33,
+        "parts": {
+          "verse": {
+            "chords": "Dm | C | C | Dm",
+            "style": "octave"
+          },
+          "chorus": {
+            "chords": "Gm | Dm | A7 | Dm",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 73,
+        "parts": {
+          "chorus": {
+            "notes": "d6 bb5 d6 bb5 | d5@2 f5@2 | e6 c#6 b5 a5 | a5@4"
+          },
+          "outro": {
+            "notes": "a5 f5 a5 f5 | c5@2 e5@2 | g5 e5 d5 c5 | a5@4"
+          }
+        }
+      }
+    ]
+  }
+}

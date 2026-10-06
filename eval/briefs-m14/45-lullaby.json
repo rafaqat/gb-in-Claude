@@ -1,0 +1,117 @@
+{
+  "id": "45-lullaby",
+  "genre": "lullaby",
+  "bpm": 60,
+  "key": "F major",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · verse2 8 · outro 4",
+  "description": "Lullaby: music box over harp arpeggios and soft strings, no drums.",
+  "song": {
+    "title": "eval lullaby",
+    "tempo": 60,
+    "key": "F major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "loose",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "verse2",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 48,
+        "level": -9,
+        "parts": {
+          "verse": {
+            "chords": "F | Bb | F | C",
+            "style": "sustain"
+          },
+          "verse2": {
+            "chords": "Bb | F | C | F",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "F | Bb | F | C",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Arp",
+        "role": "arp",
+        "program": 46,
+        "level": -4,
+        "parts": {
+          "intro": {
+            "chords": "F | Bb | F | C",
+            "style": "broken",
+            "octave": 3
+          },
+          "verse": {
+            "chords": "F | Bb | F | C",
+            "style": "broken",
+            "octave": 3
+          },
+          "verse2": {
+            "chords": "Bb | F | C | F",
+            "style": "broken",
+            "octave": 3
+          },
+          "outro": {
+            "chords": "F | Bb | F | C",
+            "style": "broken",
+            "octave": 3
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 43,
+        "level": -8,
+        "parts": {
+          "verse": {
+            "chords": "F | Bb | F | C",
+            "style": "sustain"
+          },
+          "verse2": {
+            "chords": "Bb | F | C | F",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead-high",
+        "program": 10,
+        "parts": {
+          "verse": {
+            "notes": "c7@2 a6@2 | bb6@4 | a6 c7 a6 g6 | c6@4"
+          },
+          "verse2": {
+            "notes": "f7@2 d7@2 | f6@4 | e6 g6 e6 d6 | f6@4"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "id": "21-latin-trap",
+  "genre": "Latin trap",
+  "bpm": 140,
+  "key": "A minor",
+  "meter": "4/4",
+  "form": "intro 4 · verse 8 · hook 8 · outro 4",
+  "description": "Dark Latin trap: 808 glides, rolling hats, half-time snare, a nylon-guitar hook.",
+  "song": {
+    "title": "eval latin-trap",
+    "tempo": 140,
+    "key": "A minor",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "tight",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "verse",
+        "bars": 8
+      },
+      {
+        "name": "hook",
+        "bars": 8
+      },
+      {
+        "name": "outro",
+        "bars": 4
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 24,
+        "parts": {
+          "verse": {
+            "grid": {
+              "kick": "x......x..x.....",
+              "snare": "........x.......",
+              "hat": "x.x.x.x.x.xxx.x.x.x.x.x.xxx.xxxx",
+              "rim": "...x..x....x..x."
+            }
+          },
+          "hook": {
+            "grid": {
+              "kick": "x......x..x.....",
+              "snare": "........x.......",
+              "hat": "x.x.x.x.x.xxx.x.x.x.x.x.xxx.xxxx",
+              "rim": "...x..x....x..x."
+            }
+          },
+          "outro": {
+            "grid": {
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 91,
+        "level": -6,
+        "parts": {
+          "intro": {
+            "chords": "Am | F | C | G",
+            "style": "sustain"
+          },
+          "verse": {
+            "chords": "Am | F | C | G",
+            "style": "sustain"
+          },
+          "hook": {
+            "chords": "Am | Dm | F | E",
+            "style": "sustain"
+          },
+          "outro": {
+            "chords": "Am | F | C | G",
+            "style": "sustain"
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 38,
+        "glide": true,
+        "parts": {
+          "verse": {
+            "notes": "a1@3 a2 | f1@2 ~ c2 | c1@3 e1 | g1 ~ d2 g2"
+          },
+          "hook": {
+            "notes": "a1@3 a2 | d1@2 ~ a1 | f1@3 a1 | e1 ~ b1 e2"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 24,
+        "parts": {
+          "intro": {
+            "notes": "e5 c5 a4 c5 | c5@2 ~ a4 | c4 g4 e4 c4 | b4@4"
+          },
+          "hook": {
+            "notes": "e5 c5 a4 c5 | a4@2 ~ f4 | f4 c5 a4 f4 | g#4@4"
+          }
+        }
+      }
+    ]
+  }
+}

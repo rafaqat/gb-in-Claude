@@ -1,0 +1,131 @@
+{
+  "id": "26-bossa-nova",
+  "genre": "bossa nova",
+  "bpm": 130,
+  "key": "D major",
+  "meter": "4/4",
+  "form": "intro 4 · A 8 · B 8 · A2 8",
+  "description": "Bossa nova: the cross-stick bossa clave, nylon guitar comping in sevenths, upright bass, flute.",
+  "song": {
+    "title": "eval bossa-nova",
+    "tempo": 130,
+    "key": "D major",
+    "timeSignature": [
+      4,
+      4
+    ],
+    "seed": 1,
+    "humanize": "loose",
+    "sections": [
+      {
+        "name": "intro",
+        "bars": 4
+      },
+      {
+        "name": "A",
+        "bars": 8
+      },
+      {
+        "name": "B",
+        "bars": 8
+      },
+      {
+        "name": "A2",
+        "bars": 8
+      }
+    ],
+    "tracks": [
+      {
+        "name": "Drums",
+        "role": "drums",
+        "program": 32,
+        "parts": {
+          "intro": {
+            "grid": {
+              "rim": "x..x..x...x..x.. | ..x..x..x...x..."
+            }
+          },
+          "A": {
+            "grid": {
+              "rim": "x..x..x...x..x.. | ..x..x..x...x...",
+              "kick": "x.....x.x.....x.",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "B": {
+            "grid": {
+              "rim": "x..x..x...x..x.. | ..x..x..x...x...",
+              "kick": "x.....x.x.....x.",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          },
+          "A2": {
+            "grid": {
+              "rim": "x..x..x...x..x.. | ..x..x..x...x...",
+              "kick": "x.....x.x.....x.",
+              "hat": "x.x.x.x.x.x.x.x."
+            }
+          }
+        }
+      },
+      {
+        "name": "Chords",
+        "role": "pad",
+        "program": 24,
+        "parts": {
+          "intro": {
+            "chords": "Dmaj7 | E7 | Em7 A7 | Dmaj7",
+            "style": "stabs"
+          },
+          "A": {
+            "chords": "Dmaj7 | E7 | Em7 A7 | Dmaj7",
+            "style": "stabs"
+          },
+          "B": {
+            "chords": "Gmaj7 | Gm7 | F#m7 B7 | Em7 A7",
+            "style": "stabs"
+          },
+          "A2": {
+            "chords": "Dmaj7 | E7 | Em7 A7 | Dmaj7",
+            "style": "stabs"
+          }
+        }
+      },
+      {
+        "name": "Bass",
+        "role": "bass",
+        "program": 32,
+        "parts": {
+          "A": {
+            "chords": "Dmaj7 | E7 | Em7 A7 | Dmaj7",
+            "style": "octave"
+          },
+          "B": {
+            "chords": "Gmaj7 | Gm7 | F#m7 B7 | Em7 A7",
+            "style": "octave"
+          },
+          "A2": {
+            "chords": "Dmaj7 | E7 | Em7 A7 | Dmaj7",
+            "style": "octave"
+          }
+        }
+      },
+      {
+        "name": "Hook",
+        "role": "lead",
+        "program": 73,
+        "parts": {
+          "A": {
+            "notes": "a5@3 gb5 | f#5@2 e5@2 | g5 f#5 e5 d6 | d5@4"
+          },
+          "B": {
+            "notes": "d6@3 b5 | a5@2 g5@2 | a5 ab5 f#5 e6 | e5@4"
+          },
+          "A2": {
+            "notes": "a5@3 gb5 | f#5@2 e5@2 | g5 f#5 e5 d6 | d5@4"
+          }
+        }
+      }
+    ]
+  }
+}

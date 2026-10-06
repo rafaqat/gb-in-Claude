@@ -64,8 +64,11 @@ const GridPart = z.object({
   levels: z.record(z.enum(DRUM_VOICE_NAMES), LevelDb).optional(),
   /** Kit volume (CC7) — fades; drums take levels, not dynamics. */
   volume: Ramp.optional(),
-}).strict().refine((p) => !p.levels || Object.keys(p.levels).every((v) => v in p.grid),
-  { message: "levels may only name voices that are in the grid" });
+}).strict().superRefine((p, ctx) => {
+  for (const v of Object.keys(p.levels ?? {})) {
+    if (!(v in p.grid)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["levels", v], message: "levels may only name voices that are in the grid" });
+  }
+});
 
 const NotesPart = z.object({
   notes: z.string().min(1),

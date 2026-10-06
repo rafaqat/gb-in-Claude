@@ -24,6 +24,7 @@ import { GM_PATCH_MAP, GM_DRUM_KIT_MAP, patchFor } from "../knowledge/gm-patch-m
 import { SONG_FORMAT_GUIDE } from "../knowledge/song-format.js";
 import { BAND_FILES_GUIDE } from "../knowledge/band-files.js";
 import { GENERATE_GUIDE } from "../knowledge/generate.js";
+import { GENRES_GUIDE } from "../knowledge/genre-styles.js";
 import { SERVER_INSTRUCTIONS } from "./instructions.js";
 import { registerPrompts } from "./prompts.js";
 import { FromAudioInput } from "./from-audio.js";
@@ -309,6 +310,10 @@ export function createServer(opts: ServerOptions): McpServer {
   server.registerResource("generate", "gb://knowledge/generate",
     { description: "gb_generate: engines (ACE-Step, MuLaCover), steps to a placed vocal, times, licences, install", mimeType: "text/markdown" },
     async (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: GENERATE_GUIDE }] }));
+
+  server.registerResource("genres", "gb://knowledge/genres",
+    { description: "The 47 genres: caption words for gb_generate (sound, voice, production), tempo, what a GarageBand draft lacks", mimeType: "text/markdown" },
+    async (uri) => ({ contents: [{ uri: uri.href, mimeType: "text/markdown", text: GENRES_GUIDE }] }));
 
   server.registerResource("styles", "gb://knowledge/styles",
     { description: "Style presets: GM program and GarageBand patch per role", mimeType: "application/json" },

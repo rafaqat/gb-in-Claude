@@ -69,6 +69,19 @@ GENRES = {  # gb-mcp genre → Spotify genre tags (substring match on the 'genre
     "classical/pop crossover": ["classical crossover"], "ambient trance": ["trance"], "Levantine strings": ["arab", "lebanese"],
     "epic orchestral": ["soundtrack", "epicore", "orchestral"],
 }
+M8_GENRES = dict(GENRES)  # '_all' (the pool for genres with few songs) stays the songs of these 20, as in M13.16
+GENRES = {**GENRES,
+    # M14 ("'rai'" and "'k-pop" with quotes: "rai" is inside "praise", "k-pop" inside "folk-pop")
+    "Latin trap": ["trap latino"], "dembow": ["dembow"], "bachata": ["bachata"], "salsa": ["salsa"], "cumbia": ["cumbia"],
+    "bossa nova": ["bossa nova", "mpb"], "corridos tumbados": ["corrido", "sierreno"], "Latin pop": ["latin pop"],
+    "Brazilian funk": ["funk carioca"], "merengue": ["merengue"],
+    "Arabic pop": ["arab pop", "egyptian pop", "lebanese pop"], "Khaleeji": ["khaleeji", "khaliji"],
+    "mahraganat": ["mahraganat", "shaabi"], "raï": ["'rai'"], "gnawa": ["gnawa"], "Moroccan chaabi": ["chaabi", "moroccan pop"],
+    "dabke": ["dabke"], "country": ["country"], "Americana": ["americana", "bluegrass"],
+    "Bollywood (filmi)": ["filmi", "bollywood"], "gospel": ["gospel"], "soul": ["soul"], "blues": ["blues"],
+    "Celtic folk": ["celtic", "irish folk", "scottish folk"], "lullaby": ["lullaby", "children's music", "nursery"],
+    "K-pop": ["'k-pop"], "amapiano": ["amapiano"],
+}
 SEC = re.compile(r"<([a-z]+)_\d+>")
 
 def main(csv, out):

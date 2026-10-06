@@ -7,6 +7,10 @@ import { validateSong } from "./validate.js";
 import { loadBriefs } from "../eval/briefs.js";
 import { COMMON_LOOPS } from "./common-loops.js";
 import { romanToChords } from "./roman.js";
+import { renderSong } from "./render.js";
+import { ORCHESTRAL_KIT_ONLY, type DrumVoice } from "../composition/drums.js";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const briefs = loadBriefs();
 
@@ -47,6 +51,58 @@ describe("genre templates (M9): a full Song JSON draft for every genre gb-mcp kn
     if (!r.ok) throw new Error(r.error);
     const song = r.value as { tracks: { role: string; program?: number }[] };
     expect(song.tracks.find((t) => t.role === "drums")!.program).toBe(25);
+  });
+
+  // M14: the labels CLAP ranks against (models/gbmodels/genres.py) are the genres a template exists for
+  const clapLabels = [...readFileSync(fileURLToPath(new URL("../../models/gbmodels/genres.py", import.meta.url)), "utf8")
+    .split("CLAP_PROMPTS")[0]!  // the label lists only, not the prompt texts after them
+    .matchAll(/^\s+"([^"]+)"[,\]]|"([^"]+)",/gm)].map((m) => m[1] ?? m[2]!);
+
+  it("has a template for each of the 47 genres CLAP knows, and no other", () => {
+    expect(new Set(clapLabels).size).toBe(47);
+    expect(Object.keys(GENRE_TEMPLATES).sort()).toEqual([...new Set(clapLabels)].sort());
+  });
+
+  // every key: a hook written at a fixed octave left the instrument's range in high keys (lo-fi vibraphone G6 in C)
+  const KEYS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"].flatMap((t) => [`${t} major`, `${t} minor`])
+    .map((k) => k.replace("Ab minor", "G# minor"));
+  it.each(Object.keys(GENRE_TEMPLATES))("%s in all 24 keys at its own tempo: valid, renders, no validation errors", (genre) => {
+    for (const key of KEYS) {
+      const r = templateSong({ genre, key });
+      expect(r.ok, key).toBe(true);
+      if (!r.ok) return;
+      const parsed = parseSong(r.value);
+      expect(parsed, key).toMatchObject({ ok: true });
+      if (!parsed.ok) return;
+      expect(validateSong(parsed.value).filter((i) => i.severity === "error").map((i) => `${key}: ${i.message}`)).toEqual([]);
+      expect(renderSong(parsed.value).ok, key).toBe(true);
+    }
+  });
+
+  // M14 live probe (out/probe-export/m14-perc-probe-v1.wav): on GarageBand only the Orchestral Kit plays hand percussion
+  // (congas, bongos, timbales, güiro …) as distinct sounds — SoCal, Retro Rock and Roots are silent on those notes, and
+  // Boutique 808 and Electro play one pitched sound across them
+  it.each(Object.keys(GENRE_TEMPLATES))("%s: hand percussion plays on the Orchestral Kit, in its own drum track", (genre) => {
+    const r = templateSong({ genre, key: "C minor" });
+    if (!r.ok) throw new Error(r.error);
+    type Drum = { name: string; role: string; program?: number; parts: Record<string, { grid: Record<string, string> }> };
+    for (const t of (r.value.tracks as Drum[]).filter((x) => x.role === "drums")) {
+      const voices = Object.values(t.parts).flatMap((p) => Object.keys(p.grid));
+      if (voices.some((v) => ORCHESTRAL_KIT_ONLY.has(v as DrumVoice))) expect(t.program, `${t.name}: ${voices.join(" ")}`).toBe(40);
+    }
+  });
+
+  it("salsa: the conga, timbale and cowbell parts are in a Percussion track, the kit keeps what any kit plays", () => {
+    const r = templateSong({ genre: "salsa", key: "C minor" });
+    if (!r.ok) throw new Error(r.error);
+    const names = (r.value.tracks as { name: string; role: string }[]).filter((t) => t.role === "drums").map((t) => t.name);
+    expect(names).toEqual(["Drums", "Percussion"]);
+  });
+
+  // M14 live: without a kick on the beat, the beat tracker followed gnawa's and chaabi's triplet hats and congas
+  // (1.5× tempo) and dabke's off-beats (recall 0.70 / 0.83 / 0.75); a kick on every beat: 0.99 / 1.00 / 0.99
+  it.each([["gnawa", "x..x..x..x.."], ["Moroccan chaabi", "x..x..x..x.."], ["dabke", "x...x...x...x..."]])("%s: a kick on every beat", (genre, kick) => {
+    expect(GENRE_TEMPLATES[genre]!.drums!.full.kick).toBe(kick);
   });
 
   it("refuses an unknown genre with the list of known ones", () => {
