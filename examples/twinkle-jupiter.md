@@ -6,7 +6,7 @@ Two versions of one prompt: GarageBand plays Claude's Song JSON, and ACE-Step 1.
 |---|---|---|
 | Video | [twinkle-jupiter-garageband.mp4](../media/twinkle-jupiter-garageband.mp4) | [twinkle-jupiter-ace-step.mp4](../media/twinkle-jupiter-ace-step.mp4) |
 | Audio | [MP3](../media/twinkle-jupiter-garageband.mp3) | [MP3](../media/twinkle-jupiter-ace-step.mp3) |
-| GarageBand project | [twinkle-jupiter.band.zip](bands/twinkle-jupiter.band.zip) — 14 MIDI tracks, 3/4, 72 → 60 BPM | `twinkle-jupiter-ace-step.band.zip` (README download) — the cover on an audio track |
+| GarageBand project | [twinkle-jupiter.band.zip](bands/twinkle-jupiter.band.zip) — 14 MIDI tracks, 3/4, 72 → 60 BPM | [twinkle-jupiter-ace-step.band.zip](https://github.com/user-attachments/files/33102362/twinkle-jupiter-ace-step.band.zip) — the cover on an audio track |
 | Source | [twinkle-jupiter.song.json](twinkle-jupiter.song.json) | the GarageBand export, `strength: 0.6` |
 
 ## The prompt

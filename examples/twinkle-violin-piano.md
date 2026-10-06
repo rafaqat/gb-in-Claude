@@ -7,7 +7,7 @@ solo violin.
 |---|---|---|
 | Video | [twinkle-violin-piano-garageband.mp4](../media/twinkle-violin-piano-garageband.mp4) | [twinkle-violin-piano-ace-step.mp4](../media/twinkle-violin-piano-ace-step.mp4) |
 | Audio | [MP3](../media/twinkle-violin-piano-garageband.mp3) | [MP3](../media/twinkle-violin-piano-ace-step.mp3) |
-| GarageBand project | [twinkle-violin-piano.band.zip](bands/twinkle-violin-piano.band.zip) — violin + 4 piano tracks, 60 BPM | `twinkle-violin-piano-ace-step.band.zip` (README download) — the MIDI song **and** the cover on an audio track, in time |
+| GarageBand project | [twinkle-violin-piano.band.zip](bands/twinkle-violin-piano.band.zip) — violin + 4 piano tracks, 60 BPM | [twinkle-violin-piano-ace-step.band.zip](https://github.com/user-attachments/files/33102376/twinkle-violin-piano-ace-step.band.zip) — the MIDI song **and** the cover on an audio track, in time |
 | Source | [twinkle-violin-piano.song.json](twinkle-violin-piano.song.json) | the GarageBand export, `strength: 0.5` |
 
 The cover stays in time with the MIDI song: its harmony lines up with the GarageBand export at 0.0 s lag over the whole

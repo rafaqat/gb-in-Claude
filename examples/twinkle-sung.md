@@ -4,11 +4,11 @@ Three sung versions, made with ACE-Step 1.5 (MIT) through `gb_generate`. Each on
 version ([twinkle-violin-piano.md](twinkle-violin-piano.md)); the singer sings the traditional words (Jane Taylor, 1806,
 public domain).
 
-| Version | Video | Audio | GarageBand project (README download) |
+| Version | Video | Audio | GarageBand project |
 |---|---|---|---|
-| Lullaby: female voice, violin and piano | [twinkle-sung-lullaby.mp4](../media/twinkle-sung-lullaby.mp4) | [MP3](../media/twinkle-sung-lullaby.mp3) | `twinkle-sung-lullaby.band.zip` |
-| Cinematic, in the style of Hans Zimmer | [twinkle-sung-zimmer.mp4](../media/twinkle-sung-zimmer.mp4) | [MP3](../media/twinkle-sung-zimmer.mp3) | `twinkle-sung-zimmer.band.zip` |
-| Modern country | [twinkle-sung-country.mp4](../media/twinkle-sung-country.mp4) | [MP3](../media/twinkle-sung-country.mp3) | `twinkle-sung-country.band.zip` |
+| Lullaby: female voice, violin and piano | [twinkle-sung-lullaby.mp4](../media/twinkle-sung-lullaby.mp4) | [MP3](../media/twinkle-sung-lullaby.mp3) | [twinkle-sung-lullaby.band.zip](https://github.com/user-attachments/files/33102370/twinkle-sung-lullaby.band.zip) |
+| Cinematic, in the style of Hans Zimmer | [twinkle-sung-zimmer.mp4](../media/twinkle-sung-zimmer.mp4) | [MP3](../media/twinkle-sung-zimmer.mp3) | [twinkle-sung-zimmer.band.zip](https://github.com/user-attachments/files/33102373/twinkle-sung-zimmer.band.zip) |
+| Modern country | [twinkle-sung-country.mp4](../media/twinkle-sung-country.mp4) | [MP3](../media/twinkle-sung-country.mp3) | [twinkle-sung-country.band.zip](https://github.com/user-attachments/files/33102366/twinkle-sung-country.band.zip) |
 
 Each `.band` holds the song on an audio track of a GarageBand project (verified with `gb_project open_band`). These
 covers rewrote the arrangement and the sung melody, so they do not line up note for note with the MIDI song; the

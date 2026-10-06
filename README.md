@@ -62,7 +62,7 @@ https://github.com/user-attachments/assets/4b70c3b3-0a6a-4c90-86cb-a91b52e067ef
 Piano and celesta at night, ticking strings over a drone, then the tune as a broad 3/4 hymn — strings and horn, six
 horns in unison, brass and timpani — and a luminous D-major finale.
 
-⬇️ DRAG twinkle-jupiter-garageband.mp4 HERE
+https://github.com/user-attachments/assets/4f4b302c-5736-4eef-b525-14eb1d353970
 
 [▶ MP3](media/twinkle-jupiter-garageband.mp3) · [MP4](media/twinkle-jupiter-garageband.mp4) · [GarageBand project](examples/bands/twinkle-jupiter.band.zip) · [Song JSON](examples/twinkle-jupiter.song.json) · [The prompt](examples/twinkle-jupiter.md)
 
@@ -70,7 +70,7 @@ horns in unison, brass and timpani — and a luminous D-major finale.
 
 An intimate four-minute lullaby: piano, the tune on the violin, a middle swell, a closing phrase that settles.
 
-⬇️ DRAG twinkle-violin-piano-garageband.mp4 HERE
+https://github.com/user-attachments/assets/38f75edd-5502-462a-bdfa-2aa154ccb792
 
 [▶ MP3](media/twinkle-violin-piano-garageband.mp3) · [MP4](media/twinkle-violin-piano-garageband.mp4) · [GarageBand project](examples/bands/twinkle-violin-piano.band.zip) · [Song JSON](examples/twinkle-violin-piano.song.json) · [The prompt](examples/twinkle-violin-piano.md)
 
@@ -82,9 +82,9 @@ A short indie-pop song with new words: Claude Code wrote the caption and lyrics 
 `gb_generate` made it on a MacBook Air in about 2 minutes, `gb_analyze lyrics` checked the words (6 of 8 lines sung as
 written, 2 partly) and `gb_analyze master` set the loudness.
 
-⬇️ DRAG vocal-demo.mp4 HERE
+https://github.com/user-attachments/assets/66f3a722-42fe-42fb-b193-2e6db6516286
 
-[▶ MP3](media/vocal-demo.mp3) · [MP4](media/vocal-demo.mp4) · [Caption, lyrics and calls](examples/vocal-demo.md) · GarageBand project (stereo, on a track pair): ⬇️ DRAG vocal-demo.band.zip HERE
+[▶ MP3](media/vocal-demo.mp3) · [MP4](media/vocal-demo.mp4) · [Caption, lyrics and calls](examples/vocal-demo.md) · GarageBand project (stereo, on a track pair): [vocal-demo.band.zip](https://github.com/user-attachments/files/33102382/vocal-demo.band.zip)
 
 #### Twinkle, Twinkle — sung
 
@@ -101,21 +101,21 @@ How I wonder what you are
 
 **Lullaby** — female voice, solo violin and piano.
 
-⬇️ DRAG twinkle-sung-lullaby.mp4 HERE
+https://github.com/user-attachments/assets/a4885bf1-545c-461c-a89b-db8487a25e66
 
-[▶ MP3](media/twinkle-sung-lullaby.mp3) · [MP4](media/twinkle-sung-lullaby.mp4) · GarageBand project: ⬇️ DRAG twinkle-sung-lullaby.band.zip HERE
+[▶ MP3](media/twinkle-sung-lullaby.mp3) · [MP4](media/twinkle-sung-lullaby.mp4) · GarageBand project: [twinkle-sung-lullaby.band.zip](https://github.com/user-attachments/files/33102370/twinkle-sung-lullaby.band.zip)
 
 **In the style of Hans Zimmer** — the same voice over felt piano, a growing string ostinato, organ, low brass and taiko.
 
-⬇️ DRAG twinkle-sung-zimmer.mp4 HERE
+https://github.com/user-attachments/assets/3383ddb1-3ed0-4b2e-9401-db26f1f58986
 
-[▶ MP3](media/twinkle-sung-zimmer.mp3) · [MP4](media/twinkle-sung-zimmer.mp4) · GarageBand project: ⬇️ DRAG twinkle-sung-zimmer.band.zip HERE
+[▶ MP3](media/twinkle-sung-zimmer.mp3) · [MP4](media/twinkle-sung-zimmer.mp4) · GarageBand project: [twinkle-sung-zimmer.band.zip](https://github.com/user-attachments/files/33102373/twinkle-sung-zimmer.band.zip)
 
 **Modern country** — the same voice with acoustic guitars, pedal steel, fiddle and a half-time band.
 
-⬇️ DRAG twinkle-sung-country.mp4 HERE
+https://github.com/user-attachments/assets/c2263d11-255b-49bf-8332-2a75626090ab
 
-[▶ MP3](media/twinkle-sung-country.mp3) · [MP4](media/twinkle-sung-country.mp4) · GarageBand project: ⬇️ DRAG twinkle-sung-country.band.zip HERE
+[▶ MP3](media/twinkle-sung-country.mp3) · [MP4](media/twinkle-sung-country.mp4) · GarageBand project: [twinkle-sung-country.band.zip](https://github.com/user-attachments/files/33102366/twinkle-sung-country.band.zip)
 
 Prompts, captions, lyrics and how the cover strength decided whether a voice appeared: [examples/twinkle-sung.md](examples/twinkle-sung.md).
 
@@ -125,16 +125,16 @@ ACE-Step 1.5 re-plays a GarageBand export from a caption (`gb_generate` `cover`)
 
 **Jupiter hymn** (strength 0.6)
 
-⬇️ DRAG twinkle-jupiter-ace-step.mp4 HERE
+https://github.com/user-attachments/assets/39f2c6aa-a6bb-436b-9525-4e583ca3edfe
 
-[▶ MP3](media/twinkle-jupiter-ace-step.mp3) · [MP4](media/twinkle-jupiter-ace-step.mp4) · GarageBand project: ⬇️ DRAG twinkle-jupiter-ace-step.band.zip HERE
+[▶ MP3](media/twinkle-jupiter-ace-step.mp3) · [MP4](media/twinkle-jupiter-ace-step.mp4) · GarageBand project: [twinkle-jupiter-ace-step.band.zip](https://github.com/user-attachments/files/33102362/twinkle-jupiter-ace-step.band.zip)
 
 **Violin and piano** (strength 0.5) — with a real solo violin; it stays in time with the MIDI song, so its GarageBand
 project holds both: the MIDI instruments and the cover on an audio track.
 
-⬇️ DRAG twinkle-violin-piano-ace-step.mp4 HERE
+https://github.com/user-attachments/assets/2937c283-41fc-4850-b9e9-e236ac6fe49f
 
-[▶ MP3](media/twinkle-violin-piano-ace-step.mp3) · [MP4](media/twinkle-violin-piano-ace-step.mp4) · GarageBand project: ⬇️ DRAG twinkle-violin-piano-ace-step.band.zip HERE
+[▶ MP3](media/twinkle-violin-piano-ace-step.mp3) · [MP4](media/twinkle-violin-piano-ace-step.mp4) · GarageBand project: [twinkle-violin-piano-ace-step.band.zip](https://github.com/user-attachments/files/33102376/twinkle-violin-piano-ace-step.band.zip)
 
 ## Requirements
 
@@ -518,47 +518,3 @@ GarageBand's interface differs between versions; the element locators live in `s
 - The vocal demo, the sung Twinkle versions and the AI covers (`media/vocal-demo.*`, `media/twinkle-sung-*`,
   `media/*-ace-step.*`) were generated with ACE-Step 1.5 (MIT) through gb_generate; the demo's words are new, the
   Twinkle words are traditional (Jane Taylor, 1806, public domain).
-
-
-
-
-
-  
-
-https://github.com/user-attachments/assets/66f3a722-42fe-42fb-b193-2e6db6516286
-
-[vocal-demo.band.zip](https://github.com/user-attachments/files/33102382/vocal-demo.band.zip)
-
-
-https://github.com/user-attachments/assets/38f75edd-5502-462a-bdfa-2aa154ccb792
-
-
-
-https://github.com/user-attachments/assets/2937c283-41fc-4850-b9e9-e236ac6fe49f
-
-[twinkle-violin-piano-ace-step.band.zip](https://github.com/user-attachments/files/33102376/twinkle-violin-piano-ace-step.band.zip)
-
-
-https://github.com/user-attachments/assets/3383ddb1-3ed0-4b2e-9401-db26f1f58986
-
-[twinkle-sung-zimmer.band.zip](https://github.com/user-attachments/files/33102373/twinkle-sung-zimmer.band.zip)
-
-
-https://github.com/user-attachments/assets/a4885bf1-545c-461c-a89b-db8487a25e66
-
-[twinkle-sung-lullaby.band.zip](https://github.com/user-attachments/files/33102370/twinkle-sung-lullaby.band.zip)
-
-
-https://github.com/user-attachments/assets/c2263d11-255b-49bf-8332-2a75626090ab
-
-[twinkle-sung-country.band.zip](https://github.com/user-attachments/files/33102366/twinkle-sung-country.band.zip)
-
-
-https://github.com/user-attachments/assets/4f4b302c-5736-4eef-b525-14eb1d353970
-
-
-
-https://github.com/user-attachments/assets/39f2c6aa-a6bb-436b-9525-4e583ca3edfe
-
-[twinkle-jupiter-ace-step.band.zip](https://github.com/user-attachments/files/33102362/twinkle-jupiter-ace-step.band.zip)
-
