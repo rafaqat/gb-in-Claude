@@ -31,6 +31,12 @@ class TempoTest(unittest.TestCase):
         b[100:] += round(60 / 86.0 / 3 / FRAME) * FRAME               # from beat 100 the tracker follows the swung 8th
         self.assertAlmostEqual(beatthis.tempo(b), 86.0, delta=0.05)
 
+    def test_hard_swing_counted_per_eighth_gives_the_eighth_tempo(self):
+        # 80 BPM, swing 75, the tracker on every 8th: intervals alternate 0.19 s and 0.56 s; no interval is "regular"
+        unit = 60 / 80 / 2
+        b = np.round(np.array([k * unit + (unit / 2 if k % 2 else 0.0) for k in range(96)]) / FRAME) * FRAME
+        self.assertAlmostEqual(beatthis.tempo(b), 160.0, delta=0.5)
+
 
 if __name__ == "__main__":
     unittest.main()

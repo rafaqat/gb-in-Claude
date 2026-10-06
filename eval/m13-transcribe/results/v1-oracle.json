@@ -1,0 +1,302 @@
+{
+ "oracle": true,
+ "results": [
+  {
+   "id": "drift-g",
+   "failed": {
+    "message": "the map file is not JSON",
+    "status": "failed",
+    "op": "gb_song.transcribe",
+    "error": "ANALYSIS_FAILED",
+    "write_attempted": true,
+    "safe_to_retry": true,
+    "recoverable": true
+   }
+  },
+  {
+   "id": "funk-em",
+   "seconds": 9.448,
+   "steady": true,
+   "lead_source": "vocals",
+   "tempo": {
+    "truth": 110,
+    "truth_map": 0,
+    "draft": 109.99,
+    "draft_map": 0,
+    "map_bpm": 109.991
+   },
+   "bar_line_ms": {
+    "median": 3.718,
+    "p90": 5.273
+   },
+   "key": {
+    "truth": "E minor",
+    "draft": "E minor",
+    "relation": "exact"
+   },
+   "chords": {
+    "halves": 40,
+    "root": 1,
+    "majmin": 0.9
+   },
+   "bass": {
+    "per_beat": {
+     "beats": 80,
+     "exact": 0.85,
+     "pitch_class": 0.85
+    },
+    "notes": {
+     "truth": 240,
+     "est": 241,
+     "matched": 222,
+     "precision": 0.921,
+     "recall": 0.925,
+     "f": 0.923
+    }
+   },
+   "lead": {
+    "notes": {
+     "truth": 71,
+     "est": 94,
+     "matched": 55,
+     "precision": 0.585,
+     "recall": 0.775,
+     "f": 0.667
+    },
+    "onsets": {
+     "truth": 71,
+     "est": 94,
+     "matched": 71,
+     "precision": 0.755,
+     "recall": 1,
+     "f": 0.861
+    },
+    "per_beat": {
+     "beats": 65,
+     "exact": 0.846,
+     "pitch_class": 0.846
+    }
+   },
+   "drums": {
+    "kick": {
+     "truth": 100,
+     "est": 64,
+     "matched": 64,
+     "precision": 1,
+     "recall": 0.64,
+     "f": 0.78
+    },
+    "snare": {
+     "truth": 160,
+     "est": 73,
+     "matched": 72,
+     "precision": 0.986,
+     "recall": 0.45,
+     "f": 0.618
+    },
+    "hat": {
+     "truth": 144,
+     "est": 140,
+     "matched": 128,
+     "precision": 0.914,
+     "recall": 0.889,
+     "f": 0.901
+    }
+   }
+  },
+  {
+   "id": "house-am",
+   "seconds": 15.653,
+   "steady": true,
+   "lead_source": "vocals",
+   "tempo": {
+    "truth": 122,
+    "truth_map": 0,
+    "draft": 121.95,
+    "draft_map": 0,
+    "map_bpm": 121.951
+   },
+   "bar_line_ms": {
+    "median": 6.69,
+    "p90": 17.22
+   },
+   "key": {
+    "truth": "A minor",
+    "draft": "A minor",
+    "relation": "exact"
+   },
+   "chords": {
+    "halves": 48,
+    "root": 0.667,
+    "majmin": 0.667
+   },
+   "bass": {
+    "per_beat": {
+     "beats": 64,
+     "exact": 0.781,
+     "pitch_class": 0.781
+    },
+    "notes": {
+     "truth": 64,
+     "est": 80,
+     "matched": 64,
+     "precision": 0.8,
+     "recall": 1,
+     "f": 0.889
+    }
+   },
+   "lead": {
+    "notes": {
+     "truth": 76,
+     "est": 112,
+     "matched": 52,
+     "precision": 0.464,
+     "recall": 0.684,
+     "f": 0.553
+    },
+    "onsets": {
+     "truth": 76,
+     "est": 112,
+     "matched": 76,
+     "precision": 0.679,
+     "recall": 1,
+     "f": 0.809
+    },
+    "per_beat": {
+     "beats": 65,
+     "exact": 0.831,
+     "pitch_class": 0.831
+    }
+   },
+   "drums": {
+    "kick": {
+     "truth": 96,
+     "est": 96,
+     "matched": 96,
+     "precision": 1,
+     "recall": 1,
+     "f": 1
+    },
+    "snare": {
+     "truth": 32,
+     "est": 113,
+     "matched": 32,
+     "precision": 0.283,
+     "recall": 1,
+     "f": 0.441
+    },
+    "hat": {
+     "truth": 320,
+     "est": 255,
+     "matched": 223,
+     "precision": 0.875,
+     "recall": 0.697,
+     "f": 0.776
+    }
+   }
+  },
+  {
+   "id": "pop-c",
+   "seconds": 15.435,
+   "steady": true,
+   "lead_source": "vocals",
+   "tempo": {
+    "truth": 105,
+    "truth_map": 0,
+    "draft": 104.96,
+    "draft_map": 0,
+    "map_bpm": 104.963
+   },
+   "bar_line_ms": {
+    "median": 7.057,
+    "p90": 17.243
+   },
+   "key": {
+    "truth": "C major",
+    "draft": "C major",
+    "relation": "exact"
+   },
+   "chords": {
+    "halves": 64,
+    "root": 0.906,
+    "majmin": 0.906
+   },
+   "bass": {
+    "per_beat": {
+     "beats": 112,
+     "exact": 0.938,
+     "pitch_class": 0.938
+    },
+    "notes": {
+     "truth": 112,
+     "est": 145,
+     "matched": 112,
+     "precision": 0.772,
+     "recall": 1,
+     "f": 0.872
+    }
+   },
+   "lead": {
+    "notes": {
+     "truth": 152,
+     "est": 221,
+     "matched": 98,
+     "precision": 0.443,
+     "recall": 0.645,
+     "f": 0.525
+    },
+    "onsets": {
+     "truth": 152,
+     "est": 221,
+     "matched": 152,
+     "precision": 0.688,
+     "recall": 1,
+     "f": 0.815
+    },
+    "per_beat": {
+     "beats": 127,
+     "exact": 0.795,
+     "pitch_class": 0.795
+    }
+   },
+   "drums": {
+    "kick": {
+     "truth": 84,
+     "est": 64,
+     "matched": 64,
+     "precision": 1,
+     "recall": 0.762,
+     "f": 0.865
+    },
+    "snare": {
+     "truth": 60,
+     "est": 61,
+     "matched": 60,
+     "precision": 0.984,
+     "recall": 1,
+     "f": 0.992
+    },
+    "hat": {
+     "truth": 224,
+     "est": 120,
+     "matched": 120,
+     "precision": 1,
+     "recall": 0.536,
+     "f": 0.698
+    }
+   }
+  },
+  {
+   "id": "rnb-eb",
+   "failed": {
+    "message": "the map file is not JSON",
+    "status": "failed",
+    "op": "gb_song.transcribe",
+    "error": "ANALYSIS_FAILED",
+    "write_attempted": true,
+    "safe_to_retry": true,
+    "recoverable": true
+   }
+  }
+ ]
+}

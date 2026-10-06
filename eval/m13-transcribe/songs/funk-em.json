@@ -1,0 +1,104 @@
+{
+ "title": "transcribe bench funk-em",
+ "tempo": 110,
+ "key": "E minor",
+ "timeSignature": [
+  4,
+  4
+ ],
+ "seed": 1,
+ "humanize": "natural",
+ "groove": "funk",
+ "swing": 54,
+ "swingUnit": "16th",
+ "sections": [
+  {
+   "name": "groove",
+   "bars": 8
+  },
+  {
+   "name": "break",
+   "bars": 4
+  },
+  {
+   "name": "groove2",
+   "bars": 8
+  }
+ ],
+ "tracks": [
+  {
+   "name": "Drums",
+   "role": "drums",
+   "program": 32,
+   "parts": {
+    "groove": {
+     "grid": {
+      "kick": "x.oo...oo.o.....",
+      "snare": ".o..Xo.x.o..Xoxo",
+      "hat": "x.x.x.xox.o.x.o."
+     }
+    },
+    "break": {
+     "grid": {
+      "kick": "x...............",
+      "snare": "....x..o.o..x..."
+     }
+    },
+    "groove2": {
+     "grid": {
+      "kick": "x.oo...oo.o.....",
+      "snare": ".o..Xo.x.o..Xoxo",
+      "hat": "x.x.x.xox.o.x.o."
+     }
+    }
+   }
+  },
+  {
+   "name": "Chords",
+   "role": "pad",
+   "program": 28,
+   "parts": {
+    "groove": {
+     "chords": "Em7 | A7 | Em7 | A7",
+     "style": "stabs"
+    },
+    "groove2": {
+     "chords": "Em7 | A7 | Em7 | A7",
+     "style": "stabs"
+    }
+   }
+  },
+  {
+   "name": "Bass",
+   "role": "bass",
+   "program": 36,
+   "parts": {
+    "groove": {
+     "chords": "Em7 | A7 | Em7 | A7",
+     "style": "rolling"
+    },
+    "break": {
+     "chords": "Em7 | A7 | Em7 | A7",
+     "style": "rolling"
+    },
+    "groove2": {
+     "chords": "Em7 | A7 | Em7 | A7",
+     "style": "rolling"
+    }
+   }
+  },
+  {
+   "name": "Vocal",
+   "role": "lead",
+   "program": 53,
+   "parts": {
+    "groove": {
+     "notes": "e4@6 f#4@2 b4@4 g4@4 | a4@2 b4@2 c#5@4 e5@2 b4@2 e5@4 | g5@6 f#5@2 g5@4 e5@4 | c#5@4 a4@2 f#4@4 b4@2 c#5@4 | b4@8 g4@8 | e4@8 c#4@8 | e4@6 c4@2 e4@4 g4@4 | a4@6 g4@2 e4@4 c#4@4"
+    },
+    "groove2": {
+     "notes": "e4@4 g4@2 a4@4 b4@2 g4@4 | a4@2 g4@2 e4@4 c#4@2 d4@2 e4@4 | g4@2 f#4@2 e4@4 g4@2 d4@2 g4@4 | e4@2 f#4@2 e4@4 c#4@2 d4@2 c#4@4 | e4@2 f#4@2 b4@4 e5@2 c5@2 b4@4 | a4@4 c#5@2 b4@4 e5@2 c#5@4 | ~@4 b4@2 g4@2 b4@4 g4@4 | e4@8 a4@8"
+    }
+   }
+  }
+ ]
+}

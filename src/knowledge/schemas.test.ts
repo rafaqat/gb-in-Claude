@@ -31,7 +31,7 @@ describe("toolJsonSchemas", () => {
   const tools = toolJsonSchemas({ gb_song: GbSongInput, gb_sound: GbSoundInput, gb_export: GbExportInput }) as Record<string, { commands: Record<string, JsonSchema> }>;
 
   it("lists every command of every tool", () => {
-    expect(Object.keys(tools.gb_song!.commands)).toEqual(["validate", "preview", "render_midi", "render_draft", "band_plan", "template", "infill"]);
+    expect(Object.keys(tools.gb_song!.commands)).toEqual(["validate", "preview", "render_midi", "render_draft", "band_plan", "template", "infill", "transcribe"]);
     expect(Object.keys(tools.gb_sound!.commands)).toEqual(["patches", "plugins", "loops", "samples", "palette"]);
     expect(Object.keys(tools.gb_export!.commands)).toEqual(["song"]);
   });

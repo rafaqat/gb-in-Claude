@@ -3,13 +3,15 @@
 import { INSTRUMENT_RANGES } from "../knowledge/instrument-ranges.js";
 import { patchFor } from "../knowledge/gm-patch-map.js";
 import { bendRangeFor } from "../knowledge/bend-ranges.js";
-import { renderSong, type ExpressiveNote } from "./render.js";
+import { renderSong, PPQ, type ExpressiveNote } from "./render.js";
+import { voiceLeading } from "./voice-leading.js";
 import type { PartExpression, Song } from "./schema.js";
 
 export type Issue = {
   severity: "error" | "warning";
   code: "OUT_OF_INSTRUMENT_RANGE" | "RENDER_FAILED" | "ROLE_REGISTER" | "EMPTY_SECTION" | "HUMANIZE_OFF"
-    | "BEND_RANGE" | "BEND_NEEDS_MONO" | "BEND_RANGE_UNMEASURED" | "NO_PITCH_BEND" | "BRIGHTNESS_SYNTH_ONLY";
+    | "BEND_RANGE" | "BEND_NEEDS_MONO" | "BEND_RANGE_UNMEASURED" | "NO_PITCH_BEND" | "BRIGHTNESS_SYNTH_ONLY"
+    | "PARALLEL_FIFTHS" | "PARALLEL_OCTAVES" | "LARGE_LEAP" | "VOICE_CROSSING";
   path: string;
   message: string;
 };
@@ -26,7 +28,9 @@ const ROLE_REGISTER: Partial<Record<Song["tracks"][number]["role"], [number, num
 };
 
 /** Musical checks on a parsed song. Structural validity is parseSong's job; this finds what would sound wrong. */
-export function validateSong(song: Song): Issue[] {
+export type ValidateOptions = { /** M13.4: the classical voice-leading checks (opt-in) */ voiceLeading?: boolean };
+
+export function validateSong(song: Song, opts: ValidateOptions = {}): Issue[] {
   const rendered = renderSong({ ...song, humanize: "off" });
   if (!rendered.ok) {
     return [{ severity: "error", code: "RENDER_FAILED", path: rendered.error.path, message: rendered.error.message }];
@@ -69,6 +73,15 @@ export function validateSong(song: Song): Issue[] {
     });
   }
   issues.push(...expressionIssues(song, rendered.value.tracks));
+  // M13.4: each lead line against each bass line — opt-in warnings (classical rules; pop and EDM double on purpose)
+  if (!opts.voiceLeading) return issues;
+  const ticksPerBar = PPQ * song.timeSignature[0];
+  const byRole = (roles: readonly string[]) => rendered.value.tracks.filter((_, i) => roles.includes(song.tracks[i]!.role));
+  for (const lead of byRole(["lead", "lead-high"])) {
+    for (const bass of byRole(["bass"])) {
+      for (const v of voiceLeading(lead, bass, ticksPerBar, PPQ)) issues.push({ severity: "warning", ...v });
+    }
+  }
   return issues;
 }
 

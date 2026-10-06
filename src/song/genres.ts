@@ -10,9 +10,11 @@
 import { err, ok, type Result } from "../result.js";
 import { GROOVES } from "./grooves.js";
 import { chordTones, parseKey, romanToChords } from "./roman.js";
+import { COMMON_LOOPS } from "./common-loops.js";
 
-/** GarageBand drum kits on GM programs (knowledge/gm-patch-map GM_DRUM_KIT_MAP). */
-const KIT = { socal: 0, retroRock: 8, electro: 16, boutique808: 24, roots: 32, orchestral: 40 } as const;
+/** GarageBand drum kits on GM programs (knowledge/gm-patch-map GM_DRUM_KIT_MAP). GarageBand plays 24 and 25 as
+ * Boutique 808; the GM draft synth plays only 25 as a TR-808 (24 is its Electronic kit), so tr808 drafts closer. */
+const KIT = { socal: 0, retroRock: 8, electro: 16, boutique808: 24, tr808: 25, roots: 32, orchestral: 40 } as const;
 type Grid = Record<string, string>;
 type Drums = { full: Grid; light?: Grid; groove?: string };
 type Section = { name: string; bars: number; drums?: "full" | "light"; bass?: boolean; hook?: boolean; pad?: boolean; arp?: boolean; prog?: "a" | "b" };
@@ -106,7 +108,8 @@ export const GENRE_TEMPLATES: Record<string, GenreTemplate> = {
     hook: { program: 80, role: "lead", octave: 5, pattern: "3 5 5 8 | 5@2 3 1 | 1 3 5 8 | 8@2 5@2" },
   },
   afrobeats: {
-    defaultBpm: 108, kit: KIT.roots, humanize: "natural",
+    // M13.17 (eval/m13-17): the 808 kit moved afrobeats up in CLAP's genre ranking of GM drafts on every seed, in 5 keys
+    defaultBpm: 108, kit: KIT.tr808, humanize: "natural",
     form: [sec("intro", 4, { arp: true }), sec("verse", 8, { drums: "full", bass: true, arp: true }), sec("hook", 8, { drums: "full", bass: true, arp: true, hook: true, pad: true, prog: "b" }), sec("outro", 4, { drums: "full", bass: true, arp: true })],
     progression: { minor: { a: "i | iv | VII | III", b: "VI | VII | i | i" }, major: { a: "I | vi | IV | V", b: "IV | V | I | vi" } },
     // Live renders: GarageBand's "Classic Analog Pad" (89) and a bassless outro moved the beat tracker half a beat off
@@ -237,7 +240,17 @@ function hookBar(pattern: string, chord: string, octave: number): string {
 const NOTE_PC: Record<string, number> = { c: 0, "c#": 1, db: 1, d: 2, "d#": 3, eb: 3, e: 4, f: 5, "f#": 6, gb: 6, g: 7, "g#": 8, ab: 8, a: 9, "a#": 10, bb: 10, b: 11 };
 const PC_NAME = ["c", "c#", "d", "eb", "e", "f", "f#", "g", "ab", "a", "bb", "b"];
 
-export type TemplateRequest = { genre: string; key: string; bpm?: number; meter?: number; title?: string; seed?: number };
+/** variant: 0 (default) the hand-written progressions; 1–3 the genre's common loops (M13.16, common-loops.ts). */
+export type TemplateRequest = { genre: string; key: string; bpm?: number; meter?: number; title?: string; seed?: number; variant?: number };
+
+const SEVENTHS: Record<string, string> = { I: "Imaj7", ii: "ii7", iii: "iii7", IV: "IVmaj7", V: "V7", vi: "vi7",
+  i: "i7", III: "IIImaj7", iv: "iv7", v: "v7", VI: "VImaj7", VII: "VII7" };
+
+/** A common loop (triads) in the template's colour: sevenths when its own progression has them. */
+function coloured(loop: string, own: string): string {
+  if (!/\d|maj|ø/.test(own)) return loop;
+  return loop.split("|").map((c) => SEVENTHS[c.trim()] ?? c.trim()).join(" | ");
+}
 
 /** A complete Song JSON draft for the genre, in the key and at the tempo given. */
 export function templateSong(req: TemplateRequest): Result<Record<string, unknown>, string> {
@@ -245,7 +258,12 @@ export function templateSong(req: TemplateRequest): Result<Record<string, unknow
   if (!t) return err(`unknown genre "${req.genre}"; genres: ${Object.keys(GENRE_TEMPLATES).join(", ")}`);
   const minor = parseKey(req.key).minor;
   const meter = req.meter ?? 4;
-  const prog = minor ? t.progression.minor : t.progression.major;
+  const own = minor ? t.progression.minor : t.progression.major;
+  const common = COMMON_LOOPS[req.genre]?.[minor ? "minor" : "major"];
+  const v = req.variant ?? 0;
+  const prog = v > 0 && common
+    ? { a: coloured(common.verse[v - 1]!, own.a), b: coloured(common.chorus[v - 1]!, own.b) }
+    : own;
   const chords = { a: romanToChords(prog.a, req.key), b: romanToChords(prog.b, req.key) };
   const of = (s: Section) => chords[s.prog ?? "a"];
   const each = <T>(flag: keyof Section, part: (s: Section) => T) => Object.fromEntries(t.form.filter((s) => s[flag]).map((s) => [s.name, part(s)]));

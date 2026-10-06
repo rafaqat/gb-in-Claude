@@ -64,3 +64,29 @@ class CliTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MasterCliTest(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.wav = Path(self.dir.name, "mix.wav")
+        sf.write(str(self.wav), full_mix(120, 8) * 0.3, SR)
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def test_master_writes_the_copy_and_prints_one_json_document(self):
+        out = Path(self.dir.name, "mix-master.wav")
+        code, lines, doc = run("master", "--input", str(self.wav), "--output", str(out), "--lufs", "-14", "--peak", "-1")
+        self.assertEqual((code, len(lines)), (0, 1))
+        self.assertTrue(doc["ok"])
+        self.assertAlmostEqual(doc["result"]["after"]["lufs"], -14.0, delta=0.5)
+        self.assertTrue(out.is_file())
+
+    def test_master_refuses_a_taken_output_name_with_a_typed_error(self):
+        out = Path(self.dir.name, "taken.wav")
+        out.write_bytes(b"")
+        code, _, doc = run("master", "--input", str(self.wav), "--output", str(out))
+        self.assertEqual(code, 2)
+        self.assertEqual(doc["error"]["code"], "FILE_EXISTS")
+        self.assertEqual(out.stat().st_size, 0)

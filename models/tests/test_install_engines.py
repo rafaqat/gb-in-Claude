@@ -92,3 +92,68 @@ class DryRun(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BaseModel(unittest.TestCase):
+    """M13.10: ace-step-base = ACE-Step's code and venv plus the pinned base weights (lego, complete)."""
+
+    def test_it_shares_ace_steps_code_and_adds_only_the_base_weights(self):
+        from gbmodels import ace_step
+        base, main = ie.ENGINES["ace-step-base"], ie.ENGINES["ace-step"]
+        self.assertEqual((base["commit"], base["dir"], base["gbmodels_env"]), (main["commit"], main["dir"], main["gbmodels_env"]))
+        self.assertEqual(base["weights"], [("ACE-Step/acestep-v15-base", ace_step.BASE_REVISION, "{code}/checkpoints/acestep-v15-base")])
+        self.assertEqual(len(ace_step.BASE_REVISION), 40)
+
+
+class Roformer(unittest.TestCase):
+    """M13.12: the RoFormer vocal separator has no code to clone — a folder, its own venv (audio-separator, pinned)
+    and Kim's MelBand RoFormer weights (MIT, a pinned revision)."""
+
+    def test_its_pins_come_from_the_roformer_module(self):
+        from gbmodels import roformer
+        e = ie.ENGINES["roformer"]
+        self.assertIsNone(e["repo"])
+        self.assertEqual(e["weights"], [(roformer.WEIGHTS_REPO, roformer.WEIGHTS_REVISION, "{code}/models")])
+        self.assertIn(f"audio-separator[cpu]=={roformer.AUDIO_SEPARATOR}", [a for argv in e["venv"] for a in argv])
+        self.assertEqual((e["gbmodels_env"], len(roformer.WEIGHTS_REVISION)), ("roformer", 40))
+
+    def test_its_venv_can_download_its_weights(self):
+        # the weights step runs snapshot_download with the engine's own python (it was missing)
+        e = ie.ENGINES["roformer"]
+        self.assertIn("huggingface_hub", e["imports"])
+        self.assertTrue(any(a.startswith("huggingface_hub==") for argv in e["venv"] for a in argv))
+
+    def test_code_state_without_a_repository_is_the_folder(self):
+        d = tempfile.mkdtemp()
+        self.assertEqual(ie.code_state(d, None)[0], "ok")
+        self.assertEqual(ie.code_state(os.path.join(d, "none"), None)[0], "missing")
+
+    def test_a_fresh_install_makes_the_folder_then_the_venv_then_the_weights(self):
+        steps = ie.plan("roformer", {"code": ("missing", ""), "venv": "missing", "weights": ["missing"]})
+        self.assertEqual([s.kind for s in steps], ["folder", "venv", "weights"])
+
+    def test_a_checkpoint_counts_as_weights(self):
+        d = tempfile.mkdtemp()
+        open(os.path.join(d, "MelBandRoformer.ckpt"), "wb").write(b"x")
+        self.assertEqual(ie.weights_state(d), "ok")
+
+
+class Sections(unittest.TestCase):
+    """M13.13: all-in-one in its own venv — no code to clone, its packages pinned, madmom from git at a commit, and
+    the weights (MIT) at a pinned revision; NATTEN is not installed (gb-mcp's natten_mps replaces it)."""
+
+    def test_its_pins_come_from_the_sections_module(self):
+        from gbmodels import sections
+        e = ie.ENGINES["sections"]
+        argv = [a for c in e["venv"] for a in c]
+        self.assertIsNone(e["repo"])
+        self.assertEqual(e["weights"], [(sections.WEIGHTS_REPO, sections.WEIGHTS_REVISION, "{code}/models")])
+        self.assertIn(f"allin1=={sections.ALLIN1}", argv)
+        self.assertIn(f"git+https://github.com/CPJKU/madmom@{sections.MADMOM_COMMIT}", argv)
+        self.assertFalse(any(a.startswith("natten") for a in argv))
+        self.assertIn("huggingface_hub", e["imports"])
+
+    def test_pytorch_weights_count_as_weights(self):
+        d = tempfile.mkdtemp()
+        open(os.path.join(d, "harmonix-fold0-0vra4ys2.pth"), "wb").write(b"x")
+        self.assertEqual(ie.weights_state(d), "ok")

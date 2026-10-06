@@ -169,6 +169,29 @@ class SeparateTest(unittest.TestCase):
             self.assertLess(10 * np.log10(np.mean(residual ** 2) / np.mean(mix[:n] ** 2)), -20)
 
 
+class SplitTest(unittest.TestCase):
+    """M13.12: after RoFormer takes the vocal out, Demucs splits the instrumental — drums, bass, and the rest as other,
+    so the three stems add up to the instrumental exactly (nothing is lost or added)."""
+
+    def test_drums_bass_and_other_add_up_to_the_instrumental_and_no_vocal_is_written(self):
+        with tempfile.TemporaryDirectory() as d:
+            x, times = clicks(100, 12)
+            inst = x + tone(110, len(x) / SR) * 0.5
+            src = os.path.join(d, "song-instrumental.wav")
+            sf.write(src, inst, SR, subtype="PCM_24")
+            out = os.path.join(d, "stems")
+            r = stems.run(stems.load("mps"), {"op": "split", "wav": src, "out_dir": out, "base": "song"})
+            self.assertEqual(sorted(r["stems"]), ["bass", "drums", "other"])
+            self.assertFalse(os.path.exists(os.path.join(out, "song-vocals.wav")))
+            parts = {name: sf.read(path, always_2d=True)[0] for name, path in r["stems"].items()}
+            self.assertEqual({len(p) for p in parts.values()}, {len(inst)})
+            back, _ = sf.read(src, always_2d=True)
+            residual = back - sum(parts.values())
+            self.assertLess(10 * np.log10(np.mean(residual ** 2) / np.mean(back ** 2)), -90)  # 24-bit rounding only
+            with self.assertRaises(FileExistsError):
+                stems.run(stems.load("mps"), {"op": "split", "wav": src, "out_dir": out, "base": "song"})
+
+
 class NoEscapeTest(unittest.TestCase):
     """Security review of 8591c80: a dangling link at an output name must not let a write leave the folder."""
 

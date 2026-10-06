@@ -104,3 +104,38 @@ describe("validateSong: expression against what the patch can do (M11, probe 202
     expect(codes(check({ program: 81, parts: { a: { notes: "c5", brightness: 0.2 } } }))).toEqual([]);
   });
 });
+
+describe("validateSong: voice leading (M13.4, warnings only)", () => {
+  const two = { title: "T", tempo: 120, sections: [{ name: "a", bars: 2 }] };
+  const leadOverBass = (lead: string, bassChords: string) => song({ ...two, tracks: [
+    { name: "Lead", role: "lead", parts: { a: { notes: lead } } },
+    { name: "Bass", role: "bass", parts: { a: { chords: bassChords, style: "sustain" } } },
+  ] });
+  const issues = (lead: string, bassChords: string) => validateSong(leadOverBass(lead, bassChords), { voiceLeading: true });
+
+  it("is opt-in: by default validate says nothing about voice leading (pop and EDM double the bass on purpose)", () => {
+    expect(validateSong(leadOverBass("g4 | a4", "C | D")).map((i) => i.code)).not.toContain("PARALLEL_FIFTHS");
+  });
+
+  it("warns when the lead and the bass move in parallel fifths, naming the bar", () => {
+    const w = issues("g4 | a4", "C | D").find((i) => i.code === "PARALLEL_FIFTHS");
+    expect(w).toMatchObject({ severity: "warning", path: "tracks.Lead" });
+    expect(w!.message).toMatch(/Bass.*bar 2/);
+  });
+
+  it("warns about parallel octaves", () => {
+    expect(issues("c5 | d5", "C | D").map((i) => i.code)).toContain("PARALLEL_OCTAVES");
+  });
+
+  it("says nothing for contrary motion, even into a perfect fifth (g5 → a4 over C → D)", () => {
+    expect(issues("g5 | a4", "C | D").filter((i) => i.code.startsWith("PARALLEL"))).toEqual([]);
+  });
+
+  it("warns about a leap over an octave inside a phrase", () => {
+    expect(issues("c5 e6 | d5", "C | D").map((i) => i.code)).toContain("LARGE_LEAP");
+  });
+
+  it("warns when the lead goes below the bass", () => {
+    expect(issues("c5 | c2", "C | D").map((i) => i.code)).toContain("VOICE_CROSSING");
+  });
+});

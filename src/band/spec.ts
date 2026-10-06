@@ -17,6 +17,8 @@ export const BandRegion = z.object({
   tick: z.number().int().min(0).max(2_000_000_000).describe("start, in ticks from the song start (960 per quarter note)"),
   track: z.number().int().min(1).max(255).describe("1-based audio track of the donor"),
   name: z.string().regex(REGION_NAME, "printable ASCII, at most 38 characters").optional().describe("region name; default: the file name"),
+  /** M13.18: only this channel (0 left, 1 right) of a stereo WAV, written as a mono file "<name>-L.wav" / "-R.wav". */
+  channel: z.union([z.literal(0), z.literal(1)]).optional(),
 }).strict();
 export type BandRegion = z.infer<typeof BandRegion>;
 
@@ -44,6 +46,9 @@ export const BuildBandInput = z.object({
   regions: z.array(BandRegion).min(1).max(64),
   midi: z.array(BandMidi).max(64).optional().describe("new notes for the donor's MIDI regions, by region name")
     .refine((m) => !m || new Set(m.map((x) => x.region)).size === m.length, { message: "each MIDI region may be named once" }),
+  /** M13.18: pans for the donor's audio tracks (−64 hard left … +63 hard right), written into their channels. */
+  pans: z.array(z.object({ track: z.number().int().min(1).max(255), pan: z.number().int().min(-64).max(63) }).strict()).max(64).optional()
+    .refine((p) => !p || new Set(p.map((x) => x.track)).size === p.length, { message: "each track may be panned once" }),
 }).strict();
 export type BuildBandInput = z.infer<typeof BuildBandInput>;
 

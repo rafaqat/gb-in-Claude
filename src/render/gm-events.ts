@@ -9,7 +9,7 @@ export type GmEventList = { duration_s: number; events: TimedMidi[] };
 const ORDER = { program: 0, off: 1, controller: 2, on: 3 } as const;
 
 /** Tick → seconds through the song's tempo map (M11: ritardando, accelerando, section tempi). */
-function clock(song: SmfSong): (tick: number) => number {
+export function clock(song: SmfSong): (tick: number) => number {
   const changes = [{ tick: 0, bpm: song.tempoBpm }, ...(song.tempoMap ?? [])].sort((a, b) => a.tick - b.tick);
   const starts: number[] = [0];
   for (let i = 1; i < changes.length; i++) {

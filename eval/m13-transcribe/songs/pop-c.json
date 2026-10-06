@@ -1,0 +1,158 @@
+{
+ "title": "transcribe bench pop-c",
+ "tempo": 105,
+ "key": "C major",
+ "timeSignature": [
+  4,
+  4
+ ],
+ "seed": 1,
+ "humanize": "natural",
+ "groove": "pop",
+ "sections": [
+  {
+   "name": "verse",
+   "bars": 8
+  },
+  {
+   "name": "pre",
+   "bars": 4
+  },
+  {
+   "name": "chorus",
+   "bars": 8
+  },
+  {
+   "name": "bridge",
+   "bars": 4
+  },
+  {
+   "name": "chorus2",
+   "bars": 8
+  }
+ ],
+ "tracks": [
+  {
+   "name": "Drums",
+   "role": "drums",
+   "program": 0,
+   "parts": {
+    "verse": {
+     "grid": {
+      "kick": "x.......x.x.....",
+      "hat": "x.x.x.x.x.x.x.x."
+     }
+    },
+    "pre": {
+     "grid": {
+      "kick": "x.....o.o.......",
+      "snare": "....X...x...X...",
+      "hat": "x.o.X.o.x.o.X.o."
+     }
+    },
+    "chorus": {
+     "grid": {
+      "kick": "x.....o.o.......",
+      "snare": "....X...x...X...",
+      "hat": "x.o.X.o.x.o.X.o."
+     }
+    },
+    "chorus2": {
+     "grid": {
+      "kick": "x.....o.o.......",
+      "snare": "....X...x...X...",
+      "hat": "x.o.X.o.x.o.X.o."
+     }
+    }
+   }
+  },
+  {
+   "name": "Chords",
+   "role": "pad",
+   "program": 0,
+   "parts": {
+    "verse": {
+     "chords": "C | G | Am | F",
+     "style": "stabs"
+    },
+    "pre": {
+     "chords": "C | G | Am | F",
+     "style": "stabs"
+    },
+    "chorus": {
+     "chords": "Am | F | C | G",
+     "style": "stabs"
+    },
+    "bridge": {
+     "chords": "Am | F | C | G",
+     "style": "stabs"
+    },
+    "chorus2": {
+     "chords": "Am | F | C | G",
+     "style": "stabs"
+    }
+   }
+  },
+  {
+   "name": "Arp",
+   "role": "arp",
+   "program": 89,
+   "level": -6,
+   "parts": {
+    "chorus": {
+     "chords": "Am | F | C | G",
+     "style": "updown"
+    },
+    "chorus2": {
+     "chords": "Am | F | C | G",
+     "style": "updown"
+    }
+   }
+  },
+  {
+   "name": "Bass",
+   "role": "bass",
+   "program": 33,
+   "parts": {
+    "verse": {
+     "chords": "C | G | Am | F",
+     "style": "offbeat"
+    },
+    "pre": {
+     "chords": "C | G | Am | F",
+     "style": "offbeat"
+    },
+    "chorus": {
+     "chords": "Am | F | C | G",
+     "style": "offbeat"
+    },
+    "chorus2": {
+     "chords": "Am | F | C | G",
+     "style": "offbeat"
+    }
+   }
+  },
+  {
+   "name": "Vocal",
+   "role": "lead",
+   "program": 53,
+   "parts": {
+    "verse": {
+     "notes": "~@2 a4@2 g4@2 a4@4 d5@2 e5@2 b4@2 | ~@2 d5@2 b4@2 c5@4 f5@2 d5@2 f5@2 | c5@2 a4@2 e4@2 d4@2 c4@8 | ~@2 d4@2 f4@2 e4@4 f4@2 a4@2 c5@2 | g4@4 c5@2 a4@4 e4@2 g4@4 | ~@4 d4@2 c4@2 d4@4 g4@4 | ~@2 a4@2 c5@2 g4@4 c5@2 e5@2 c5@2 | a4@2 d5@2 c5@4 f5@2 d5@2 c5@4"
+    },
+    "pre": {
+     "notes": "g4@2 a4@2 e4@2 f4@2 e4@8 | ~@4 d4@2 e4@2 d4@4 g4@4 | a4@2 c5@2 a4@2 b4@2 c5@8 | a4@4 f4@2 g4@4 a4@2 f4@4"
+    },
+    "chorus": {
+     "notes": "e4@6 a4@2 c5@4 e5@4 | f5@8 c5@8 | g4@8 c5@8 | d5@2 b4@2 g4@4 d4@2 c4@2 d4@4 | ~@2 f4@2 c4@2 e4@4 g4@2 c5@2 f5@2 | ~@2 e5@2 f5@2 d5@4 a4@2 c5@2 d5@2 | ~@4 g5@2 d5@2 c5@4 e5@4 | ~@4 d5@2 g5@2 d5@4 g5@4"
+    },
+    "bridge": {
+     "notes": "e5@2 c5@2 e5@2 d5@2 c5@8 | f5@4 c5@4 a4@2 b4@2 a4@4 | c5@4 e5@4 g5@2 d5@2 e5@4 | d5@4 g5@2 e5@4 b4@2 g4@4"
+    },
+    "chorus2": {
+     "notes": "e4@8 a4@8 | f4@2 a4@2 c5@4 f5@2 g5@2 f5@4 | ~@4 c5@2 a4@2 g4@4 e4@4 | g4@8 d4@8 | c4@2 d4@2 c4@4 e4@2 f4@2 e4@4 | ~@2 d4@2 f4@2 d4@4 e4@2 c4@2 f4@2 | e4@6 g4@2 e4@4 c4@4 | d4@4 g4@4 b4@2 g4@2 b4@4"
+    }
+   }
+  }
+ ]
+}

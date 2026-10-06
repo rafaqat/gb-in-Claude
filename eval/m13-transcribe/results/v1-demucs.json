@@ -1,0 +1,460 @@
+{
+ "oracle": false,
+ "results": [
+  {
+   "id": "drift-g",
+   "seconds": 20.409,
+   "steady": false,
+   "lead_source": "vocals",
+   "tempo": {
+    "truth": 120,
+    "truth_map": 4,
+    "draft": 123.077,
+    "draft_map": 21,
+    "map_bpm": 123.077
+   },
+   "bar_line_ms": {
+    "median": 7.446,
+    "p90": 15.095
+   },
+   "key": {
+    "truth": "G major",
+    "draft": "G major",
+    "relation": "exact"
+   },
+   "chords": {
+    "halves": 48,
+    "root": 0.958,
+    "majmin": 0.958
+   },
+   "bass": {
+    "per_beat": {
+     "beats": 64,
+     "exact": 0.953,
+     "pitch_class": 0.953
+    },
+    "notes": {
+     "truth": 192,
+     "est": 187,
+     "matched": 176,
+     "precision": 0.941,
+     "recall": 0.917,
+     "f": 0.929
+    }
+   },
+   "lead": {
+    "notes": {
+     "truth": 80,
+     "est": 180,
+     "matched": 29,
+     "precision": 0.161,
+     "recall": 0.363,
+     "f": 0.223
+    },
+    "onsets": {
+     "truth": 80,
+     "est": 180,
+     "matched": 74,
+     "precision": 0.411,
+     "recall": 0.925,
+     "f": 0.569
+    },
+    "per_beat": {
+     "beats": 65,
+     "exact": 0.754,
+     "pitch_class": 0.754
+    }
+   },
+   "drums": {
+    "kick": {
+     "truth": 80,
+     "est": 65,
+     "matched": 65,
+     "precision": 1,
+     "recall": 0.813,
+     "f": 0.897
+    },
+    "snare": {
+     "truth": 40,
+     "est": 40,
+     "matched": 40,
+     "precision": 1,
+     "recall": 1,
+     "f": 1
+    },
+    "hat": {
+     "truth": 160,
+     "est": 111,
+     "matched": 111,
+     "precision": 1,
+     "recall": 0.694,
+     "f": 0.819
+    }
+   }
+  },
+  {
+   "id": "funk-em",
+   "seconds": 20.361,
+   "steady": true,
+   "lead_source": "vocals",
+   "tempo": {
+    "truth": 110,
+    "truth_map": 0,
+    "draft": 109.99,
+    "draft_map": 0,
+    "map_bpm": 109.991
+   },
+   "bar_line_ms": {
+    "median": 3.718,
+    "p90": 5.273
+   },
+   "key": {
+    "truth": "E minor",
+    "draft": "E minor",
+    "relation": "exact"
+   },
+   "chords": {
+    "halves": 40,
+    "root": 1,
+    "majmin": 0.9
+   },
+   "bass": {
+    "per_beat": {
+     "beats": 80,
+     "exact": 0.888,
+     "pitch_class": 0.888
+    },
+    "notes": {
+     "truth": 240,
+     "est": 228,
+     "matched": 207,
+     "precision": 0.908,
+     "recall": 0.863,
+     "f": 0.885
+    }
+   },
+   "lead": {
+    "notes": {
+     "truth": 71,
+     "est": 149,
+     "matched": 27,
+     "precision": 0.181,
+     "recall": 0.38,
+     "f": 0.245
+    },
+    "onsets": {
+     "truth": 71,
+     "est": 149,
+     "matched": 55,
+     "precision": 0.369,
+     "recall": 0.775,
+     "f": 0.5
+    },
+    "per_beat": {
+     "beats": 65,
+     "exact": 0.6,
+     "pitch_class": 0.615
+    }
+   },
+   "drums": {
+    "kick": {
+     "truth": 100,
+     "est": 66,
+     "matched": 66,
+     "precision": 1,
+     "recall": 0.66,
+     "f": 0.795
+    },
+    "snare": {
+     "truth": 160,
+     "est": 72,
+     "matched": 71,
+     "precision": 0.986,
+     "recall": 0.444,
+     "f": 0.612
+    },
+    "hat": {
+     "truth": 144,
+     "est": 129,
+     "matched": 117,
+     "precision": 0.907,
+     "recall": 0.813,
+     "f": 0.857
+    }
+   }
+  },
+  {
+   "id": "house-am",
+   "seconds": 19.668,
+   "steady": true,
+   "lead_source": "vocals",
+   "tempo": {
+    "truth": 122,
+    "truth_map": 0,
+    "draft": 121.95,
+    "draft_map": 0,
+    "map_bpm": 121.951
+   },
+   "bar_line_ms": {
+    "median": 6.69,
+    "p90": 17.22
+   },
+   "key": {
+    "truth": "A minor",
+    "draft": "A minor",
+    "relation": "exact"
+   },
+   "chords": {
+    "halves": 48,
+    "root": 0.625,
+    "majmin": 0.625
+   },
+   "bass": {
+    "per_beat": {
+     "beats": 64,
+     "exact": 0,
+     "pitch_class": 0
+    },
+    "notes": {
+     "truth": 64,
+     "est": 4,
+     "matched": 0,
+     "precision": 0,
+     "recall": 0,
+     "f": 0
+    }
+   },
+   "lead": {
+    "notes": {
+     "truth": 76,
+     "est": 136,
+     "matched": 28,
+     "precision": 0.206,
+     "recall": 0.368,
+     "f": 0.264
+    },
+    "onsets": {
+     "truth": 76,
+     "est": 136,
+     "matched": 54,
+     "precision": 0.397,
+     "recall": 0.711,
+     "f": 0.509
+    },
+    "per_beat": {
+     "beats": 65,
+     "exact": 0.585,
+     "pitch_class": 0.585
+    }
+   },
+   "drums": {
+    "kick": {
+     "truth": 96,
+     "est": 96,
+     "matched": 96,
+     "precision": 1,
+     "recall": 1,
+     "f": 1
+    },
+    "snare": {
+     "truth": 32,
+     "est": 96,
+     "matched": 32,
+     "precision": 0.333,
+     "recall": 1,
+     "f": 0.5
+    },
+    "hat": {
+     "truth": 320,
+     "est": 253,
+     "matched": 221,
+     "precision": 0.874,
+     "recall": 0.691,
+     "f": 0.771
+    }
+   }
+  },
+  {
+   "id": "pop-c",
+   "seconds": 17.611,
+   "steady": true,
+   "lead_source": "vocals",
+   "tempo": {
+    "truth": 105,
+    "truth_map": 0,
+    "draft": 104.96,
+    "draft_map": 0,
+    "map_bpm": 104.963
+   },
+   "bar_line_ms": {
+    "median": 7.057,
+    "p90": 17.243
+   },
+   "key": {
+    "truth": "C major",
+    "draft": "C major",
+    "relation": "exact"
+   },
+   "chords": {
+    "halves": 64,
+    "root": 0.938,
+    "majmin": 0.938
+   },
+   "bass": {
+    "per_beat": {
+     "beats": 112,
+     "exact": 1,
+     "pitch_class": 1
+    },
+    "notes": {
+     "truth": 112,
+     "est": 133,
+     "matched": 112,
+     "precision": 0.842,
+     "recall": 1,
+     "f": 0.914
+    }
+   },
+   "lead": {
+    "notes": {
+     "truth": 152,
+     "est": 243,
+     "matched": 63,
+     "precision": 0.259,
+     "recall": 0.414,
+     "f": 0.319
+    },
+    "onsets": {
+     "truth": 152,
+     "est": 243,
+     "matched": 124,
+     "precision": 0.51,
+     "recall": 0.816,
+     "f": 0.628
+    },
+    "per_beat": {
+     "beats": 127,
+     "exact": 0.74,
+     "pitch_class": 0.74
+    }
+   },
+   "drums": {
+    "kick": {
+     "truth": 84,
+     "est": 64,
+     "matched": 64,
+     "precision": 1,
+     "recall": 0.762,
+     "f": 0.865
+    },
+    "snare": {
+     "truth": 60,
+     "est": 61,
+     "matched": 60,
+     "precision": 0.984,
+     "recall": 1,
+     "f": 0.992
+    },
+    "hat": {
+     "truth": 224,
+     "est": 121,
+     "matched": 121,
+     "precision": 1,
+     "recall": 0.54,
+     "f": 0.701
+    }
+   }
+  },
+  {
+   "id": "rnb-eb",
+   "seconds": 24.553,
+   "steady": true,
+   "lead_source": "vocals",
+   "tempo": {
+    "truth": 75,
+    "truth_map": 0,
+    "draft": 75,
+    "draft_map": 0,
+    "map_bpm": 75
+   },
+   "bar_line_ms": {
+    "median": 9.6,
+    "p90": 9.6
+   },
+   "key": {
+    "truth": "Eb major",
+    "draft": "D# major",
+    "relation": "exact"
+   },
+   "chords": {
+    "halves": 48,
+    "root": 0.833,
+    "majmin": 0.833
+   },
+   "bass": {
+    "per_beat": {
+     "beats": 64,
+     "exact": 0.406,
+     "pitch_class": 0.406
+    },
+    "notes": {
+     "truth": 16,
+     "est": 23,
+     "matched": 6,
+     "precision": 0.261,
+     "recall": 0.375,
+     "f": 0.308
+    }
+   },
+   "lead": {
+    "notes": {
+     "truth": 76,
+     "est": 169,
+     "matched": 43,
+     "precision": 0.254,
+     "recall": 0.566,
+     "f": 0.351
+    },
+    "onsets": {
+     "truth": 76,
+     "est": 169,
+     "matched": 73,
+     "precision": 0.432,
+     "recall": 0.961,
+     "f": 0.596
+    },
+    "per_beat": {
+     "beats": 64,
+     "exact": 0.719,
+     "pitch_class": 0.719
+    }
+   },
+   "drums": {
+    "kick": {
+     "truth": 48,
+     "est": 48,
+     "matched": 48,
+     "precision": 1,
+     "recall": 1,
+     "f": 1
+    },
+    "snare": {
+     "truth": 32,
+     "est": 80,
+     "matched": 32,
+     "precision": 0.4,
+     "recall": 1,
+     "f": 0.571
+    },
+    "hat": {
+     "truth": 160,
+     "est": 160,
+     "matched": 160,
+     "precision": 1,
+     "recall": 1,
+     "f": 1
+    }
+   }
+  }
+ ]
+}

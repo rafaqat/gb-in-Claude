@@ -171,16 +171,43 @@ def separate(handle: dict, inputs: dict) -> dict:
     existing = [p for p in targets.values() if os.path.lexists(p)]  # a dangling link counts
     if existing:
         raise FileExistsError(f"stems already exist: {', '.join(os.path.basename(p) for p in existing)}")
+    sep = _demucs(handle)
+    _, parts = sep.separate_audio_file(inputs["wav"])
+    for name, path in targets.items():
+        write_pcm(path, parts[name].detach().cpu().numpy().T, sep.samplerate, int(inputs.get("bits", 24)))
+    return {"stems": targets, "model": DEMUCS_MODEL, "rate": sep.samplerate}
+
+
+def _demucs(handle: dict):
     if handle.get("demucs") is None:
         from demucs.api import Separator
         try:
             handle["demucs"] = Separator(model=DEMUCS_MODEL, device=handle["device"])
         except Exception:
             handle["demucs"] = Separator(model=DEMUCS_MODEL, device="cpu")  # an op Metal lacks: run on the CPU
-    sep = handle["demucs"]
-    _, parts = sep.separate_audio_file(inputs["wav"])
+    return handle["demucs"]
+
+
+def split(handle: dict, inputs: dict) -> dict:
+    """M13.12: an instrumental (the mix without its vocal, from RoFormer) → out_dir/<base>-drums, -bass, -other.wav.
+    Demucs gives drums and bass; other is all the rest (Demucs' other and the vocal it still hears), so the three add
+    up to the instrumental. One gain for all three if a peak would clip. Never overwrites."""
+    import os
+    os.makedirs(inputs["out_dir"], exist_ok=True)
+    base = inputs["base"]
+    targets = {s: os.path.join(inputs["out_dir"], f"{base}-{s}.wav") for s in ("drums", "bass", "other")}
+    existing = [p for p in targets.values() if os.path.lexists(p)]
+    if existing:
+        raise FileExistsError(f"stems already exist: {', '.join(os.path.basename(p) for p in existing)}")
+    sep = _demucs(handle)
+    whole, parts = sep.separate_audio_file(inputs["wav"])
+    x = whole.detach().cpu().numpy().T
+    out = {s: parts[s].detach().cpu().numpy().T for s in ("drums", "bass")}
+    out["other"] = x - out["drums"] - out["bass"]
+    peak = max(float(np.abs(v).max()) for v in out.values())
+    gain = 0.999 / peak if peak > 1.0 else 1.0
     for name, path in targets.items():
-        write_pcm(path, parts[name].detach().cpu().numpy().T, sep.samplerate, int(inputs.get("bits", 24)))
+        write_pcm(path, out[name] * gain, sep.samplerate, int(inputs.get("bits", 24)))
     return {"stems": targets, "model": DEMUCS_MODEL, "rate": sep.samplerate}
 
 
@@ -196,4 +223,6 @@ def run(handle: dict, inputs: dict) -> dict:
         return inspect(handle, inputs)
     if op == "separate":
         return separate(handle, inputs)
-    raise ValueError(f"op must be inspect, prepare or separate (got {op!r})")
+    if op == "split":
+        return split(handle, inputs)
+    raise ValueError(f"op must be inspect, prepare, separate or split (got {op!r})")

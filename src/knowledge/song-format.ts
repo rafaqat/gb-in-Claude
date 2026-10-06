@@ -4,6 +4,8 @@
 export const SONG_FORMAT_GUIDE = `# Song JSON (gb-mcp)
 
 Workflow: gb_song validate → preview (per section) → render_midi → open in GarageBand.
+Classical, choral or orchestral writing: gb_song validate {song, voice_leading: true} adds warnings for parallel
+fifths/octaves between a lead and the bass, leaps over an octave inside a phrase, and a lead below the bass.
 Pitches are scientific (C4 = MIDI 60). GarageBand displays MIDI 60 as "C3" — do not adjust for that.
 
 ## Top level
@@ -32,6 +34,9 @@ any non-drum role — notes: "f5 ab5 c6 ~ | eb6@2 c6 ~"
 ## Genre drafts and grooves (M9)
 gb_song template {genre, key, bpm?, meter?} → a complete Song JSON draft for the genre: form, progressions, the
 genre's GarageBand drum kit and instruments, bass style, a hook, and drums. Start from it, then make it yours.
+  variant: 1–3 → the same draft on the genre's 1st, 2nd or 3rd most common 4-chord loops in verses (a-sections) and
+  choruses (b-sections), in the template's chord colour — counted in songs tagged with the genre in Chordonomicon
+  (Kantarelis et al. 2024; CC BY-NC dataset, not part of gb-mcp). Rare tags use all genres (progressions.source says).
   genres: lo-fi hip-hop · R&B · ambient · jazz ballad · reggaeton · synthwave · pop · afrobeats · funk · indie rock ·
   deep house · techno · UK garage · trap · drum and bass · EDM (big room) · classical/pop crossover ·
   ambient trance (William Orbit style) · Levantine ethereal strings (Fairuz style) · epic orchestral (Hans Zimmer style)
@@ -58,6 +63,8 @@ On a notes/chords part:
   brightness 0–1 | {from, to} (CC74, synth patches)   volume 0–1 | {from, to} (CC7, fades; 1 = default)
 On a drum part: volume (fades). Drums take levels, not dynamics.
 sections[].tempo (new tempo from the section) · sections[].tempoTo (ramp to it by the section end: rit./accel.)
+tempoMap: [{bar, beat?, bpm}] — a tempo from that bar (absolute, from the song's start) on; for a project whose bar
+  lines follow a recording that drifts (gb_analyze map gives it). Not together with section tempo/tempoTo.
 Automatic: a key signature from "key", a marker per section. GarageBand ignores CC1 on sampled patches, aftertouch,
 portamento, reverb/chorus sends, mid-track program changes and RPN tuning — gb-mcp does not offer them.
 gb_band build: notes may carry slides and cent offsets too (bends written into the .band region).
@@ -70,6 +77,23 @@ exact ≈ 1–1.5 min per 8 bars, fast ≈ 20 s (shorter context: listen before 
 Drums are never infilled. Two tracks on the same instrument cannot be infilled together.
 candidates: 2–4 takes (seeds seed, seed+1, …) and judge: "what the music should be" → CLaMP 3 ranks the takes against
 that text and returns the best (scores of all takes in "takes": a ranking, not a grade).
+
+## From a recording (M13.14)
+gb_song transcribe {path: "gen/song.wav", filename?: "song-v1.song.json", dry_run?} → a Song JSON draft that plays like
+the recording. It runs gb_analyze map (Demucs stems), then transcribes the stems on the map's GarageBand bars:
+  tempo, and tempoMap when the take drifts · key · sections (the map's, or one section "song" without the section engine)
+  Chords: the map's chord per half bar, sustained · Bass: the bass stem (pYIN) · Lead: the vocal stem (pYIN)
+  Drums: kick, snare and hat per 16th step (X accent, x hit, o ghost)
+Notes are straight 16ths: no swing, no note velocities. A note that holds over a bar line is struck again in the next
+bar (Song JSON has no ties). The draft's bar 1 is bar 1 of gb_project from_audio's project (the stems start at
+place.beat of bar 1), so the draft's MIDI lines up with the stems there.
+Warnings: BASS_FROM_CHORDS — the bass stem is silent (the separation put the bass in another stem). The bass plays the
+chord roots. NO_LEAD — the vocal stem is silent. gb-mcp does not transcribe an instrumental melody.
+Measured (eval/m13-transcribe: 5 GM renders with known notes, Demucs stems): tempo within 0.05 BPM, key 5 of 5, chord
+root 0.63–1.00 per half bar (it reads 7th chords as triads), bass pitch per beat 0.48–1.00, lead notes 0.48–0.81
+(F-measure: onset within 50 ms and the same pitch), kick 0.88–1.00, snare 0.50–1.00, hat 0.72–1.00. On clean stems the
+lead is 0.93–0.97: most lead errors come from the separation.
+It is a draft: listen to it (render_draft), correct the wrong notes, then render_midi.
 
 ## Audio clips (WAVs: stems, vocals, samples) — built by gb_band, not by render_midi
 a track may hold audio: { donorTrack: n, audio: [{ wav, section, bar?, beat? }] }

@@ -82,3 +82,27 @@ export function withOverview(b: Uint8Array): Result<Uint8Array, WavError> {
   ov.setUint32(4, out.length - 8, true);
   return ok(out);
 }
+
+/**
+ * One channel (0 left, 1 right) of a stereo PCM WAV as a mono PCM WAV with the same rate and bits (M13.18).
+ * GarageBand's "Mic or Line" tracks on a Mac with a mono input are mono: a stereo file on one plays as mono. Its two
+ * channels on two tracks panned hard left and right play back as the stereo file (measured: −75 dB residual).
+ */
+export function channelOf(b: Uint8Array, channel: 0 | 1): Result<Uint8Array, WavError> {
+  const info = wavInfo(b);
+  if (!info.ok) return info;
+  const { channels, rate, bits, frames } = info.value;
+  if (channels !== 2) return err({ code: "WAV_UNSUPPORTED", message: `a stereo pair needs a stereo WAV (this one has ${channels} channel${channels === 1 ? "" : "s"})` });
+  const bytes = bits / 8;
+  const data = chunks(b).find((c) => c.id === "data")!;
+  const size = frames * bytes;
+  const out = new Uint8Array(44 + size + (size & 1));
+  const v = new DataView(out.buffer);
+  const tag = (at: number, s: string) => out.set(new TextEncoder().encode(s), at);
+  tag(0, "RIFF"); v.setUint32(4, out.length - 8, true); tag(8, "WAVE");
+  tag(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * bytes, true); v.setUint16(32, bytes, true); v.setUint16(34, bits, true);
+  tag(36, "data"); v.setUint32(40, size, true);
+  for (let i = 0; i < frames; i++) out.set(b.subarray(data.at + (2 * i + channel) * bytes, data.at + (2 * i + channel + 1) * bytes), 44 + i * bytes);
+  return ok(out);
+}

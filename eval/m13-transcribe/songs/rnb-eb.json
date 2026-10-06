@@ -1,0 +1,106 @@
+{
+ "title": "transcribe bench rnb-eb",
+ "tempo": 75,
+ "key": "Eb major",
+ "timeSignature": [
+  4,
+  4
+ ],
+ "seed": 1,
+ "humanize": "natural",
+ "groove": "soul",
+ "swing": 55,
+ "swingUnit": "16th",
+ "sections": [
+  {
+   "name": "intro",
+   "bars": 4
+  },
+  {
+   "name": "verse",
+   "bars": 8
+  },
+  {
+   "name": "chorus",
+   "bars": 8
+  },
+  {
+   "name": "outro",
+   "bars": 4
+  }
+ ],
+ "tracks": [
+  {
+   "name": "Drums",
+   "role": "drums",
+   "program": 24,
+   "parts": {
+    "verse": {
+     "grid": {
+      "kick": "x.....x...x.....",
+      "clap": "....x.......x...",
+      "hat": "x.xxx.x.x.xxx.x."
+     }
+    },
+    "chorus": {
+     "grid": {
+      "kick": "x.....x...x.....",
+      "clap": "....x.......x...",
+      "hat": "x.xxx.x.x.xxx.x."
+     }
+    }
+   }
+  },
+  {
+   "name": "Chords",
+   "role": "pad",
+   "program": 4,
+   "parts": {
+    "intro": {
+     "chords": "Ebmaj7 | Cm9 | Fm7 | Bb7",
+     "style": "sustain"
+    },
+    "verse": {
+     "chords": "Ebmaj7 | Cm9 | Fm7 | Bb7",
+     "style": "sustain"
+    },
+    "chorus": {
+     "chords": "Abmaj7 | Gm7 | Fm7 | Bb7",
+     "style": "sustain"
+    },
+    "outro": {
+     "chords": "Ebmaj7 | Cm9 | Fm7 | Bb7",
+     "style": "sustain"
+    }
+   }
+  },
+  {
+   "name": "Bass",
+   "role": "bass",
+   "program": 39,
+   "parts": {
+    "verse": {
+     "chords": "Ebmaj7 | Cm9 | Fm7 | Bb7",
+     "style": "sustain"
+    },
+    "chorus": {
+     "chords": "Abmaj7 | Gm7 | Fm7 | Bb7",
+     "style": "sustain"
+    }
+   }
+  },
+  {
+   "name": "Vocal",
+   "role": "lead",
+   "program": 53,
+   "parts": {
+    "verse": {
+     "notes": "d#4@8 g4@8 | d#4@6 f4@2 g4@4 d#4@4 | ~@4 g#4@2 f4@2 c4@4 f4@4 | d4@2 d#4@2 d4@4 f4@2 c4@2 f4@4 | a#4@6 g#4@2 a#4@4 d#5@4 | ~@4 c5@2 g#4@2 d#4@4 g4@4 | f4@4 g#4@4 f4@2 c4@2 f4@4 | ~@2 g#4@2 a#4@2 c5@4 g#4@2 f4@2 g4@2"
+    },
+    "chorus": {
+     "notes": "g#4@2 a#4@2 d#5@4 c5@2 a#4@2 g#4@4 | ~@2 d#4@2 d4@2 d#4@4 c4@2 d4@2 d#4@2 | g#4@6 c5@2 g#4@4 c5@4 | ~@2 d5@2 f5@2 d5@4 d#5@2 a#4@2 d5@2 | ~@4 d#5@2 a#4@2 g#4@4 c5@4 | ~@2 f5@2 g5@2 d5@4 g5@2 d5@2 d#5@2 | ~@4 c5@2 a#4@2 c5@4 f5@4 | d5@2 c5@2 d5@2 g5@2 f5@8"
+    }
+   }
+  }
+ ]
+}

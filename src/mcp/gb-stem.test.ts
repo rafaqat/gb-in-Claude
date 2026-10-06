@@ -153,3 +153,50 @@ describe("gb_stem never writes through a link", () => {
     expect(calls).toEqual([]);
   });
 });
+
+describe("gb_stem separate {model: roformer} (M13.12)", () => {
+  const written = (dir: string, base: string, names: string[]) => {
+    mkdirSync(dir, { recursive: true });
+    const stems = Object.fromEntries(names.map((s) => [s, join(dir, `${base}-${s}.wav`)]));
+    for (const p of Object.values(stems)) writeFileSync(p, bareWav(44100 * 4, 2, 44100, 24));
+    return stems;
+  };
+  const engines = () => {
+    const ro = fakeSidecar((inputs) => ({ stems: written(inputs.out_dir as string, inputs.base as string, ["vocals", "instrumental"]), model: "MelBand RoFormer (Kim)", rate: 44100 }));
+    const md = fakeSidecar((inputs) => (inputs.op === "split"
+      ? { stems: written(inputs.out_dir as string, inputs.base as string, ["drums", "bass", "other"]), model: "htdemucs", rate: 44100 }
+      : inspectAnswer(inputs)));
+    return { ro, md };
+  };
+
+  it("RoFormer takes the vocal out, then Demucs splits the instrumental: five placeable files", async () => {
+    const { ro, md } = engines();
+    const r = await createGbStem({ workspaceDir: ws, models: md.sidecar, roformer: ro.sidecar })({ command: "separate", path: "tabla.wav", model: "roformer" });
+    expect(r.status).toBe("verified");
+    expect(ro.calls[0]).toMatchObject({ model: "roformer", wav: join(ws, "tabla.wav"), out_dir: join(ws, "stems"), base: "tabla" });
+    expect(md.calls[0]).toMatchObject({ model: "stems", op: "split", wav: join(ws, "stems", "tabla-instrumental.wav"), out_dir: join(ws, "stems"), base: "tabla" });
+    const data = (r as { data: { stems: object; model: string } }).data;
+    expect(Object.keys(data.stems).sort()).toEqual(["bass", "drums", "instrumental", "other", "vocals"]);
+    expect(data.model).toMatch(/RoFormer.*htdemucs/);
+  });
+
+  it("without the RoFormer engine it fails before anything runs and names the install command", async () => {
+    const { md } = engines();
+    const r = await createGbStem({ workspaceDir: ws, models: md.sidecar })({ command: "separate", path: "tabla.wav", model: "roformer" });
+    expect(r).toMatchObject({ status: "failed", error: "DEPENDENCY_MISSING" });
+    expect(JSON.stringify(r)).toContain("install-engines.sh roformer");
+    expect(md.calls).toHaveLength(0);
+  });
+
+  it("dry run lists the five files; a taken instrumental name stops it", async () => {
+    const { ro, md } = engines();
+    const gb = createGbStem({ workspaceDir: ws, models: md.sidecar, roformer: ro.sidecar });
+    const dry = await gb({ command: "separate", path: "tabla.wav", model: "roformer", dry_run: true });
+    expect(Object.keys((dry as { data: { stems: object } }).data.stems).sort()).toEqual(["bass", "drums", "instrumental", "other", "vocals"]);
+    mkdirSync(join(ws, "stems"));
+    writeFileSync(join(ws, "stems", "tabla-instrumental.wav"), "x");
+    const r = await gb({ command: "separate", path: "tabla.wav", model: "roformer" });
+    expect(r).toMatchObject({ status: "failed", error: "FILE_EXISTS" });
+    expect(ro.calls).toHaveLength(0);
+  });
+});

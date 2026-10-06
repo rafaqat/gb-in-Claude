@@ -141,3 +141,23 @@ describe("sectionTimes: real section times through the tempo map (for gb_analyze
     expect(t).toEqual([["a", 0, 2], ["b", 2, 4.85], ["c", 4.85, 8.85]]);
   });
 });
+
+describe("Song JSON tempoMap (M13.7): a tempo per bar, for a project that follows a drifting recording", () => {
+  const base = { title: "T", tempo: 80, humanize: "off", sections: [{ name: "a", bars: 4 }],
+    tracks: [{ name: "Pad", role: "pad", parts: { a: { chords: "C", style: "sustain" } } }] };
+
+  it("renders a tempo event at each listed bar (and beat)", () => {
+    const p = parseSong({ ...base, tempoMap: [{ bar: 2, bpm: 82 }, { bar: 3, beat: 3, bpm: 84.5 }] });
+    if (!p.ok) throw new Error(JSON.stringify(p.error));
+    const r = renderSong(p.value);
+    if (!r.ok) throw new Error(r.error.message);
+    expect(applyExpression(p.value, r.value.tracks, PPQ).tempoMap).toEqual([{ tick: 4 * PPQ, bpm: 82 }, { tick: (8 + 2) * PPQ, bpm: 84.5 }]);
+    expect(sectionTimes(p.value)[0]!.end_s).toBeCloseTo(4 * 60 / 80 + 4 * 60 / 82 + 2 * 60 / 82 + 6 * 60 / 84.5, 6);
+  });
+
+  it("refuses bars that do not rise, a bar past the end, and a tempoMap next to section tempi", () => {
+    expect(parseSong({ ...base, tempoMap: [{ bar: 3, bpm: 82 }, { bar: 2, bpm: 84 }] }).ok).toBe(false);
+    expect(parseSong({ ...base, tempoMap: [{ bar: 5, bpm: 82 }] }).ok).toBe(false);
+    expect(parseSong({ ...base, sections: [{ name: "a", bars: 4, tempo: 90 }], tempoMap: [{ bar: 2, bpm: 82 }] }).ok).toBe(false);
+  });
+});

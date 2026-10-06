@@ -13,7 +13,8 @@ import { err, ok } from "../result.js";
 import { copyDonor, donorProblem, FileRefused, readRegular } from "./files.js";
 import { parseProjectData, serializeProjectData } from "./projectdata.js";
 import { audioPlacements, MAX_PLACEMENTS, regionRecords, withoutRegionsFrom, withPlacement, writeAudioFile, writeAudioRegion } from "./audio.js";
-import { wavInfo, withOverview, type WavInfo } from "./wav.js";
+import { channelOf, wavInfo, withOverview, type WavInfo } from "./wav.js";
+import { withPan } from "./channels.js";
 import { midiRegions, withMidiNotes } from "./midi.js";
 import { visibleTracks } from "./tracks.js";
 import { graftAudioSlots } from "./graft.js";
@@ -43,7 +44,7 @@ const fail = (code: BuildBandError["code"], message: string, recoverable = true,
   err({ code, message, recoverable, ...extra });
 
 /** A planned sample: its name in the project and its WAV (with overview) as it will be written. */
-type Sample = { source: string; file: string; size: number; info: WavInfo };
+type Sample = { source: string; channel?: 0 | 1; file: string; size: number; info: WavInfo };
 
 /** Size limits. A 10-minute 24-bit stereo stem at 48 kHz is about 165 MB. */
 export type BuildBandLimits = { maxWavBytes?: number; maxTotalWavBytes?: number };
@@ -51,12 +52,17 @@ const MAX_WAV_BYTES = 256 * 1024 * 1024;
 const MAX_TOTAL_WAV_BYTES = 1024 * 1024 * 1024;
 
 /** The WAV at `path` with GarageBand's overview chunk added, read without following a link and refused above `max`. */
-function sampleBytes(path: string, max: number): { ok: true; bytes: Uint8Array } | { ok: false; message: string } {
+function sampleBytes(path: string, max: number, channel?: 0 | 1): { ok: true; bytes: Uint8Array } | { ok: false; message: string } {
   let raw: Uint8Array;
   try {
     raw = readRegular(path, max);
   } catch (e) {
     return { ok: false, message: e instanceof FileRefused ? e.message : "unreadable" };
+  }
+  if (channel !== undefined) { // M13.18: one channel of a stereo file, as a mono file
+    const one = channelOf(raw, channel);
+    if (!one.ok) return { ok: false, message: one.error.message };
+    raw = one.value;
   }
   const wav = withOverview(raw);
   return wav.ok ? { ok: true, bytes: wav.value } : { ok: false, message: wav.error.message };
@@ -137,12 +143,13 @@ export class BuildBandHandler implements BuildBandSpec {
       const samples: Sample[] = [];
       const taken = new Set<string>();
       for (const [i, region] of input.regions.entries()) {
-        const file = uniqueName(basename(region.wav), taken);
-        const wav = sampleBytes(region.wav, maxWavBytes); // read one at a time; written again from the file later
+        const base = region.channel === undefined ? basename(region.wav) : basename(region.wav).replace(/\.wav$/i, region.channel === 0 ? "-L.wav" : "-R.wav");
+        const file = uniqueName(base, taken);
+        const wav = sampleBytes(region.wav, maxWavBytes, region.channel); // read one at a time; written again from the file later
         if (!wav.ok) return fail("WAV_INVALID", `regions.${i}: ${wav.message}`);
         const info = wavInfo(wav.bytes);
         if (!info.ok) return fail("WAV_INVALID", `regions.${i}: ${info.error.message}`);
-        samples.push({ source: region.wav, file, size: wav.bytes.length, info: info.value });
+        samples.push({ source: region.wav, ...(region.channel !== undefined ? { channel: region.channel } : {}), file, size: wav.bytes.length, info: info.value });
         if (samples.reduce((sum, x) => sum + x.size, 0) > maxTotalWavBytes) {
           return fail("WAV_INVALID", `the samples add up to more than ${maxTotalWavBytes} bytes (each slot is its own copy in the project)`);
         }
@@ -190,6 +197,13 @@ export class BuildBandHandler implements BuildBandSpec {
       input.regions.forEach((region, i) => {
         project = withPlacement(project, placements[i]!, { tick: region.tick, track: region.track, ...(strips.has(region.track) ? { strip: strips.get(region.track)! } : {}) });
       });
+      for (const p of input.pans ?? []) { // M13.18: into the track's audio channel (AuCO), so the file keeps it
+        const strip = strips.get(p.track);
+        if (strip === undefined) return fail("TRACK_NOT_IN_DONOR", `pans: the donor has no track ${p.track}`);
+        const panned = withPan(project, strip, p.pan);
+        if (!panned.ok) return fail("DONOR_INVALID", `pans: track ${p.track}: ${panned.error}`);
+        project = panned.value;
+      }
       const records = project.records.slice();
       for (const [i, region] of input.regions.entries()) {
         const sample = samples[i]!;
@@ -234,7 +248,7 @@ export class BuildBandHandler implements BuildBandSpec {
         if (!existsSync(media)) mkdirSync(media);
         mkdirSync(join(media, AUDIO_FOLDER));
         for (const s of samples) {
-          const wav = sampleBytes(s.source, maxWavBytes);
+          const wav = sampleBytes(s.source, maxWavBytes, s.channel);
           if (!wav.ok || wav.bytes.length !== s.size) throw new Error(`${s.file} changed while the build ran`);
           writeFileSync(join(media, AUDIO_FOLDER, s.file), wav.bytes, { flag: "wx" });
         }

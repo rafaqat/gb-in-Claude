@@ -1,0 +1,145 @@
+{
+ "title": "transcribe bench drift-g",
+ "tempo": 120,
+ "key": "G major",
+ "timeSignature": [
+  4,
+  4
+ ],
+ "seed": 1,
+ "humanize": "natural",
+ "groove": "rock",
+ "sections": [
+  {
+   "name": "intro",
+   "bars": 4
+  },
+  {
+   "name": "verse",
+   "bars": 8
+  },
+  {
+   "name": "chorus",
+   "bars": 8
+  },
+  {
+   "name": "outro",
+   "bars": 4
+  }
+ ],
+ "tracks": [
+  {
+   "name": "Drums",
+   "role": "drums",
+   "program": 8,
+   "parts": {
+    "verse": {
+     "grid": {
+      "kick": "x...x...x.o.....",
+      "snare": "....X.......X...",
+      "hat": "x.x.x.x.x.x.x.x."
+     }
+    },
+    "chorus": {
+     "grid": {
+      "kick": "x...x...x.o.....",
+      "snare": "....X.......X...",
+      "hat": "x.x.x.x.x.x.x.x."
+     }
+    },
+    "outro": {
+     "grid": {
+      "kick": "x...x...x.o.....",
+      "snare": "....X.......X...",
+      "hat": "x.x.x.x.x.x.x.x."
+     }
+    }
+   }
+  },
+  {
+   "name": "Chords",
+   "role": "pad",
+   "program": 30,
+   "level": -6,
+   "parts": {
+    "chorus": {
+     "chords": "C | G | D | Em",
+     "style": "sustain"
+    }
+   }
+  },
+  {
+   "name": "Arp",
+   "role": "arp",
+   "program": 29,
+   "parts": {
+    "intro": {
+     "chords": "G | D | Em | C",
+     "style": "broken",
+     "octave": 3
+    },
+    "verse": {
+     "chords": "G | D | Em | C",
+     "style": "broken",
+     "octave": 3
+    },
+    "chorus": {
+     "chords": "C | G | D | Em",
+     "style": "broken",
+     "octave": 3
+    },
+    "outro": {
+     "chords": "G | D | Em | C",
+     "style": "broken",
+     "octave": 3
+    }
+   }
+  },
+  {
+   "name": "Bass",
+   "role": "bass",
+   "program": 34,
+   "parts": {
+    "verse": {
+     "chords": "G | D | Em | C",
+     "style": "rolling"
+    },
+    "chorus": {
+     "chords": "C | G | D | Em",
+     "style": "rolling"
+    }
+   }
+  },
+  {
+   "name": "Vocal",
+   "role": "lead",
+   "program": 53,
+   "parts": {
+    "verse": {
+     "notes": "d4@4 g4@4 d4@2 c4@2 d4@4 | ~@4 f#4@2 d4@2 f#4@4 d4@4 | e4@6 g4@2 e4@4 g4@4 | c5@2 e5@2 g5@4 e5@2 b4@2 c5@4 | b4@2 f#4@2 b4@4 g4@2 a4@2 b4@4 | a4@2 e4@2 a4@2 c5@2 a4@8 | e4@4 g4@4 b4@2 c5@2 b4@4 | g4@4 c5@2 a4@4 e4@2 g4@4"
+    },
+    "chorus": {
+     "notes": "e4@2 a4@2 c5@2 a4@2 e4@8 | ~@2 a4@2 g4@2 d4@4 g4@2 d4@2 c4@2 | d4@4 f#4@4 a4@2 f#4@2 a4@4 | b4@6 d5@2 g5@4 e5@4 | g5@6 e5@2 g5@4 e5@4 | d5@2 f#5@2 g5@2 e5@2 b4@8 | f#4@2 a4@2 d5@2 a4@2 f#4@8 | ~@2 a4@2 e4@2 c4@4 d4@2 e4@2 c4@2"
+    }
+   }
+  }
+ ],
+ "tempoMap": [
+  {
+   "bar": 5,
+   "bpm": 121
+  },
+  {
+   "bar": 9,
+   "bpm": 122.5
+  },
+  {
+   "bar": 13,
+   "bpm": 124
+  },
+  {
+   "bar": 17,
+   "bpm": 125.5
+  }
+ ]
+}

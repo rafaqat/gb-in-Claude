@@ -129,3 +129,19 @@ describe("gb_band build: a write that stops half-way", () => {
     expect(r).toMatchObject({ status: "failed", error: "WRITE_FAILED", context: { written: true, path: join(ws, "bands", "half.band") } });
   });
 });
+
+describe("gb_band build: a stereo stem on a pair of mono tracks (M13.18)", () => {
+  it("pair: the left channel on track, the right on pair, panned hard left and right", async () => {
+    cpSync(fixture("two-audio-tracks.band"), join(ws, "donors", "two.band"), { recursive: true });
+    const r = await createGbBand({ workspaceDir: ws })({
+      command: "build", donor: "donors/two.band", filename: "stereo.band", audio: [{ wav: "samples/vox.wav", bar: 1, track: 1, pair: 2, name: "Vox" }],
+    });
+    expect(r).toMatchObject({ status: "verified", data: { audio: [{ track: 1, file: "vox-L.wav" }, { track: 2, file: "vox-R.wav" }], pans: [{ track: 1, pan: -64 }, { track: 2, pan: 63 }] } });
+  });
+
+  it("pair must be another track", async () => {
+    cpSync(fixture("two-audio-tracks.band"), join(ws, "donors", "two.band"), { recursive: true });
+    const r = await createGbBand({ workspaceDir: ws })({ command: "build", donor: "donors/two.band", filename: "x.band", audio: [{ wav: "samples/vox.wav", bar: 1, track: 1, pair: 1 }] });
+    expect(r).toMatchObject({ status: "failed", error: "INPUT_INVALID" });
+  });
+});

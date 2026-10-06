@@ -9,6 +9,8 @@ import { createGbTransport, GB_TRANSPORT_COMMANDS, TRANSPORT_FIELDS } from "../g
 import { createGbMix, GB_MIX_COMMANDS, MIX_FIELDS } from "../garageband/mix.js";
 import { AxCore } from "../ax/core.js";
 import { guarded } from "./tool-result.js";
+import { createFromAudio, type FromAudioSteps } from "./from-audio.js";
+import { failed } from "./envelope.js";
 
 export type GarageBandToolDeps = Omit<GbProjectDeps, "core"> & Pick<GbExportDeps, "inboxDir" | "defaultExportDir"> & Pick<GbTracksDeps, "patchCatalog">;
 
@@ -20,7 +22,10 @@ const live = { readOnlyHint: false, destructiveHint: false, idempotentHint: fals
 const replaces = { ...live, destructiveHint: true } as const;
 
 /** Live GarageBand operations — every mutation is read back; refusals touch nothing; dialogs are never answered. */
-export function registerGarageBandTools(server: McpServer, deps: GarageBandToolDeps): void {
+/** M13.8: the non-GarageBand steps gb_project from_audio chains (absent without the analyzer: no from_audio). */
+export type FromAudioExtras = Pick<FromAudioSteps, "analyze" | "song" | "band">;
+
+export function registerGarageBandTools(server: McpServer, deps: GarageBandToolDeps, extras?: FromAudioExtras): void {
   const core = new AxCore(deps.helper);
   const common = { helper: deps.helper, core, ...(deps.screenLocked ? { screenLocked: deps.screenLocked } : {}) };
   const project = createGbProject(deps);
@@ -31,6 +36,11 @@ export function registerGarageBandTools(server: McpServer, deps: GarageBandToolD
   const tracks = createGbTracks({ ...common, patchCatalog: deps.patchCatalog });
   const transport = createGbTransport(common);
   const mix = createGbMix(common);
+  const fromAudio = extras ? createFromAudio({ ...extras, project, tracks, transport }, deps.workspaceDir) : undefined;
+  const projectOrFlow = async (input: unknown) =>
+    (input as { command?: unknown } | null)?.command === "from_audio"
+      ? (fromAudio ? fromAudio(input) : failed("gb_project.from_audio", "DEPENDENCY_MISSING", "from_audio needs gb_analyze (the analysis toolchain)", { hint: "run gb_system doctor" }))
+      : project(input);
 
   server.registerTool(
     "gb_project",
@@ -44,17 +54,20 @@ export function registerGarageBandTools(server: McpServer, deps: GarageBandToolD
         "are first saved as copies into sessions/; GarageBand's save prompt is only dismissed for a project that was just " +
         "backed up; any other dialog stops the operation. save_copy: save the open project as donors/<filename> (GarageBand " +
         "keeps its own document) and list the copy's tracks — audio or instrument — so gb_band build can place stems on its " +
-        "audio tracks next to the MIDI tracks. dry_run: plan only.",
+        "audio tracks next to the MIDI tracks. from_audio: a recording (path) → a GarageBand project (filename) in one " +
+        "call — gb_analyze map, a muted guide at the song's tempo (a tempo map when the take drifts), open, 4 audio " +
+        "tracks, metronome off, donor copy, the stems at the map's bar and beat, open_band; it stops at the first step " +
+        "that is not verified and names it. dry_run: plan only.",
       inputSchema: z.object({
-        command: z.enum(GB_PROJECT_COMMANDS),
-        path: z.string().optional().describe("open_midi: .mid inside the workspace, e.g. ascent-v2.mid · open_band: e.g. bands/my-song-v1.band"),
-        filename: z.string().optional().describe("save_copy: e.g. my-song-donor.band (written to donors/)"),
+        command: z.enum([...GB_PROJECT_COMMANDS, "from_audio"]),
+        path: z.string().optional().describe("open_midi: .mid inside the workspace, e.g. ascent-v2.mid · open_band: e.g. bands/my-song-v1.band · from_audio: the recording, e.g. gen/song.wav"),
+        filename: z.string().optional().describe("save_copy: e.g. my-song-donor.band (written to donors/) · from_audio: the project, e.g. song-v1.band (written to bands/)"),
         fields: z.array(z.enum(PROJECT_FIELDS)).optional().describe("status: only these fields"),
         dry_run: dryRun,
       }).strict(),
       annotations: replaces,
     },
-    guarded("gb_project", project, true),
+    guarded("gb_project", projectOrFlow, true),
   );
 
   server.registerTool(

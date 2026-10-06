@@ -1,7 +1,7 @@
 ---
 name: make-track
 description: Use when the user asks to make, write, compose or produce a new track/song in GarageBand with gb-mcp. Turns a brief into Song JSON, renders it, opens it in GarageBand, exports and analyzes it — hands-free (no clicks from you).
-version: 0.7.1
+version: 0.8.0
 ---
 
 # Make a track (gb-mcp)
@@ -14,7 +14,7 @@ You compose; gb-mcp renders, drives GarageBand and measures. You cannot hear —
 - Need a specific loop/patch? `gb_sound loops` (key like `"F minor"`, genre like `"Electronic/Dance"`, `installedOnly: true`) / `gb_sound patches`.
 
 ## 2. Write Song JSON
-- Start from the genre: `gb_song template {genre, key, bpm}` gives a full draft (form, progressions, the genre's drum kit, grooves from real drummers, a hook). Then make it yours: rewrite the hook, vary sections, add parts.
+- Start from the genre: `gb_song template {genre, key, bpm}` gives a full draft (form, progressions, the genre's drum kit, grooves from real drummers, a hook). Then make it yours: rewrite the hook, vary sections, add parts. Another harmonic starting point: `variant: 1`–`3` (the genre's common loops).
 - Sections in play order; per track: `role`, `parts` per section (drums `grid`, bass/pad/arp `chords`+`style`, others `notes`).
 - Set `key`, `style`, `humanize: "natural"` (never `"off"` unless asked for a machine feel).
 - Save it with your file tool as `<workspace>/songs/<slug>-v1.song.json` — the workspace is `GB_MCP_WORKSPACE` (default `~/Music/gb-mcp`; `gb_system doctor` shows the path).

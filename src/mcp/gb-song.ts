@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { z } from "zod";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, extname, join, resolve } from "node:path";
 import { parseSong, type Song } from "../song/schema.js";
 import { validateSong } from "../song/validate.js";
 import { previewSong } from "../song/preview.js";
+import { sectionTimes } from "../song/expression.js";
 import { renderSong, PPQ } from "../song/render.js";
 import { humanize } from "../song/humanize.js";
 import { grooveFeel } from "../song/grooves.js";
@@ -18,8 +19,11 @@ import { applyExpression } from "../song/expression.js";
 import { patchFor } from "../knowledge/gm-patch-map.js";
 import { bandPlan } from "../song/band-plan.js";
 import { GENRE_TEMPLATES, templateSong } from "../song/genres.js";
+import { COMMON_LOOPS } from "../song/common-loops.js";
 import { notesToPart, type InfillNote } from "../song/infill.js";
 import type { ModelSidecar } from "../models/sidecar.js";
+import { draftSong, type SongMap, type Transcription } from "../song/draft.js";
+import { resolveWorkspaceFile, workspaceOutputDir } from "../workspace/paths.js";
 import { tmpdir } from "node:os";
 import { verified, failed, type Envelope } from "./envelope.js";
 
@@ -28,9 +32,12 @@ const SafeMidiFilename = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9 _-]{0,79}\.mid
   "letters, digits, space, _ or -, ending in .mid (no paths)");
 const SafeWavFilename = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9 _-]{0,79}\.wav$/,
   "letters, digits, space, _ or -, ending in .wav (no paths)");
+const SafeJsonFilename = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9 _-]{0,79}(\.song)?\.json$/,
+  "letters, digits, space, _ or -, ending in .song.json or .json (no paths)");
+const SONGS_DIR = "songs";
 
 export const GbSongInput = z.discriminatedUnion("command", [
-  z.object({ command: z.literal("validate"), song: z.unknown() }).strict(),
+  z.object({ command: z.literal("validate"), song: z.unknown(), voice_leading: z.boolean().optional().describe("add the classical voice-leading checks (warnings)") }).strict(),
   z.object({ command: z.literal("preview"), song: z.unknown(), section: z.string().min(1), maxBars: z.number().int().min(1).max(64).optional() }).strict(),
   z.object({ command: z.literal("render_midi"), song: z.unknown(), filename: z.string(), dry_run: z.boolean().optional() }).strict(),
   z.object({ command: z.literal("render_draft"), song: z.unknown(), filename: z.string(), dry_run: z.boolean().optional() }).strict(),
@@ -39,6 +46,7 @@ export const GbSongInput = z.discriminatedUnion("command", [
     command: z.literal("template"), genre: z.string().min(1).describe("one of gb-mcp's genres (an unknown one lists them)"),
     key: z.string().regex(/^[A-G][#b]? (major|minor)$/, 'like "F minor" or "Ab major"'),
     bpm: z.number().min(20).max(300).optional(), meter: z.number().int().min(2).max(7).optional(), title: z.string().min(1).max(80).optional(),
+    variant: z.number().int().min(0).max(3).optional().describe("0 the template's own progressions; 1–3 the genre's common loops"),
   }).strict(),
   z.object({
     command: z.literal("infill"), song: z.unknown(), section: z.string().min(1),
@@ -48,18 +56,46 @@ export const GbSongInput = z.discriminatedUnion("command", [
     candidates: z.number().int().min(1).max(4).default(1).describe("takes to generate (seeds seed, seed+1, …); CLaMP 3 keeps the best"),
     judge: z.string().min(3).max(300).optional().describe("what the music should be, e.g. \"warm neo-soul keys\": takes are ranked against it"),
   }).strict(),
+  z.object({ command: z.literal("transcribe"), path: z.string().min(1), filename: z.string().optional(), dry_run: z.boolean().optional() }).strict(),
 ]);
 export type GbSongInput = z.infer<typeof GbSongInput>;
-export const GB_SONG_COMMANDS = ["validate", "preview", "render_midi", "render_draft", "band_plan", "template", "infill"] as const;
+export const GB_SONG_COMMANDS = ["validate", "preview", "render_midi", "render_draft", "band_plan", "template", "infill", "transcribe"] as const;
 
 /** Song JSON audio clips are built by gb_band; the MIDI file and the GM draft leave them out. */
 const AUDIO_LEFT_OUT = "AUDIO_LEFT_OUT: MIDI cannot carry the audio clips; gb_song band_plan + gb_band build place them";
 
-/** models: the M8 model sidecar (gb_song infill); optional — without it infill is DEPENDENCY_MISSING */
-export type GbSongDeps = { workspaceDir: string; gmRenderer?: GmRendererPort; models?: ModelSidecar };
+/** models: the M8 model sidecar (gb_song infill, transcribe); optional — without it they are DEPENDENCY_MISSING.
+ * map: gb_analyze (its map command) for transcribe. */
+export type GbSongDeps = { workspaceDir: string; gmRenderer?: GmRendererPort; models?: ModelSidecar; map?: (input: unknown) => Promise<Envelope> };
+
+/** The parts of the map file the draft reads (analysis/<name>-map.json, models/gbmodels/songmap.py). */
+const MapFile = z.object({
+  key: z.string().nullable(),
+  place: z.object({ guide_bpm: z.number(), bar: z.number(), beat: z.number(), offset_s: z.number() }),
+  tempo_map: z.array(z.object({ bar: z.number().int().min(1), bpm: z.number() })).nullable(),
+  bar_lines_s: z.array(z.number()).min(2),
+  sections: z.array(z.object({ name: z.string().min(1).max(32), gb_bar: z.number().int(), bars: z.number().int() })).nullable().default(null),
+  gb: z.array(z.object({ bar: z.number().int(), chords: z.array(z.string().nullable()) })),
+});
+const Note = z.object({ bar: z.number().int().min(1), step: z.number().int().min(0).max(15), len: z.number().int().min(1), pitch: z.number().int().min(0).max(127) });
+const Hit = z.object({ bar: z.number().int().min(1), step: z.number().int().min(0).max(15), strength: z.number().min(0).max(1) });
+const TranscriptionOut = z.object({
+  bass: z.array(Note), bass_source: z.enum(["bass"]).nullable(), lead: z.array(Note), lead_source: z.enum(["vocals", "other"]).nullable(),
+  drums: z.object({ kick: z.array(Hit), snare: z.array(Hit), hat: z.array(Hit) }),
+});
+
+/** Anything at this name — a file, a folder, a link — counts: never write through it. */
+function occupied(path: string): boolean {
+  try {
+    lstatSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /** Render + swing + humanize + levels + expression: the performance the MIDI file and the draft audio are made from. */
-function perform(song: Song): { ok: true; smf: SmfSong } | { ok: false; message: string } {
+export function perform(song: Song): { ok: true; smf: SmfSong } | { ok: false; message: string } {
   const rendered = renderSong(song);
   if (!rendered.ok) return { ok: false, message: `${rendered.error.path}: ${rendered.error.message}` };
   const placed = rendered.value.tracks.map((t, i) => ({ ...t, role: song.tracks[i]!.role, ...(song.tracks[i]!.glide ? { glide: true } : {}) }));
@@ -79,12 +115,80 @@ function summarize(song: Song) {
   const tracks = rendered.ok
     ? rendered.value.tracks.map((t) => ({ name: t.name, channel: t.channel, program: t.program, patch: t.program === undefined ? undefined : patchFor(t.program, t.channel), notes: t.notes.length }))
     : [];
-  const durationSec = Math.round(((bars * song.timeSignature[0] * 60) / song.tempo) * 100) / 100;
+  const times = sectionTimes(song); // through the tempo map (section tempi, tempoTo ramps, tempoMap)
+  const durationSec = Math.round((times[times.length - 1]?.end_s ?? 0) * 100) / 100;
   return { bars, durationSec, tempo: song.tempo, style: song.style ?? null, humanize: song.humanize, tracks };
 }
 
 export function createGbSong(deps: GbSongDeps) {
   const workspace = resolve(deps.workspaceDir);
+
+  /** M13.14: gb_analyze map, then the transcription model on the map's bars, then the draft (pure). */
+  async function transcribe(cmd: Extract<GbSongInput, { command: "transcribe" }>): Promise<Envelope> {
+    const op = "gb_song.transcribe";
+    let out: string | undefined;
+    if (cmd.filename !== undefined) { // checked before anything runs; songs/ is made only just before the write
+      const name = SafeJsonFilename.safeParse(cmd.filename);
+      if (!name.success) return failed(op, "PATH_INVALID", `filename: ${name.error.issues[0]!.message}`);
+      const dir = workspaceOutputDir(workspace, SONGS_DIR, false);
+      if (!dir.ok && dir.error.code !== "FILE_NOT_FOUND") return failed(op, dir.error.code, `${SONGS_DIR}/: ${dir.error.message}`);
+      out = join(dir.ok ? dir.value : join(workspace, SONGS_DIR), name.data);
+      if (occupied(out)) return failed(op, "FILE_EXISTS", `${SONGS_DIR}/${name.data} already exists; nothing done`, { hint: "choose a new filename (e.g. add -v2); files are never overwritten" });
+    }
+    const plan = ["gb_analyze map (separates the stems first when they are missing)", "transcribe the stems on the map's bars: bass and lead (pYIN), drums (NMF)",
+      "build the draft: sections, chords, bass, lead, drums", ...(out ? [`write ${SONGS_DIR}/${basename(out)}`] : [])];
+    if (cmd.dry_run) return verified(op, { dry_run: true, plan, ...(out ? { path: out } : {}) });
+    if (!deps.map || !deps.models) return failed(op, "DEPENDENCY_MISSING", "the model sidecar is not set up (models/.venv)", { hint: "install the models: scripts/install.sh --with-models" });
+
+    const mapped = await deps.map({ command: "map", path: cmd.path, melody: false });
+    if (mapped.status !== "verified") {
+      return mapped.status === "failed" ? failed(op, mapped.error, `gb_analyze.map: ${mapped.message}`, { ...(mapped.hint ? { hint: mapped.hint } : {}), recoverable: mapped.recoverable })
+        : failed(op, "ANALYSIS_FAILED", `gb_analyze.map was not confirmed: ${mapped.hint}`);
+    }
+    const { map: mapPath, stems } = mapped.data as { map: string; stems: Record<string, string> };
+    const mapWarnings = (mapped.warnings ?? []).map((w) => `gb_analyze.map: ${w}`); // e.g. no section engine: one section
+    const after = { write_attempted: true, safe_to_retry: true }; // the map (and stems) are written; a retry writes new names
+    const mapFile = resolveWorkspaceFile(workspace, mapPath, [".json"]);
+    if (!mapFile.ok) return failed(op, "ANALYSIS_FAILED", `the map file: ${mapFile.error.message}`, after);
+    let map: SongMap;
+    try {
+      const m = MapFile.safeParse(JSON.parse(readFileSync(mapFile.value, "utf8")));
+      if (!m.success) return failed(op, "ANALYSIS_FAILED", `the map file is not a song map (${m.error.issues[0]!.path.join(".")})`, after);
+      map = m.data;
+    } catch {
+      return failed(op, "ANALYSIS_FAILED", "the map file is not JSON", after);
+    }
+    const heard = await deps.models.run("transcribe", { stems, lines: map.bar_lines_s });
+    if (!heard.ok) return failed(op, heard.error.code === "SIDECAR_UNAVAILABLE" ? "DEPENDENCY_MISSING" : "ANALYSIS_FAILED", heard.error.message, after);
+    const t = TranscriptionOut.safeParse(heard.value);
+    if (!t.success) return failed(op, "ANALYSIS_FAILED", `the transcription is malformed (${t.error.issues[0]!.path.join(".")})`, after);
+    const title = `${basename(cmd.path, extname(cmd.path)).slice(0, 60)} (draft)`;
+    const draft = draftSong(map, t.data as Transcription, { title });
+    const parsed = parseSong(draft);
+    if (!parsed.ok) return failed(op, "RENDER_FAILED", `the draft is not valid Song JSON: ${parsed.error.path}: ${parsed.error.message}`, after);
+    const issues = validateSong(parsed.value);
+    const errors = issues.filter((i) => i.severity === "error");
+    if (errors.length) return failed(op, "VALIDATION_FAILED", `${errors.length} musical error(s) in the draft; nothing written`, { ...after, context: { issues: errors, song: draft } });
+    if (out) {
+      const dir = workspaceOutputDir(workspace, SONGS_DIR, true);
+      if (!dir.ok) return failed(op, dir.error.code, `${SONGS_DIR}/: ${dir.error.message}`, after);
+      out = join(dir.value, basename(out));
+      try {
+        writeFileSync(out, JSON.stringify(draft, null, 1) + "\n", { flag: "wx" }); // exclusive: never overwrite, never through a link
+      } catch (e) {
+        const code = (e as NodeJS.ErrnoException).code;
+        if (code === "EEXIST") return failed(op, "FILE_EXISTS", `${SONGS_DIR}/${basename(out)} appeared meanwhile; nothing written`, { ...after, hint: "choose a new filename" });
+        return failed(op, "WRITE_FAILED", `could not write ${SONGS_DIR}/${basename(out)} (${code ?? "unknown error"})`, { write_attempted: true, safe_to_retry: false });
+      }
+    }
+    const warnings = [
+      ...mapWarnings,
+      ...(t.data.bass_source === null ? ["BASS_FROM_CHORDS: the bass stem is silent (the separation put no bass in it). The Bass track plays the map's chord roots"] : []),
+      ...(t.data.lead_source === null ? ["NO_LEAD: the vocal stem is silent. The draft has no lead (gb-mcp does not transcribe an instrumental melody)"] : []),
+      ...issues.filter((i) => i.severity === "warning").map((i) => `${i.code} ${i.path}: ${i.message}`),
+    ];
+    return verified(op, { song: draft, ...(out ? { path: out } : {}), map: mapPath, lead_source: t.data.lead_source, place: map.place }, warnings);
+  }
 
   return async function gbSong(input: unknown): Promise<Envelope> {
     const parsedInput = GbSongInput.safeParse(input);
@@ -96,10 +200,19 @@ export function createGbSong(deps: GbSongDeps) {
     const cmd = parsedInput.data;
     const op = `gb_song.${cmd.command}`;
 
+    if (cmd.command === "transcribe") return transcribe(cmd);
+
     if (cmd.command === "template") {
-      const draft = templateSong({ genre: cmd.genre, key: cmd.key, ...(cmd.bpm ? { bpm: cmd.bpm } : {}), ...(cmd.meter ? { meter: cmd.meter } : {}), ...(cmd.title ? { title: cmd.title } : {}) });
+      const variant = cmd.variant ?? 0;
+      const draft = templateSong({ genre: cmd.genre, key: cmd.key, ...(cmd.bpm ? { bpm: cmd.bpm } : {}), ...(cmd.meter ? { meter: cmd.meter } : {}),
+        ...(cmd.title ? { title: cmd.title } : {}), variant });
       if (!draft.ok) return failed(op, "INPUT_INVALID", `genre: not a known genre`, { hint: `genres: ${Object.keys(GENRE_TEMPLATES).join(", ")}` });
-      return verified(op, { song: draft.value, note: "a genre draft to develop: change the hook, add sections, vary parts — then validate and render" });
+      const loops = COMMON_LOOPS[cmd.genre]?.[/minor$/.test(cmd.key) ? "minor" : "major"];
+      const source = variant === 0 ? "the template's hand-written progressions (variant 1–3: the genre's common loops)"
+        : `the ${["most", "second most", "third most"][variant - 1]} common 4-chord loop in verses and choruses of ${loops?.pooled
+          ? "songs of all genres (too few songs are tagged with this genre)" : `songs tagged ${cmd.genre}`} — Chordonomicon statistics`;
+      return verified(op, { song: draft.value, progressions: { variant, source },
+        note: "a genre draft to develop: change the hook, add sections, vary parts — then validate and render" });
     }
 
     const parsed = parseSong(cmd.song);
@@ -111,7 +224,7 @@ export function createGbSong(deps: GbSongDeps) {
 
     switch (cmd.command) {
       case "validate":
-        return verified(op, { issues: validateSong(song), summary: summarize(song) });
+        return verified(op, { issues: validateSong(song, { voiceLeading: cmd.voice_leading === true }), summary: summarize(song) });
 
       case "band_plan": {
         // read-only: the agent passes `audio` to gb_band build with its donor (gb_song never touches donors)

@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 rafaqat
-# Install the gb_generate engines at their reviewed versions: ACE-Step 1.5 and MuLaCover. Apple Silicon only.
+# Install the engines at their reviewed versions: ACE-Step 1.5, MuLaCover (gb_generate) and the RoFormer separator (gb_stem). Apple Silicon only.
 # Safe to re-run: what is installed is checked, not redone; an interrupted download resumes.
 #
 #   ./scripts/install-engines.sh ace-step              ACE-Step 1.5 (MIT): code, venv, 10 GB of weights
 #   ./scripts/install-engines.sh mulacover             MuLaCover: 15 GB; weights AND outputs non-commercial (CC BY-NC 4.0)
+#   ./scripts/install-engines.sh ace-step-base         ACE-Step's base model for lego / complete (MIT): 4.8 GB more
+#   ./scripts/install-engines.sh roformer              RoFormer vocal separation for gb_stem (MIT): 0.9 GB
+#   ./scripts/install-engines.sh sections              all-in-one song sections for gb_analyze map (MIT): 0.1 GB
 #   ./scripts/install-engines.sh all
 #   --dry-run                print the plan, change nothing
 #   --accept-noncommercial   accept MuLaCover's licence without the question (for scripts)

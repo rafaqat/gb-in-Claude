@@ -16,7 +16,7 @@ export function notesToPart(notes: readonly InfillNote[], t: SectionTiming): str
   const sixteenth = 60 / t.bpm / 4;
   const perBar = t.beatsPerBar * 4;
   const total = t.bars * perBar;
-  const onsets = new Map<number, { pitches: Set<number>; len: number }>();
+  const onsets = new Map<number, SlotNote>();
   for (const n of notes) {
     const slot = Math.round((n.start_s - t.startS) / sixteenth);
     if (slot < 0 || slot >= total) continue;
@@ -25,17 +25,34 @@ export function notesToPart(notes: readonly InfillNote[], t: SectionTiming): str
     o.len = Math.max(o.len, Math.max(1, Math.round(n.dur_s / sixteenth)));
     onsets.set(slot, o);
   }
+  return slotsToPart(onsets, perBar, t.bars);
+}
+
+/** Notes that start on a 16th slot of a section (slot 0 = its first 16th), each `len` 16ths long. */
+export type SlotNote = { pitches: Set<number>; len: number };
+
+/** Slot notes → Song JSON `notes`, bar by bar in 16th shares (perBar per bar). A note is cut where the next one starts
+ * or where the section ends, and struck again in the next bar when it crosses a bar line. restRuns: a run of rests is
+ * one token ("~@4"), not one "~" per 16th. */
+export function slotsToPart(onsets: Map<number, SlotNote>, perBar: number, bars: number, opts: { restRuns?: boolean } = {}): string {
+  const total = bars * perBar;
   const starts = [...onsets.keys()].sort((a, b) => a - b);
   starts.forEach((s, i) => { const o = onsets.get(s)!; o.len = Math.min(o.len, (starts[i + 1] ?? total) - s); });
 
-  const bars: string[] = [];
-  for (let b = 0; b < t.bars; b++) {
+  const out: string[] = [];
+  for (let b = 0; b < bars; b++) {
     const end = (b + 1) * perBar;
     const tokens: string[] = [];
     let sounding = false;
     for (let slot = b * perBar; slot < end;) {
       const o = onsets.get(slot);
-      if (!o) { tokens.push("~"); slot++; continue; }
+      if (!o) {
+        let run = 1;
+        while (opts.restRuns && slot + run < end && !onsets.has(slot + run)) run++;
+        tokens.push(run > 1 ? `~@${run}` : "~");
+        slot += run;
+        continue;
+      }
       const len = Math.min(o.len, end - slot);
       if (o.len > len && !onsets.has(end)) onsets.set(end, { pitches: o.pitches, len: o.len - len }); // struck again next bar
       const pitches = [...o.pitches].sort((x, y) => x - y).map(noteName);
@@ -44,7 +61,7 @@ export function notesToPart(notes: readonly InfillNote[], t: SectionTiming): str
       sounding = true;
       slot += len;
     }
-    bars.push(sounding ? tokens.join(" ") : `~@${perBar}`);
+    out.push(sounding ? tokens.join(" ") : `~@${perBar}`);
   }
-  return bars.join(" | ");
+  return out.join(" | ");
 }

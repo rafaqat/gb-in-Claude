@@ -3,6 +3,7 @@
 """CLI for the TS server. stdout carries exactly one JSON document; diagnostics go to stderr.
 
     python3 -m gbanalyze.cli analyze --input <wav|aiff|flac> [--context <json>] [--spectrogram <new.png>]
+    python3 -m gbanalyze.cli master --input <wav|aiff|flac> --output <new.wav> [--lufs -14] [--peak -1]
 
 → {"ok": true, "result": {...}}  or  {"ok": false, "error": {"code": "...", "message": "..."}}  (exit 2)
 """
@@ -75,15 +76,46 @@ def _load(path):
     return x, rate
 
 
+def _master(argv) -> dict:
+    """master --input <file> --output <new.wav> [--lufs N] [--peak N] (M13.2)."""
+    opts, i = {}, 1
+    while i < len(argv):
+        flag = argv[i]
+        if flag not in ("--input", "--output", "--lufs", "--peak") or i + 1 >= len(argv):
+            raise CliError("INPUT_INVALID", f"unexpected argument {flag!r}")
+        opts[flag[2:]] = argv[i + 1]
+        i += 2
+    if "input" not in opts or "output" not in opts:
+        raise CliError("INPUT_INVALID", "--input and --output are required")
+    try:
+        lufs, peak = float(opts.get("lufs", -14)), float(opts.get("peak", -1))
+    except ValueError:
+        raise CliError("INPUT_INVALID", "--lufs and --peak must be numbers") from None
+    if not -30 <= lufs <= -5 or not -6 <= peak <= 0:
+        raise CliError("INPUT_INVALID", "--lufs must be -30 to -5 and --peak -6 to 0")
+    _load(opts["input"])  # the same checks as analyze: exists, readable, mono/stereo, at most 20 minutes
+    from .master import master
+    try:
+        return master(opts["input"], opts["output"], lufs=lufs, peak_db=peak)
+    except FileExistsError:
+        raise CliError("FILE_EXISTS", "the output path already exists; nothing written") from None
+    except ValueError as e:
+        raise CliError("AUDIO_INVALID", str(e)) from None
+
+
 def main(argv=None) -> int:
     warnings.simplefilter("ignore")
+    argv = sys.argv[1:] if argv is None else argv
     try:
+        if argv and argv[0] == "master":
+            print(json.dumps({"ok": True, "result": _clean(_master(argv))}, allow_nan=False, separators=(",", ":")))
+            return 0
         try:
             from .analyze import analyze
             from .spectrogram import write_spectrogram
         except ImportError as e:
             raise CliError("DEPENDENCY_MISSING", f"python dependency missing: {e.name}") from None
-        opts = _parse_args(sys.argv[1:] if argv is None else argv)
+        opts = _parse_args(argv)
         x, rate = _load(opts["input"])
         result = analyze(x, rate, opts.get("context"))
         if "spectrogram" in opts:

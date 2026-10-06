@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { describe, it, expect } from "vitest";
-import { wavInfo, withOverview } from "./wav.js";
+import { wavInfo, withOverview, channelOf } from "./wav.js";
 import { bareWav } from "./testing.js";
 
 describe("wavInfo", () => {
@@ -107,5 +107,30 @@ describe("withOverview after an odd-sized last chunk", () => {
     if (!r.ok) return;
     expect(wavInfo(r.value)).toMatchObject({ ok: true, value: { hasOverview: true } });
     expect(new DataView(r.value.buffer).getUint32(4, true)).toBe(r.value.length - 8);
+  });
+});
+
+describe("channelOf (M13.18): one channel of a stereo WAV as a mono WAV", () => {
+  /** A 16-bit stereo WAV whose left samples are 1, 2, 3… and right samples -1, -2, -3… */
+  const stereo = (frames: number) => {
+    const b = bareWav(frames, 2, 44100, 16);
+    const v = new DataView(b.buffer, b.byteOffset);
+    const data = b.length - frames * 4;
+    for (let i = 0; i < frames; i++) { v.setInt16(data + 4 * i, i + 1, true); v.setInt16(data + 4 * i + 2, -(i + 1), true); }
+    return b;
+  };
+
+  it("takes the left or the right samples, keeping rate and bits", () => {
+    for (const [ch, sign] of [[0, 1], [1, -1]] as const) {
+      const r = channelOf(stereo(5), ch);
+      if (!r.ok) throw new Error(r.error.message);
+      expect(wavInfo(r.value)).toMatchObject({ ok: true, value: { channels: 1, rate: 44100, bits: 16, frames: 5 } });
+      const v = new DataView(r.value.buffer, r.value.byteOffset);
+      expect([0, 1, 2, 3, 4].map((i) => v.getInt16(r.value.length - 10 + 2 * i, true))).toEqual([1, 2, 3, 4, 5].map((x) => sign * x));
+    }
+  });
+
+  it("refuses a mono WAV", () => {
+    expect(channelOf(bareWav(5, 1, 44100, 16), 0)).toMatchObject({ ok: false, error: { code: "WAV_UNSUPPORTED" } });
   });
 });

@@ -36,7 +36,8 @@ def grid_score(beats, bpm, swing=None, swing_unit="16th", span=None):
     import numpy as np
     if len(beats) < 4:
         return {"beats": len(beats), "pass_rate": 0.0, "tempo_ratio": None, "grid_multiple": None, "note": "fewer than 4 beats detected"}
-    detected = 60.0 / float(np.median(np.diff(beats)))
+    from gbmodels.beatthis import tempo
+    detected = tempo(beats)  # not 60 / the median: frame-quantised, and wrong for swing counted on every 8th
     multiple = min(GRID_MULTIPLES, key=lambda m: abs(np.log(detected / (bpm * m))))
     period = 60.0 / (bpm * multiple)
     b = np.asarray(beats)

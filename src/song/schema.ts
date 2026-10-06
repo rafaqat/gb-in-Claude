@@ -153,11 +153,26 @@ export const SongSchema = z
     swingUnit: z.enum(["16th", "8th"]).default("16th"),
     sections: z.array(Section).min(1),
     tracks: z.array(Track).min(1),
+    /** M13.7: a tempo from a bar (and beat) on, absolute bars from the song's start — a project whose bar lines
+     *  follow a recording that drifts (gb_analyze map). Not together with section tempo / tempoTo. */
+    tempoMap: z.array(z.object({ bar: z.number().int().min(1), beat: z.number().min(1).max(7.999).default(1), bpm: Tempo }).strict()).min(1).optional(),
   })
   .strict()
   .superRefine((song, ctx) => {
     const issue = (path: (string | number)[], message: string) =>
       ctx.addIssue({ code: z.ZodIssueCode.custom, path, message });
+    if (song.tempoMap) {
+      const bars = song.sections.reduce((n, x) => n + x.bars, 0);
+      if (song.sections.some((x) => x.tempo !== undefined || x.tempoTo !== undefined)) {
+        issue(["tempoMap"], "use sections' tempo/tempoTo or tempoMap, not both");
+      }
+      song.tempoMap.forEach((t, i) => {
+        if (t.bar > bars) issue(["tempoMap", i, "bar"], `bar ${t.bar} is past the song's ${bars} bars`);
+        if (t.beat > song.timeSignature[0] + 0.999) issue(["tempoMap", i, "beat"], `beat ${t.beat} is past a ${song.timeSignature[0]}-beat bar`);
+        const prev = song.tempoMap![i - 1];
+        if (prev && (t.bar < prev.bar || (t.bar === prev.bar && t.beat <= prev.beat))) issue(["tempoMap", i], "tempoMap positions must rise");
+      });
+    }
     const [beats, unit] = song.timeSignature;
     if (unit !== 4 || beats < 2 || beats > 7) {
       issue(["timeSignature"], `only 2/4 to 7/4 are supported (got ${beats}/${unit}); styles assume quarter-note beats`);

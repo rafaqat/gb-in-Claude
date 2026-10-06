@@ -8,8 +8,9 @@ Notes are ~30% of the result; sound choice, expression and mix are the rest. Che
 ## Sound
 1. Every track gets a deliberate sound. Prefer GM programs that load with no UI (gb_sound palette → via "gm_program");
    a track left on piano when its role isn't keys is a mistake.
-2. Electronic drums: use an electronic kit (Epic Electro 16, Boutique 808 24 on channel 10) — a GM acoustic kit under a
-   trance arrangement sounds like a demo.
+2. Electronic drums: use an electronic kit (Epic Electro 16, Boutique 808 24 or 25 on channel 10) — a GM acoustic
+   kit under a trance arrangement sounds like a demo. A GM draft (render_draft) plays 25 as an 808, but it plays 16 as
+   an acoustic kit: judge Epic Electro drums in a GarageBand export, not in a draft.
 3. Layer the hook: lead + an octave layer (role "lead-high") on a different patch, a few dB quieter.
 4. Check content: catalog patches marked content "no_receipt_match" may not be downloaded — prefer "base"/"receipt_found".
 5. Real instruments have ranges (validate reports OUT_OF_INSTRUMENT_RANGE): flute C4–C7, bass E1–G4, glockenspiel F5–C8.

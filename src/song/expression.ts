@@ -169,6 +169,7 @@ function trackControllers(song: Song, songTrack: Song["tracks"][number], ppq: nu
 /** Section tempo (from its start) and tempoTo (a beat-by-beat ramp arriving on its last beat); a tempo holds until changed. */
 function tempoMap(song: Song, ppq: number): NonNullable<SmfSong["tempoMap"]> {
   const beatsPerBar = song.timeSignature[0];
+  if (song.tempoMap) return song.tempoMap.map((t) => ({ tick: Math.round(((t.bar - 1) * beatsPerBar + (t.beat - 1)) * ppq), bpm: t.bpm }));
   const map: NonNullable<SmfSong["tempoMap"]> = [];
   let current = song.tempo;
   let cursor = 0;

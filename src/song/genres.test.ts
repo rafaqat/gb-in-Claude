@@ -5,6 +5,8 @@ import { GENRE_TEMPLATES, templateSong } from "./genres.js";
 import { parseSong } from "./schema.js";
 import { validateSong } from "./validate.js";
 import { loadBriefs } from "../eval/briefs.js";
+import { COMMON_LOOPS } from "./common-loops.js";
+import { romanToChords } from "./roman.js";
 
 const briefs = loadBriefs();
 
@@ -38,9 +40,61 @@ describe("genre templates (M9): a full Song JSON draft for every genre gb-mcp kn
     expect(song.tracks.find((t) => t.role === "pad")!.program).not.toBe(89);
   });
 
+  // M13.17 screen (eval/m13-17): the 808 kit moved afrobeats up in CLAP's genre ranking on every seed and key screened.
+  // Kit 25: GarageBand plays 24 and 25 as Boutique 808; the GM draft synth plays only 25 as a TR-808 (24: its Electronic kit)
+  it("afrobeats: the drums are Boutique 808 on GM kit 25", () => {
+    const r = templateSong({ genre: "afrobeats", key: "G major", bpm: 108 });
+    if (!r.ok) throw new Error(r.error);
+    const song = r.value as { tracks: { role: string; program?: number }[] };
+    expect(song.tracks.find((t) => t.role === "drums")!.program).toBe(25);
+  });
+
   it("refuses an unknown genre with the list of known ones", () => {
     const r = templateSong({ genre: "polka", key: "C major", bpm: 120 });
     expect(r).toMatchObject({ ok: false });
     if (!r.ok) expect(r.error).toContain("deep house");
+  });
+});
+
+describe("template variants (M13.16): the genre's common loops (Chordonomicon statistics)", () => {
+  type Draft = { tracks: { name: string; parts: Record<string, { chords?: string }> }[] };
+  /** the chords a section plays: from the first track that plays chords there */
+  const chordsAt = (song: unknown, section: string) =>
+    (song as Draft).tracks.map((t) => t.parts[section]?.chords).find((c) => c !== undefined);
+  const sectionOf = (genre: string, prog: "a" | "b") =>
+    GENRE_TEMPLATES[genre]!.form.find((s) => (s.prog ?? "a") === prog && (s.pad || s.bass))!.name;
+
+  it("variant 1 plays the most common verse loop in a-sections and the chorus loop in b-sections", () => {
+    const r = templateSong({ genre: "indie rock", key: "C major", variant: 1 });
+    expect(r.ok).toBe(true);
+    const song = (r as { value: unknown }).value;
+    const loops = COMMON_LOOPS["indie rock"]!.major;
+    expect(chordsAt(song, sectionOf("indie rock", "a"))).toBe(romanToChords(loops.verse[0]!, "C major"));
+    expect(chordsAt(song, sectionOf("indie rock", "b"))).toBe(romanToChords(loops.chorus[0]!, "C major"));
+  });
+
+  it("keeps the template's colour: a genre written in sevenths gets its loops in sevenths", () => {
+    const r = templateSong({ genre: "lo-fi hip-hop", key: "C major", variant: 2 });
+    const verse = COMMON_LOOPS["lo-fi hip-hop"]!.major.verse[1]!; // triads, e.g. "I | vi | V | IV"
+    const sevenths = verse.split("|").map((c) => ({ I: "Imaj7", ii: "ii7", iii: "iii7", IV: "IVmaj7", V: "V7", vi: "vi7" })[c.trim() as "I"]).join(" | ");
+    expect(chordsAt((r as { value: unknown }).value, sectionOf("lo-fi hip-hop", "a"))).toBe(romanToChords(sevenths, "C major"));
+  });
+
+  it("variant 0 is the hand-written template", () => {
+    expect(templateSong({ genre: "trap", key: "F minor", variant: 0 })).toEqual(templateSong({ genre: "trap", key: "F minor" }));
+  });
+
+  it("every genre has 3 verse and 3 chorus loops per mode, and each one renders in a major and a minor key", () => {
+    for (const genre of Object.keys(GENRE_TEMPLATES)) {
+      const loops = COMMON_LOOPS[genre];
+      expect(loops, genre).toBeDefined();
+      for (const [mode, key] of [["major", "Eb major"], ["minor", "C# minor"]] as const) {
+        expect([loops![mode].verse.length, loops![mode].chorus.length], `${genre} ${mode}`).toEqual([3, 3]);
+        for (const variant of [1, 2, 3]) {
+          const r = templateSong({ genre, key, variant });
+          expect(r.ok, `${genre} ${key} variant ${variant}`).toBe(true);
+        }
+      }
+    }
   });
 });

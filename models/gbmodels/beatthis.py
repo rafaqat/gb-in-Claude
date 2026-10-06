@@ -22,10 +22,19 @@ def run(handle, inputs: dict) -> dict:
 def tempo(beats) -> float | None:
     """BPM of a beat list. Not 60 / the median interval: beat_this puts beats on 20 ms frames, so that median is
     quantised (84.85 BPM reads 85.71). The mean of the regular intervals — within 15 % of the median, which leaves out
-    gaps (a free intro, a break) and a beat caught on a swung off-beat — averages the frames out."""
+    gaps (a free intro, a break) and a beat caught on a swung off-beat — averages the frames out. Hard swing counted on
+    every 8th has no regular intervals; there the neighbouring pairs (short + long) give the step."""
     import numpy as np
     ibi = np.diff(np.asarray(beats, dtype=float))
     if len(ibi) == 0:
         return None
-    regular = ibi[np.abs(ibi / np.median(ibi) - 1) <= 0.15]
+    near = lambda v: np.abs(v / np.median(v) - 1) <= 0.15  # noqa: E731
+    regular = ibi[near(ibi)]
+    if len(regular) < 0.75 * len(ibi) and len(ibi) >= 4:
+        # swing counted on every 8th: the intervals alternate short/long, but each neighbouring pair is one beat apart.
+        # (A tracker that switches to half time also leaves few regular intervals, but its pairs do not add up.)
+        pairs = ibi[:-1] + ibi[1:]
+        steady = pairs[near(pairs)]
+        if len(steady) >= 0.75 * len(pairs):
+            return 120.0 / float(np.mean(steady))
     return 60.0 / float(np.mean(regular))

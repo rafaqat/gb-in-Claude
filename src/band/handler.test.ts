@@ -468,3 +468,26 @@ describe("a donor cannot make the build run away", () => {
   });
 });
 
+
+describe("BuildBandHandler: a stereo WAV on two mono tracks (M13.18)", () => {
+  const twoAudio = fileURLToPath(new URL("../../test/fixtures/band/two-audio-tracks.band", import.meta.url));
+
+  it("writes each channel as a mono file on its own track and pans the tracks hard left and right", async () => {
+    const wav = join(dir, "pads.wav");
+    writeFileSync(wav, bareWav(4410, 2, 44100, 16));
+    const out = join(dir, "pair.band");
+    const r = await new BuildBandHandler().execute({ donor: twoAudio, out,
+      regions: [{ wav, tick: 0, track: 1, channel: 0 }, { wav, tick: 0, track: 2, channel: 1 }],
+      pans: [{ track: 1, pan: -64 }, { track: 2, pan: 63 }] });
+    expect(r).toMatchObject({ ok: true, value: { regions: [{ track: 1, file: "pads-L.wav" }, { track: 2, file: "pads-R.wav" }] } });
+    for (const f of ["pads-L.wav", "pads-R.wav"]) {
+      expect(wavInfo(new Uint8Array(readFileSync(join(out, "Media", "Audio Files", f))))).toMatchObject({ ok: true, value: { channels: 1, frames: 4410 } });
+    }
+    const pd = parseProjectData(new Uint8Array(readFileSync(join(out, "Alternatives", "000", "ProjectData"))));
+    if (!pd.ok) throw new Error(pd.error.message);
+    const { visibleTracks } = await import("./tracks.js");
+    const { audioChannel } = await import("./channels.js");
+    const pans = visibleTracks(pd.value).filter((t) => t.kind === "audio").map((t) => { const c = audioChannel(pd.value, t.strip); return c.ok ? c.value.pan : null; });
+    expect(pans).toEqual([-64, 63]);
+  });
+});

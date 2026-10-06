@@ -40,6 +40,18 @@ const engines = Object.fromEntries(Object.entries(engineDirs)
   .filter(([, py]) => existsSync(py))
   .map(([name, py]) => [name, createModelSidecar({ command: py, args: ["-m", "gbmodels.server"], cwd: modelsDir, timeoutMs: 45 * 60_000,
     startTimeoutMs: 120_000, env: { GBMODELS_ENV: name.replace("_", "-") } })]));
+// M13.12 the RoFormer separator (gb_stem separate {model: "roformer"}): its own venv, no code of its own to clone
+const roformerPython = resolve(process.env.GB_MCP_ROFORMER ?? resolve(engineCache, "roformer"), ".venv", "bin", "python");
+const separator = existsSync(roformerPython)
+  ? createModelSidecar({ command: roformerPython, args: ["-m", "gbmodels.server"], cwd: modelsDir, timeoutMs: 30 * 60_000,
+    startTimeoutMs: 120_000, env: { GBMODELS_ENV: "roformer" } })
+  : undefined;
+// M13.13 all-in-one for gb_analyze map's sections (its NATTEN is gbmodels/natten_mps.py): its own venv
+const sectionsPython = resolve(process.env.GB_MCP_SECTIONS ?? resolve(engineCache, "sections"), ".venv", "bin", "python");
+const sections = existsSync(sectionsPython)
+  ? createModelSidecar({ command: sectionsPython, args: ["-m", "gbmodels.server"], cwd: modelsDir, timeoutMs: 15 * 60_000,
+    startTimeoutMs: 120_000, env: { GBMODELS_ENV: "sections" } })
+  : undefined;
 const server = createServer({
   system,
   garageband: {
@@ -54,6 +66,8 @@ const server = createServer({
   gmRenderer: createGmRenderer({ binary: resolve(packageRoot, "native/bin/gm-render"), timeoutMs: 300_000 }),
   ...(listener ? { listener } : {}),
   engines,
+  ...(separator ? { separator } : {}),
+  ...(sections ? { sections } : {}),
   aceExamplesDir: resolve(engineDirs.ace_step, "examples", "text2music"),
 });
 const shutdown = () => {
@@ -61,6 +75,8 @@ const shutdown = () => {
   setTimeout(exit, 1000).unref(); // never hang on a stuck helper
   listener?.close();
   for (const engine of Object.values(engines)) engine.close();
+  separator?.close();
+  sections?.close();
   system.helper.close().then(exit, exit);
 };
 process.on("SIGINT", shutdown);

@@ -53,4 +53,20 @@ tempo_mismatch → GarageBand project tempo ≠ Song JSON tempo
 key_mismatch → chords/notes vs declared key
 
 Thresholds are heuristics (ask for fields: ["thresholds"] to see them).
+
+## Finish, choose, map, check the words (M13)
+master { path, filename: "song-master.wav", lufs?: -14, peak?: -1 } → masters/<filename>: one gain to the loudness
+  target and a true-peak limiter (4× oversampled) only where a peak would pass the ceiling. It reports the result's
+  LUFS and dBTP. No EQ, no compression: for a finished mix. dry_run shows the gain first.
+takes { paths: [2–8 WAVs] } → the takes side by side: length, loudness, true peak, tempo, key, flags. Use it to pick
+  among seeds or versions; it ranks nothing — the user's ears choose.
+map { path } → the song's tempo, bars, chords, vocal rests and sections (install-engines.sh sections), and where to
+  place its stems in GarageBand (see gb://knowledge/generate, "MIDI parts next to a generated song"). It names the four
+  stems it used. gb_project from_audio and gb_song transcribe (a Song JSON draft of the recording) use it.
+lyrics { path, lyrics, language? } → Whisper (large-v3-turbo on MLX, pinned) transcribes the vocal stem (a path that ends
+  in -vocals.wav is used as it is; another WAV is separated first with htdemucs — for fewer false misses, run
+  gb_stem separate {model: "roformer"} first and pass its -vocals.wav) and lines it up with the written lyrics.
+  Per line: sung (≥ 85 % of its words heard), partial or missing; start_s and end_s; the words heard. Also wer.
+  Whisper often mishears rare names (places, people): a partial line with a name in it may be sung well. Listen at its
+  start_s before you regenerate. The first call downloads the model (1.6 GB); then about 1 minute for a 4-minute song.
 `;

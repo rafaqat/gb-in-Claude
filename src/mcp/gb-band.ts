@@ -28,7 +28,9 @@ export const BandAudioItem = z.object({
   beat: z.number().min(1).max(BAND_AUDIO_LIMITS.maxBeat).optional().describe("1-based beat in the bar (default 1)"),
   track: z.number().int().min(1).max(255).describe("the donor's audio track number"),
   name: RegionName.optional(),
-}).strict();
+  pair: z.number().int().min(1).max(255).optional()
+    .describe("a stereo WAV on two mono tracks: the left channel on track, the right on this track, panned hard left and right"),
+}).strict().refine((a) => a.pair === undefined || a.pair !== a.track, { message: "pair must be another track than track", path: ["pair"] });
 
 /** New notes for one of the donor's MIDI regions. */
 export const BandMidiItem = z.object({
@@ -107,11 +109,24 @@ export function createGbBand(deps: GbBandDeps) {
       });
     }
     const regions = [];
+    const pans: { track: number; pan: number }[] = [];
     for (const [i, a] of cmd.audio.entries()) {
       const wav = resolveWorkspaceFile(deps.workspaceDir, a.wav, [".wav"]);
       if (!wav.ok) return failed(op, wav.error.code, `audio.${i}: ${wav.error.message}`);
       const tick = Math.round(((a.bar - 1) * BEATS_PER_BAR + ((a.beat ?? 1) - 1)) * TICKS_PER_BEAT);
-      regions.push({ wav: wav.value, tick, track: a.track, ...(a.name !== undefined ? { name: a.name } : {}) });
+      if (a.pair === undefined) {
+        regions.push({ wav: wav.value, tick, track: a.track, ...(a.name !== undefined ? { name: a.name } : {}) });
+        continue;
+      }
+      // M13.18: GarageBand's Mic or Line tracks are mono here — a stereo stem keeps its image as two hard-panned tracks
+      const named = (side: string) => (a.name !== undefined ? { name: `${a.name.slice(0, 36)} ${side}` } : {});
+      regions.push({ wav: wav.value, tick, track: a.track, channel: 0 as const, ...named("L") }, { wav: wav.value, tick, track: a.pair, channel: 1 as const, ...named("R") });
+      pans.push({ track: a.track, pan: -64 }, { track: a.pair, pan: 63 });
+    }
+    const panned = new Set<number>();
+    for (const p of pans) {
+      if (panned.has(p.track)) return failed(op, "INPUT_INVALID", `track ${p.track} is in two stereo pairs`);
+      panned.add(p.track);
     }
     const midi: BandMidi[] = [];
     for (const [i, m] of (cmd.midi ?? []).entries()) {
@@ -124,9 +139,9 @@ export function createGbBand(deps: GbBandDeps) {
     const out = join(bands?.value ?? join(deps.workspaceDir, "bands"), cmd.filename);
     if (existsSync(out)) return failed(op, "FILE_EXISTS", `${cmd.filename} already exists in the workspace; nothing written`, { hint: "choose a new filename" });
     if (cmd.dry_run) {
-      return verified(op, { dry_run: true, path: out, donor: donor.value, audio: regions.map(({ tick, track, wav }) => ({ tick, track, wav })), midi: midi.map((m) => ({ region: m.region, notes: m.notes.length })) });
+      return verified(op, { dry_run: true, path: out, donor: donor.value, audio: regions.map((r) => ({ tick: r.tick, track: r.track, wav: r.wav, ...("channel" in r ? { channel: r.channel === 0 ? "left" : "right" } : {}) })), midi: midi.map((m) => ({ region: m.region, notes: m.notes.length })), ...(pans.length ? { pans } : {}) });
     }
-    const built = await new BuildBandHandler().execute({ donor: donor.value, out, regions, ...(midi.length ? { midi } : {}) });
+    const built = await new BuildBandHandler().execute({ donor: donor.value, out, regions, ...(midi.length ? { midi } : {}), ...(pans.length ? { pans } : {}) });
     if (!built.ok) {
       if (built.error.written) {
         // a partial package exists under the new name; gb-mcp never deletes, so the agent must know it is there
@@ -140,6 +155,6 @@ export function createGbBand(deps: GbBandDeps) {
     }
     const summary = inspectBand(out);
     if (!summary.ok) return failed(op, "WRITE_FAILED", `the new project does not read back: ${summary.error.message}`);
-    return verified(op, { path: out, ...summary.value });
+    return verified(op, { path: out, ...summary.value, ...(pans.length ? { pans } : {}) });
   };
 }

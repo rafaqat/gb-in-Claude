@@ -6,6 +6,8 @@ import sys
 import tempfile
 import unittest
 
+import numpy as np
+
 from gbmodels import ace_step, mulacover
 
 
@@ -58,6 +60,90 @@ class AceStepInputs(unittest.TestCase):
         open(self.out, "wb").close()
         with self.assertRaises(FileExistsError):
             ace_step.validate({"task": "text", "caption": "x", "duration": 30, "out": self.out})
+
+    def test_repaint_needs_a_source_and_a_range_and_never_thinks(self):
+        v = ace_step.validate({"task": "repaint", "src": wav(self.d), "caption": "quiet bridge", "start": 10, "end": 20, "out": self.out})
+        self.assertEqual((v["task"], v["start"], v["end"], v["mode"], v["strength"], v["thinking"]), ("repaint", 10.0, 20.0, "balanced", 0.5, False))
+        self.assertEqual(ace_step.validate({"task": "repaint", "src": wav(self.d), "caption": "x", "start": 5, "out": self.out})["end"], -1.0)
+        for inputs, word in [({"task": "repaint", "caption": "x", "start": 1, "end": 2, "out": self.out}, "src"),
+                             ({"task": "repaint", "src": wav(self.d), "caption": "x", "start": 20, "end": 10, "out": self.out}, "end"),
+                             ({"task": "repaint", "src": wav(self.d), "caption": "x", "out": self.out}, "start"),
+                             ({"task": "repaint", "src": wav(self.d), "caption": "x", "start": 1, "mode": "wild", "out": self.out}, "mode")]:
+            with self.assertRaisesRegex(ValueError, word, msg=str(inputs)[:80]):
+                ace_step.validate(inputs)
+
+
+class LegoAndComplete(unittest.TestCase):
+    """M13.10: the ACE-Step base model adds a track to a song (lego) or completes a lone track (complete)."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.out = os.path.join(self.d, "out.wav")
+
+    def test_lego_adds_one_named_track_over_a_range(self):
+        v = ace_step.validate({"task": "lego", "src": wav(self.d), "caption": "uilleann pipes, Irish ornaments", "track": "woodwinds", "out": self.out})
+        self.assertEqual((v["task"], v["track"], v["start"], v["end"], v["thinking"]), ("lego", "woodwinds", 0.0, -1.0, False))
+        for inputs, word in [({"task": "lego", "src": wav(self.d), "caption": "x", "track": "bagpipes", "out": self.out}, "track"),
+                             ({"task": "lego", "caption": "x", "track": "brass", "out": self.out}, "src")]:
+            with self.assertRaisesRegex(ValueError, word):
+                ace_step.validate(inputs)
+
+    def test_complete_takes_a_list_of_track_names(self):
+        v = ace_step.validate({"task": "complete", "src": wav(self.d), "caption": "warm soul band", "tracks": ["drums", "bass", "keyboard"], "out": self.out})
+        self.assertEqual((v["task"], v["tracks"]), ("complete", ["drums", "bass", "keyboard"]))
+        for tracks in ([], ["drums", "cowbell"], "drums"):
+            with self.assertRaisesRegex(ValueError, "tracks"):
+                ace_step.validate({"task": "complete", "src": wav(self.d), "caption": "x", "tracks": tracks, "out": self.out})
+
+
+class LegoCrop(unittest.TestCase):
+    """M13.10 live: lego on a whole 270 s song passed ACE-Step's 600 s limit (32 steps x 2 for CFG). It now works on
+    the range plus context, and the result goes back to its place in a song-length file."""
+
+    def test_the_window_is_the_range_plus_context_inside_the_song(self):
+        self.assertEqual(ace_step.crop_window(30.0, 90.0, 270.0, 10.0), (20.0, 100.0, 10.0, 70.0))
+        self.assertEqual(ace_step.crop_window(5.0, -1.0, 270.0, 10.0), (0.0, 270.0, 5.0, -1.0))
+        self.assertEqual(ace_step.crop_window(250.0, 268.0, 270.0, 10.0), (240.0, 270.0, 10.0, 28.0))
+
+    def test_only_the_new_track_is_kept_the_context_was_the_song_itself(self):
+        # live: lego returns the context (10 s each side) as a copy of the song; layered on the song it would play twice
+        piece = np.ones((100, 1))
+        y = ace_step.keep_range(piece, rate=10, start_s=2.0, end_s=8.0, fade_s=0.2)
+        self.assertEqual(y[:20, 0].tolist(), [0.0] * 20)
+        self.assertEqual(y[82:, 0].tolist(), [0.0] * 18)
+        self.assertEqual(y[30:70, 0].tolist(), [1.0] * 40)
+        self.assertTrue(0 < y[20, 0] <= y[21, 0] < 1)                 # a fade in, not a click
+
+    def test_the_piece_goes_back_to_its_place(self):
+        piece = np.ones((3, 2))
+        y = ace_step.pad_to(piece, rate=10, offset_s=0.5, frames=12)
+        self.assertEqual(y.shape, (12, 2))
+        self.assertEqual(y[:, 0].tolist(), [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0])
+
+
+class RepaintLevel(unittest.TestCase):
+    """ACE-Step normalises its output: a repaint comes back at another level. It is brought back to the source's
+    level, measured where the source was kept, so the result splices into a project."""
+
+    def test_the_kept_part_comes_back_at_the_source_level(self):
+        sr = 1000
+        rng = np.random.default_rng(0)
+        src = rng.standard_normal((10 * sr, 2)) * 0.2
+        out = src * 0.89
+        out[4 * sr:6 * sr] = rng.standard_normal((2 * sr, 2)) * 0.1  # the repainted range
+        y, info = ace_step.match_level(src, out, sr, start=4.0, end=6.0)
+        self.assertAlmostEqual(info["gain_db"], 1.01, delta=0.02)
+        self.assertTrue(info["level_matched"])
+        np.testing.assert_allclose(y[:4 * sr], src[:4 * sr], atol=1e-9)
+
+    def test_it_never_clips_a_peak_and_says_so(self):
+        sr = 1000
+        src = np.full((4 * sr, 1), 0.95)
+        out = src * 0.5
+        out[sr:2 * sr] = 0.9  # a loud repaint: matching the level would take it to 1.71
+        y, info = ace_step.match_level(src, out, sr, start=1.0, end=2.0)
+        self.assertLessEqual(np.abs(y).max(), 10 ** (-0.1 / 20) + 1e-9)
+        self.assertFalse(info["level_matched"])
 
 
 class MuLaCoverInputs(unittest.TestCase):

@@ -5,7 +5,8 @@
  * - ace_step (ACE-Step 1.5, MIT): `cover` re-sings / re-plays a song export to a caption and lyrics (strength = how
  *   closely it keeps the source); `text` makes music from a caption, bpm, key and length.
  * - mulacover (MuLaCover; weights AND outputs non-commercial): `cover` sings lyrics on a song's own melody, chords and
- *   drums, read from its MIDI; it chooses its own tempo, so the result says how to re-time it (gb_stem prepare).
+ *   drums, read from its MIDI; it chooses its own tempo, so gb_generate re-times the result to the song into a new file
+ *   next to it (M13.15; `retime: false` keeps only the original and says how to re-time it with gb_stem prepare).
  * A generation takes 1.5–8 minutes on an M4 Air — longer than many MCP clients wait for one call — so `start` returns a
  * job at once and `status` follows it; every job is also kept in gen/jobs/<job>.json. One generation runs at a time,
  * and starting one engine closes the other's sidecar (each needs ~14 GB). A finished WAV is checked with gb_band's WAV
@@ -13,12 +14,13 @@
  */
 import { z } from "zod";
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { randomBytes } from "node:crypto";
 import { resolveWorkspaceFile, workspaceOutputDir } from "../workspace/paths.js";
 import { wavInfo } from "../band/wav.js";
 import type { ModelSidecar } from "../models/sidecar.js";
 import { verified, failed, type Envelope } from "./envelope.js";
+import { ok, err, type Result } from "../result.js";
 import { ATTRIBUTION, loadExamples, rankExamples } from "../generate/examples.js";
 
 export const ENGINES = ["ace_step", "mulacover"] as const;
@@ -27,15 +29,18 @@ const GEN_DIR = "gen";
 const JOBS_DIR = "gen/jobs";
 const AUDIO_IN = [".wav", ".aif", ".aiff", ".flac"] as const;
 const TEMPO_TOLERANCE = 0.02;
+const LENGTH_TOLERANCE = 0.01; // as gb_stem prepare checks its file
 const GUIDE = "read gb://knowledge/generate (engines, install, times, licences)";
 
+/** ACE-Step's track names for lego / complete (acestep/constants.py TRACK_NAMES). */
+export const ACE_TRACKS = ["woodwinds", "brass", "fx", "synth", "strings", "percussion", "keyboard", "guitar", "bass", "drums", "backing_vocals", "vocals"] as const;
 const SafeWav = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9 _.-]{0,79}\.wav$/, "a .wav file name such as vocals-v1.wav (no folders)");
 const Names = z.array(z.string().min(1).max(64)).min(1).max(8);
 
 const Start = z.object({
   command: z.literal("start"),
   engine: z.enum(ENGINES),
-  task: z.enum(["cover", "text"]),
+  task: z.enum(["cover", "text", "repaint", "lego", "complete"]),
   filename: SafeWav,
   // ace_step
   src: z.string().min(1).optional(),
@@ -45,6 +50,11 @@ const Start = z.object({
   key: z.string().min(1).max(32).optional(),
   duration: z.number().min(10).max(600).optional(),
   thinking: z.boolean().optional(),
+  start: z.number().min(0).max(3600).optional(), // repaint: from this second of src
+  end: z.number().min(-1).max(3600).optional(), // repaint: to this second (-1: the end)
+  mode: z.enum(["conservative", "balanced", "aggressive"]).optional(), // repaint: how far it may move from src
+  track: z.enum(ACE_TRACKS).optional(), // lego: the track to add
+  tracks: z.array(z.enum(ACE_TRACKS)).min(1).max(11).optional(), // complete: the tracks to add around src
   // mulacover
   midi: z.string().min(1).optional(),
   melody: Names.optional(),
@@ -53,6 +63,7 @@ const Start = z.object({
   start_bar: z.number().int().min(1).optional(),
   bars: z.number().int().min(1).max(200).optional(),
   tags: z.string().min(1).max(512).optional(),
+  retime: z.boolean().optional(), // M13.15: re-time the result to the song's tempo (default true)
   // both
   lyrics: z.string().min(1).max(4096).optional(),
   seed: z.number().int().min(0).max(2 ** 31 - 1).optional(),
@@ -77,14 +88,19 @@ export const GB_GENERATE_COMMANDS = ["start", "status", "list", "examples"] as c
 const REQUIRED: Record<string, readonly (keyof StartInput)[]> = {
   "ace_step:cover": ["src", "caption"],
   "ace_step:text": ["caption", "duration"],
+  "ace_step:repaint": ["src", "caption", "start"],
+  "ace_step:lego": ["src", "caption", "track"],
+  "ace_step:complete": ["src", "caption", "tracks"],
   "mulacover:cover": ["midi", "melody", "chords", "lyrics", "tags"],
 };
 const ONLY: Record<Engine, readonly (keyof StartInput)[]> = {
-  ace_step: ["src", "caption", "strength", "bpm", "key", "duration", "thinking"],
-  mulacover: ["midi", "melody", "chords", "drums", "start_bar", "bars", "tags"],
+  ace_step: ["src", "caption", "strength", "bpm", "key", "duration", "thinking", "start", "end", "mode", "track", "tracks"],
+  mulacover: ["midi", "melody", "chords", "drums", "start_bar", "bars", "tags", "retime"],
 };
 
 export type JobState = "running" | "done" | "failed" | "interrupted";
+/** M13.15: a MuLaCover result re-timed to the song, a new file next to the original; bpm as measured (null: no clear beat). */
+type Retimed = { path: string; bpm: number | null; from_bpm: number; to_bpm: number; factor: number; rate: number; bits: number; seconds: number };
 type Job = {
   job: string; engine: Engine; task: string; state: JobState; out: string; started_at: string; finished_at?: string;
   eta_s: number; result?: Record<string, unknown>; error?: { code: string; message: string }; warnings?: string[];
@@ -112,6 +128,7 @@ const seconds = (from: string, to?: string) => Math.round(((to ? Date.parse(to) 
 /** Rough estimates from the M12a / M12d measurements on an M4 Air (load included). */
 function estimate(input: StartInput, srcSeconds: number | null): number {
   if (input.engine === "ace_step" && input.task === "text") return Math.round(35 + (input.thinking === false ? 1.0 : 2.4) * (input.duration ?? 30));
+  if (input.engine === "ace_step" && (input.task === "lego" || input.task === "complete")) return Math.round(60 + 3.0 * (srcSeconds ?? 120)); // base model: 32 steps
   if (input.engine === "ace_step") return Math.round(35 + 1.0 * (srcSeconds ?? 120));
   const sec = (input.bars ?? 32) * 1.9; // ≈ 4 beats at 126 BPM per bar
   return Math.round(20 + 1.9 * sec + 60 * Math.ceil(sec / 25.6));
@@ -141,7 +158,7 @@ export function createGbGenerate(deps: GbGenerateDeps) {
     ...(j.result ? { result: j.result } : {}), ...(j.error ? { error: j.error } : {}),
   });
 
-  async function finish(job: Job, dir: string, engine: ModelSidecar, inputs: Record<string, unknown>, songBpm: number | null) {
+  async function finish(job: Job, dir: string, engine: ModelSidecar, inputs: Record<string, unknown>, songBpm: number | null, retimeOn: boolean) {
     const r = await engine.run(job.engine, inputs);
     const end = (state: JobState, extra: Partial<Job>) => {
       Object.assign(job, { state, finished_at: new Date().toISOString(), ...extra });
@@ -154,6 +171,7 @@ export function createGbGenerate(deps: GbGenerateDeps) {
     if (!info.ok) return end("failed", { error: { code: "AUDIO_INVALID", message: info.error.message } });
     const value = r.value as Record<string, unknown>;
     const inputBpm = typeof value.input_bpm === "number" ? value.input_bpm : songBpm;
+    const seconds = info.value.frames / info.value.rate;
     const warnings: string[] = [];
     let measured: { bpm?: number | null; key?: string | null } = {};
     if (deps.listener) {
@@ -162,15 +180,68 @@ export function createGbGenerate(deps: GbGenerateDeps) {
       else warnings.push(`tempo and key not measured: ${m.error.message}`);
     } else warnings.push("tempo and key not measured: the model sidecar is not installed");
     const rel = relative(deps.workspaceDir, job.out);
+    let retimed: Retimed | undefined;
     if (inputBpm && typeof measured.bpm === "number" && Math.abs(measured.bpm / inputBpm - 1) > TEMPO_TOLERANCE) {
-      warnings.push(`the result runs at ${measured.bpm} BPM, the song at ${inputBpm}: re-time it before placing — gb_stem prepare ` +
-        `{path: "${rel}", filename: "…", to_bpm: ${inputBpm}, from_bpm: ${measured.bpm}}`);
+      const off = `the result runs at ${measured.bpm} BPM, the song at ${inputBpm}`;
+      const manual = `re-time it before placing — gb_stem prepare {path: "${rel}", filename: "…", to_bpm: ${inputBpm}, from_bpm: ${measured.bpm}}`;
+      // M13.15: MuLaCover's result is re-timed by default; a failed re-time never loses the result
+      const r = retimeOn && deps.listener
+        ? await retime(deps.listener, job.out, seconds, inputBpm, measured.bpm).catch((e: unknown) => err(String(e).slice(0, 300)))
+        : null;
+      if (r === null) warnings.push(`${off}: ${manual}`);
+      else if (r.ok) {
+        retimed = r.value.file;
+        warnings.push(...r.value.warnings);
+      } else warnings.push(`${off}; it is not re-timed: ${r.error}. The original is unchanged: ${manual}`);
+    } else if (job.engine === "mulacover" && inputBpm && measured.bpm === null) { // MuLaCover chooses its own tempo: never assume it
+      warnings.push(`no clear beat in the result: it is not re-timed. Find its tempo (gb_analyze map), then gb_stem prepare ` +
+        `{path: "${rel}", filename: "…", to_bpm: ${inputBpm}, from_bpm: <its tempo>}`);
+    }
+    const range = typeof value.range_seconds === "number" ? value.range_seconds : null;
+    const bars = typeof value.bars === "number" ? value.bars : null;
+    if (job.engine === "mulacover" && range && bars && inputBpm && typeof measured.bpm === "number") {
+      const atSong = (seconds * measured.bpm) / inputBpm; // the result's length at the song's tempo
+      if (atSong < range * (1 - LENGTH_TOLERANCE)) {
+        warnings.push(`the result lasts ${atSong.toFixed(2)} s at ${inputBpm} BPM; the ${bars} bars last ${range.toFixed(2)} s: about ` +
+          `${((range - atSong) / (range / bars)).toFixed(1)} bars at the end may be missing. Listen to the end before placing`);
+      }
     }
     end("done", {
-      result: { ...value, path: job.out, seconds: Math.round((info.value.frames / info.value.rate) * 1000) / 1000, rate: info.value.rate,
-        bits: info.value.bits, bpm: measured.bpm ?? null, key: measured.key ?? null },
+      result: { ...value, path: job.out, seconds: Math.round(seconds * 1000) / 1000, rate: info.value.rate,
+        bits: info.value.bits, bpm: measured.bpm ?? null, key: measured.key ?? null, ...(retimed ? { retimed } : {}) },
       ...(warnings.length ? { warnings } : {}),
     });
+  }
+
+  /** M13.15: a result → a new file next to it at the song's tempo, with the stems sidecar's prepare (Rubber Band's R3, as
+   * gb_stem prepare uses for tonal audio: a sung mix is tonal). The new file is checked like gb_stem prepare checks its
+   * file: gb_band can read it, its length is the original's × from/to, and its tempo is measured. Never overwrites; the
+   * original is never touched. An error is a reason to keep only the original. */
+  async function retime(models: ModelSidecar, wav: string, wavSeconds: number, toBpm: number, fromBpm: number):
+    Promise<Result<{ file: Retimed; warnings: string[] }, string>> {
+    const out = join(dirname(wav), `${basename(wav, ".wav")}-${Math.round(toBpm * 100) / 100}bpm.wav`);
+    const name = relative(deps.workspaceDir, out);
+    if (occupied(out)) return err(`${name} already exists`); // the sidecar refuses too, atomically
+    const r = await models.run("stems", { op: "prepare", wav, out, to_bpm: toBpm, from_bpm: fromBpm, mode: "tonal" });
+    if (!r.ok) return err(r.error.message);
+    if (!existsSync(out)) return err(`${name} was not written`);
+    const info = wavInfo(new Uint8Array(readFileSync(out)));
+    if (!info.ok) return err(`${name}: ${info.error.message}`);
+    const seconds = info.value.frames / info.value.rate;
+    const expected = (wavSeconds * fromBpm) / toBpm;
+    if (Math.abs(seconds - expected) > Math.max(0.05, expected * LENGTH_TOLERANCE)) {
+      return err(`${name} is ${seconds.toFixed(2)} s long; ${expected.toFixed(2)} s were expected — do not place it`);
+    }
+    const warnings: string[] = [];
+    const m = await models.run("stems", { op: "inspect", wav: out, near_bpm: toBpm });
+    const bpm = m.ok ? (m.value as { bpm?: number | null }).bpm ?? null : null;
+    if (!m.ok) warnings.push(`the tempo of ${name} is not measured: ${m.error.message}`);
+    else if (bpm === null) warnings.push(`no clear beat in ${name}: its tempo is not checked`);
+    else if (Math.abs(bpm / toBpm - 1) > TEMPO_TOLERANCE) {
+      warnings.push(`${name} measures ${bpm} BPM, the song ${toBpm}: listen to it before placing (MuLaCover's tempo may drift)`);
+    }
+    return ok({ file: { path: out, bpm, from_bpm: fromBpm, to_bpm: toBpm, factor: Math.round((fromBpm / toBpm) * 1e6) / 1e6,
+      rate: info.value.rate, bits: info.value.bits, seconds: Math.round(seconds * 1000) / 1000 }, warnings });
   }
 
   return async function gbGenerate(raw: unknown): Promise<Envelope> {
@@ -208,7 +279,7 @@ export function createGbGenerate(deps: GbGenerateDeps) {
     // start
     const key = `${cmd.engine}:${cmd.task}`;
     const required = REQUIRED[key];
-    if (!required) return failed(op, "INPUT_INVALID", `${cmd.engine} has no task ${cmd.task}; tasks: ace_step cover | text, mulacover cover`);
+    if (!required) return failed(op, "INPUT_INVALID", `${cmd.engine} has no task ${cmd.task}; tasks: ace_step cover | text | repaint | lego | complete, mulacover cover`);
     const missing = required.filter((f) => cmd[f] === undefined);
     if (missing.length) return failed(op, "INPUT_INVALID", `${cmd.engine} ${cmd.task} needs ${missing.join(", ")}`, { hint: GUIDE });
     const foreign = ONLY[cmd.engine === "ace_step" ? "mulacover" : "ace_step"].filter((f) => cmd[f] !== undefined);
@@ -226,7 +297,7 @@ export function createGbGenerate(deps: GbGenerateDeps) {
         const info = src.value.endsWith(".wav") ? wavInfo(new Uint8Array(readFileSync(src.value))) : null;
         srcSeconds = info?.ok ? info.value.frames / info.value.rate : null;
       }
-      for (const f of ["caption", "lyrics", "strength", "bpm", "key", "duration", "thinking", "seed"] as const) if (cmd[f] !== undefined) inputs[f] = cmd[f];
+      for (const f of ["caption", "lyrics", "strength", "bpm", "key", "duration", "thinking", "seed", "start", "end", "mode", "track", "tracks"] as const) if (cmd[f] !== undefined) inputs[f] = cmd[f];
     } else {
       const midi = resolveWorkspaceFile(deps.workspaceDir, cmd.midi!, [".mid"]);
       if (!midi.ok) return failed(op, midi.error.code, midi.error.message, { hint: "render the Song JSON first: gb_song render_midi" });
@@ -241,7 +312,11 @@ export function createGbGenerate(deps: GbGenerateDeps) {
       return failed(op, "FILE_EXISTS", `${GEN_DIR}/${inputsDir} already exists; nothing written`, { hint: "choose a new filename" });
     }
     const eta = estimate(cmd, srcSeconds);
-    if (cmd.dry_run) return verified(op, { dry_run: true, engine: cmd.engine, task: cmd.task, out, eta_s: eta, inputs: { ...inputs, out } });
+    const retimeOn = cmd.engine === "mulacover" && cmd.retime !== false;
+    if (cmd.dry_run) {
+      return verified(op, { dry_run: true, engine: cmd.engine, task: cmd.task, out, eta_s: eta, ...(cmd.engine === "mulacover" ? { retime: retimeOn } : {}),
+        inputs: { ...inputs, out } });
+    }
     if (running) {
       return failed(op, "ENGINE_BUSY", `job ${running} is still generating; one generation runs at a time`, { hint: `poll gb_generate status {job: "${running}"}` });
     }
@@ -257,7 +332,7 @@ export function createGbGenerate(deps: GbGenerateDeps) {
     save(dir.value, job);
     running = job.job;
     for (const other of ENGINES) if (other !== cmd.engine) deps.engines[other]?.close(); // free its memory first
-    void finish(job, dir.value, engine, { ...inputs, out: outPath }, cmd.bpm ?? null).catch((e: unknown) => {
+    void finish(job, dir.value, engine, { ...inputs, out: outPath }, cmd.bpm ?? null, retimeOn).catch((e: unknown) => {
       Object.assign(job, { state: "failed", finished_at: new Date().toISOString(), error: { code: "INTERNAL_ERROR", message: String(e).slice(0, 300) } });
       save(dir.value, job);
       running = null;

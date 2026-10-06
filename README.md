@@ -17,13 +17,24 @@ export a WAV, and "listen" to the result (loudness, tone, drums, tempo, key, a s
 
 ## Listen
 
+### A sung demo (gb_generate)
+
+A short indie-pop song with a sung vocal: Claude Code wrote the caption and new lyrics after reading ACE-Step's own
+examples, `gb_generate` made it with ACE-Step 1.5 on a MacBook Air in about 2 minutes, `gb_stem separate {model:
+"roformer"}` took the vocal out, `gb_analyze lyrics` checked the words (6 of 8 lines sung as written, 2 partly) and
+`gb_analyze master` set the loudness (−14 LUFS).
+
+[▶ Listen (MP3)](media/vocal-demo.mp3) · [Caption, lyrics and calls](examples/vocal-demo.md)
+
+### Twinkle, Twinkle, Little Star
+
 Three versions of *Twinkle, Twinkle, Little Star*. Claude Code wrote each one as Song JSON, GarageBand's own
 instruments play it through gb-mcp, and `gb_analyze` checked every export. They are pastiches in each composer's
 style, not affiliated with the composers.
 
 GitHub starts each player muted: turn the sound on in the player.
 
-### In the style of John Williams
+#### In the style of John Williams
 
 Celesta and harp magic, a brass fanfare, a march, then a jump up to E♭ for the finale.
 
@@ -31,7 +42,7 @@ https://github.com/user-attachments/assets/bd76db5a-bce2-4683-864b-7b516084aec5
 
 [▶ Listen (MP3)](media/twinkle-williams.mp3) · [Song JSON](examples/twinkle-williams.song.json)
 
-### In the style of Hans Zimmer
+#### In the style of Hans Zimmer
 
 A ticking ostinato, brass "braams", and a storm in D minor that breaks into D major.
 
@@ -39,7 +50,7 @@ https://github.com/user-attachments/assets/0f1adb5a-aa1d-4645-8ae6-9de8a9cd78f1
 
 [▶ Listen (MP3)](media/twinkle-zimmer.mp3) · [Song JSON](examples/twinkle-zimmer.song.json)
 
-### In the style of J. S. Bach
+#### In the style of J. S. Bach
 
 A toccata flourish, then a three-voice fugue on the tune for pipe organ, ending on a D-major chord.
 
@@ -170,6 +181,11 @@ Talk to Claude Code:
 | A song with vocals | *Write a warm acoustic folk song with a female voice about an old lighthouse keeper. Make it a WAV and a GarageBand project made from its stems* |
 | Another take | *Make another take with a different seed and tell me how the two differ in tempo and key* |
 | Stems | *Split exports/demo.wav into vocals, drums, bass and other, and put the vocals next to my song from bar 5* |
+| A recording as a project | *Turn gen/song.wav into a GarageBand project at its own tempo, with its stems on audio tracks* |
+| A recording as Song JSON | *Transcribe gen/song.wav into a Song JSON draft I can edit* |
+| Check the words | *Did the singer sing all my lyrics? Show me the lines that are wrong* |
+| Fix one part | *Regenerate seconds 60–90 as a quiet bridge and keep the rest* · *Add a brass section from bar 9* |
+| Finish | *Master it to −14 LUFS* · *Compare these three takes* |
 
 More sample prompts, by task: [examples/prompts.md](examples/prompts.md).
 
@@ -177,14 +193,14 @@ More sample prompts, by task: [examples/prompts.md](examples/prompts.md).
 
 | Tool | Commands | Touches GarageBand |
 |---|---|---|
-| `gb_song` | validate · preview · render_midi · render_draft · band_plan · template · infill | no — writes files to the workspace |
-| `gb_band` | inspect · build | no — writes a GarageBand project (.band) with your WAVs and MIDI notes |
-| `gb_analyze` | audio · against_song · compare (+ field `ml` with the optional models) | no — reads audio, writes spectrogram PNGs |
-| `gb_stem` | inspect · prepare · separate | no — reads outside audio, writes placeable stems (needs the optional models) |
-| `gb_generate` | start · status · list | no — sung covers and music from AI engines as background jobs (needs an engine) |
+| `gb_song` | validate · preview · render_midi · render_draft · band_plan · template · infill · transcribe | no — writes files to the workspace; transcribe turns a recording into a Song JSON draft |
+| `gb_band` | inspect · build | no — writes a GarageBand project (.band) with your WAVs and MIDI notes; a stereo WAV can take a pair of tracks |
+| `gb_analyze` | audio · against_song · compare · master · takes · map · lyrics (+ field `ml` with the optional models) | no — reads audio; writes spectrograms, song maps and masters |
+| `gb_stem` | inspect · prepare · separate | no — reads outside audio, writes placeable stems (needs the optional models; `model: "roformer"` for a clean vocal) |
+| `gb_generate` | examples · start · status · list | no — sung covers, music, repaint, lego and complete from AI engines as background jobs (needs an engine) |
 | `gb_sound` | patches · plugins · loops · samples · palette | no — read-only catalog of what this Mac can play |
 | `gb_system` | doctor · describe · ui_snapshot | read-only |
-| `gb_project` | status · open_midi · open_band · save_copy | opens a song (unsaved projects are backed up first) and verifies the NEW document once its window shows the tempo and the tracks; save_copy writes a donor copy |
+| `gb_project` | status · open_midi · open_band · save_copy · from_audio | opens a song (unsaved projects are backed up first) and verifies the NEW document once its window shows the tempo and the tracks; save_copy writes a donor copy; from_audio turns a recording into a project in one call |
 | `gb_tracks` | list · select · mute · solo · set_instrument · add_audio | yes — add_audio refuses while playback runs (GarageBand disables New Tracks… then) and names only the new tracks |
 | `gb_transport` | state · play · stop · rewind · set_tempo · set_metronome · set_count_in | yes |
 | `gb_mix` | get · set_volume (raw or dB) · set_pan | yes |
@@ -204,7 +220,8 @@ Resources: `gb://knowledge/song-format` (read first), `gb://knowledge/analysis`,
 ├── songs/       Song JSON (each version a new file: name-v1, name-v2 …)
 ├── *.mid        rendered MIDI files
 ├── exports/     WAV exports from GarageBand
-├── analysis/    spectrogram pictures
+├── analysis/    spectrogram pictures and song maps
+├── masters/     mastered copies (gb_analyze master)
 ├── bands/      GarageBand projects written by gb_band (readback/ holds GarageBand's own check copies)
 ├── donors/     copies of open projects (gb_project save_copy), used as gb_band donors
 ├── stems/      placeable stems from gb_stem (24-bit PCM)
@@ -235,6 +252,17 @@ adds the region slots it needs. With the optional models:
 
 The format facts behind this are in `eval/m11b/BAND-FORMAT.md`; the live end-to-end check is `eval/m11b`.
 
+**Stereo stems.** GarageBand's "Mic or Line" audio tracks can be mono (they are on the test Mac, whose input is the
+built-in microphone), and a stereo stem on a mono track folds to the centre. Give the item a second audio track — `{wav, bar, track: 1, pair: 2}` — and `gb_band` writes the
+left channel on one track and the right on the other, panned hard left and right in the project file. Measured: the
+export equals the stems (each channel correlates 1.0000).
+
+**One call from a recording to a project.** `gb_project from_audio {path, filename}` maps the recording (tempo, bar
+lines, key, chords, sections), writes a muted guide at its tempo — with a tempo map when the take drifts — opens it,
+adds the audio tracks, places the four stems at the right bar and beat on stereo pairs, and opens the result.
+`gb_song transcribe {path}` gives the same recording as an editable Song JSON draft: chords, a bass line, the sung
+melody and the drums on the song's own bars (measured on songs with known notes: `eval/m13-transcribe`).
+
 Song JSON is described in `gb://knowledge/song-format`; `examples/twinkle-epic.song.json` shows most of it
 (sections, drum grids, chord parts, melodies, levels).
 
@@ -244,13 +272,14 @@ MIDI cannot sing. `gb_generate` runs two AI engines on your Mac (Apple Silicon) 
 
 | Engine | Tasks | Melody | Time (M4 Air) | Licence |
 |---|---|---|---|---|
-| `ace_step` — [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) | `cover`: re-sing / re-play a song export to a caption and lyrics; `text`: music from a caption, bpm, key, length | follows the source melody loosely | cover ≈ the song's length | MIT |
+| `ace_step` — [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) | `cover`: re-sing / re-play a song export to a caption and lyrics; `text`: music from a caption, bpm, key, length; `repaint`: regenerate one time range, keep the rest; `lego`: add one instrument over a range; `complete`: a band around a lone track (the last two need the base model) | follows the source melody loosely | cover ≈ the song's length; repaint 2–3 min | MIT |
 | `mulacover` — [MuLaCover](https://github.com/HeartMuLa/MuLaCover) | `cover`: sing lyrics on the song's own melody, chords and drums (from its MIDI) | reads the melody as MIDI | 30 s of song ≈ 2–2.5 min | weights AND outputs **non-commercial** (CC BY-NC 4.0) |
 
 Install the engines once — each at a reviewed version, in its own environment, outside this repository:
 
 ```sh
-./scripts/install-engines.sh ace-step        # 10 GB;  or: mulacover (15 GB; asks you to accept its licence), all
+./scripts/install-engines.sh ace-step        # 10 GB;  ace-step-base (4.8 GB: lego, complete); mulacover (15 GB; asks
+                                             # you to accept its licence); roformer (0.9 GB); sections (0.1 GB); all
 ./scripts/install-engines.sh all --dry-run   # the plan, nothing changed
 ```
 
@@ -260,9 +289,11 @@ server's instructions tell it to write in their style, with new words. Captions 
 
 It is safe to re-run (an interrupted download resumes); restart Claude Code afterwards. A generation takes minutes, so
 it is a **job**: `gb_generate start` returns at once, `gb_generate status {job}` follows it until `done`, with the
-measured tempo (the mean of the regular beat intervals — not a median, which the tracker's 20 ms frames round) and key. Then `gb_stem separate` takes the vocal, `gb_stem prepare` re-times it to the song (MuLaCover
-picks its own tempo — the status gives the exact call), and `gb_tracks add_audio` + `gb_project save_copy` +
-`gb_band build` place it next to your MIDI tracks. One engine runs at a time (each needs ~14 GB of memory). Read
+measured tempo (the mean of the regular beat intervals — not a median, which the tracker's 20 ms frames round) and key. MuLaCover picks its own tempo (it has no tempo input), so `gb_generate` re-times its result to the
+song into a new file next to the original (`retime: false` keeps only the original). Then `gb_stem separate` takes the
+vocal — `model: "roformer"` leaves much less band in it (vocal SDR 18.8 dB against Demucs' 12.7 on a mix with known
+stems) — `gb_analyze lyrics` checks the sung words line by line (Whisper on MLX), and `gb_tracks add_audio` +
+`gb_project save_copy` + `gb_band build` place it next to your MIDI tracks. One engine runs at a time (each needs ~14 GB of memory). Read
 `gb://knowledge/generate`. MuLaCover's token generator runs on this repository's own MLX port
 (`models/mulacover_mlx`, about 3× the original's speed on Apple Silicon; `eval/m12d`); measurements: `eval/m12a`,
 `eval/m12b`.
@@ -273,6 +304,8 @@ picks its own tempo — the status gives the exact call), and `gb_tracks add_aud
 progressions in any key, the genre's GarageBand drum kit and instruments, a hook, and drums — for Claude to develop:
 lo-fi hip-hop, R&B, ambient, jazz ballad, reggaeton, synthwave, pop, afrobeats, funk, indie rock, deep house, techno,
 UK garage, trap, drum and bass, EDM, classical/pop crossover, ambient trance, Levantine strings and epic orchestral.
+`variant: 1`–`3` gives the same draft on the genre's most common 4-chord loops in verses and choruses, counted in
+the Chordonomicon dataset (see Credits).
 
 Song JSON also takes `groove` (the timing and accents of real drummers in 18 styles, mined from the Groove MIDI
 Dataset), `swing` (50 straight … 75 hard, on 16ths or 8ths) and, per track, `glide` (legato, so a mono 808 slides).
@@ -308,10 +341,18 @@ from Hugging Face on first use (~4 GB). gb-mcp starts one long-lived model proce
 
 - `gb_stem` (above) separates with Demucs htdemucs, measures tempo (beat_this) and key (S-KEY), and aligns stems to
   the song; it never overwrites a file.
+- `gb_analyze map` — the bar structure of a recording: tempo and how steady, bar lines (2-beat bars too), chords per
+  half bar, vocal rests, and where its stems go in a GarageBand project. With `./scripts/install-engines.sh sections`
+  it adds the song's sections (all-in-one). all-in-one needs NATTEN, whose kernels need CUDA; gb-mcp runs it on
+  Apple GPUs with its own plain-PyTorch neighborhood attention (`models/gbmodels/natten_mps.py`, tested against
+  NATTEN's outputs).
+- `gb_analyze lyrics` — Whisper large-v3-turbo on MLX; `gb_analyze master` and `takes` need no models.
 
 Without the models everything else works; `ml` says so `infill` and `gb_stem` answer `DEPENDENCY_MISSING`. Measured speeds,
 memory and what each optimisation bought (an exact KV-cache sampler, float16, an MLX port): `models/bench/results.md`.
 `eval/` holds 20 frozen genre briefs and `eval/run.py`, which renders, exports and scores them to compare versions.
+Scores made before v0.7.0 include GarageBand's metronome click, which it renders into exports; gb_export now switches
+it off for an export, and v0.8.0's run is the first clean baseline.
 
 ## Troubleshooting
 
@@ -375,3 +416,15 @@ GarageBand's interface differs between versions; the element locators live in `s
   [HeartCodec](https://huggingface.co/HeartMuLa/HeartCodec-oss-20260123) (Apache-2.0) and
   [Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B) (Apache-2.0). `models/mulacover_mlx` is this
   repository's own MLX implementation of MuLaCover's token generator (MIT); it loads the weights you downloaded.
+- Also downloaded on request, not part of this repository: [Whisper](https://github.com/openai/whisper) large-v3-turbo
+  (MIT) through [mlx-whisper](https://github.com/ml-explore/mlx-examples) (MIT);
+  [all-in-one](https://github.com/mir-aidj/all-in-one) (MIT, code and weights) with
+  [madmom](https://github.com/CPJKU/madmom) (BSD); Kim Jensen's
+  [MelBand RoFormer](https://huggingface.co/KimberleyJSN/melbandroformer) vocal model (MIT) through
+  [python-audio-separator](https://github.com/nomadkaraoke/python-audio-separator) (MIT); the ACE-Step base model
+  (MIT).
+- `src/song/common-loops.ts` lists a few common chord progressions per genre, counted in
+  [Chordonomicon](https://huggingface.co/datasets/ailsntua/Chordonomicon) (Kantarelis et al. 2024,
+  [arXiv 2410.22046](https://arxiv.org/abs/2410.22046)). The dataset is CC BY-NC 4.0 and is not part of this
+  repository; `eval/m13-chords` reproduces the counts from your own download.
+- The vocal demo (`media/vocal-demo.mp3`) was generated with ACE-Step 1.5 (MIT) through gb_generate; its words are new.

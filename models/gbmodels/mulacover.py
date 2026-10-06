@@ -4,8 +4,10 @@
 venv (a sidecar with GBMODELS_ENV=mulacover): the authors' code at a reviewed commit (checked before import) for the
 prompt (lyrics, style tags → Qwen embedding, MIDI → rolls) and the codec (PyTorch on MPS, one in-memory shim); the
 token generator is our MLX port (models/mulacover_mlx, 3× the authors' speed here). Offline. Measured (eval/m12d):
-30 s of audio ≈ 55 s tokens + 65–85 s codec. MuLaCover takes no tempo from MIDI and chooses its own: measure the
-result and re-time it with gb_stem prepare. Weights AND outputs: CC BY-NC 4.0 (non-commercial)."""
+30 s of audio ≈ 55 s tokens + 65–85 s codec. MuLaCover takes no tempo from MIDI and chooses its own (its symbolic
+condition is in sixteenth notes, symbolic.py: "Tempo is metadata"): gb_generate measures the result and re-times it to
+input_bpm (M13.15); range_seconds is the bar range's length at that tempo. Weights AND outputs: CC BY-NC 4.0
+(non-commercial)."""
 import os
 import tempfile
 
@@ -111,6 +113,7 @@ def run(handle: dict, inputs: dict) -> dict:
             os.unlink(tmp)
     info = sf.info(v["out"])
     return {"engine": "mulacover", "task": "cover", "path": v["out"], "rate": info.samplerate, "seconds": round(info.frames / info.samplerate, 3),
-            "frames": int(frames.shape[1]), "bars": built["bars"], "input_bpm": built["bpm"], "seed": v["seed"], "inputs": work,
+            "frames": int(frames.shape[1]), "bars": built["bars"], "input_bpm": built["bpm"], "range_seconds": built["seconds"],
+            "seed": v["seed"], "inputs": work,
             "mlx": mx.__version__, "shims": handle["shims"], "code": PINNED_COMMIT,
             "license": "CC BY-NC 4.0: weights and outputs are non-commercial"}

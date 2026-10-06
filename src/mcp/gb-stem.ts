@@ -29,13 +29,14 @@ export const GbStemInput = z.discriminatedUnion("command", [
     semitones: z.number().min(-12).max(12).optional(), mode: z.enum(["auto", "percussive", "tonal"]).optional(),
     rate: z.union([z.literal(44100), z.literal(48000)]).optional(), dry_run: z.boolean().optional(),
   }).strict(),
-  z.object({ command: z.literal("separate"), path: z.string().min(1), dry_run: z.boolean().optional() }).strict(),
+  z.object({ command: z.literal("separate"), path: z.string().min(1), model: z.enum(["htdemucs", "roformer"]).optional(), dry_run: z.boolean().optional() }).strict(),
 ]);
 export type GbStemInput = z.infer<typeof GbStemInput>;
 export const GB_STEM_COMMANDS = ["inspect", "prepare", "separate"] as const;
 
-/** models: the model sidecar (models/.venv); optional — without it every command but a dry run is DEPENDENCY_MISSING. */
-export type GbStemDeps = { workspaceDir: string; models?: ModelSidecar };
+/** models: the model sidecar (models/.venv); optional — without it every command but a dry run is DEPENDENCY_MISSING.
+ * roformer: the RoFormer engine's sidecar (scripts/install-engines.sh roformer), for separate {model: "roformer"}. */
+export type GbStemDeps = { workspaceDir: string; models?: ModelSidecar; roformer?: ModelSidecar };
 
 /** Anything at this name — a file, a folder, a link (dangling or not) — counts: never write through it. */
 function occupied(path: string): boolean {
@@ -115,20 +116,41 @@ export function createGbStem(deps: GbStemDeps) {
 
     // separate
     const base = basename(wav, extname(wav));
-    const targets = Object.fromEntries(STEM_NAMES.map((s) => [s, join(dir, `${base}-${s}.wav`)]));
+    const roformer = cmd.model === "roformer";
+    const names = roformer ? [...STEM_NAMES, "instrumental"] : STEM_NAMES;
+    const targets = Object.fromEntries(names.map((s) => [s, join(dir, `${base}-${s}.wav`)]));
     const existing = Object.values(targets).filter((p) => occupied(p)).map((p) => basename(p));
     if (existing.length) return failed(op, "FILE_EXISTS", `stems already exist: ${existing.join(", ")}; nothing written`, { hint: "rename the source or move the old stems" });
-    if (dryRun) return verified(op, { dry_run: true, stems: targets });
+    if (dryRun) return verified(op, { dry_run: true, stems: targets, model: cmd.model ?? "htdemucs" });
+    if (roformer && !deps.roformer) {
+      return failed(op, "DEPENDENCY_MISSING", "the RoFormer separator is not installed", { hint: "run ./scripts/install-engines.sh roformer (0.9 GB), restart Claude Code; or use model htdemucs" });
+    }
     const made = workspaceOutputDir(deps.workspaceDir, STEMS_DIR, true);
     if (!made.ok) return failed(op, made.error.code, made.error.message);
-    const r = await call({ op: "separate", wav, out_dir: made.value });
-    if (!r.ok) return r.envelope;
-    const stems = r.value.stems as Record<string, string>;
+    let stems: Record<string, string>;
+    let model: unknown;
+    let rate: unknown;
+    if (roformer) { // M13.12: RoFormer takes the vocal out (18.8 dB against Demucs' 12.7), Demucs splits the rest
+      const v = await deps.roformer!.run("roformer", { wav, out_dir: made.value, base });
+      if (!v.ok) return failed(op, v.error.code === "SIDECAR_UNAVAILABLE" ? "DEPENDENCY_MISSING" : "ANALYSIS_FAILED", v.error.message);
+      const first = v.value as { stems: Record<string, string>; model: string };
+      const rest = await call({ op: "split", wav: first.stems.instrumental, out_dir: made.value, base });
+      if (!rest.ok) return rest.envelope;
+      stems = { ...first.stems, ...(rest.value.stems as Record<string, string>) };
+      model = `${first.model} (vocals) + ${String(rest.value.model)} (drums, bass)`;
+      rate = rest.value.rate;
+    } else {
+      const r = await call({ op: "separate", wav, out_dir: made.value });
+      if (!r.ok) return r.envelope;
+      stems = r.value.stems as Record<string, string>;
+      model = r.value.model;
+      rate = r.value.rate;
+    }
     const checked = Object.entries(stems).map(([name, path]) => ({ name, path, file: placeable(path) }));
     const bad = checked.filter((c) => !c.file.ok);
     if (bad.length) return failed(op, "AUDIO_INVALID", `stems that cannot be placed: ${bad.map((b) => (b.file as { message: string }).message).join("; ")}`);
     const frames = checked.map((c) => (c.file as { frames: number }).frames);
     const warnings = Math.max(...frames) - Math.min(...frames) > Math.max(...frames) * LENGTH_TOLERANCE ? ["the stems differ in length by more than 1 %"] : [];
-    return verified(op, { stems, model: r.value.model, rate: r.value.rate }, warnings);
+    return verified(op, { stems, model, rate }, warnings);
   };
 }

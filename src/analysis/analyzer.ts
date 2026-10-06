@@ -85,6 +85,10 @@ const SidecarDoc = z.union([
 
 /** The sidecar must print exactly one JSON document. Anything else is a failure, never a result. */
 export function parseAnalyzerOutput(stdout: string, _exitCode: number | null): Result<AnalysisResult, AnalyzerError> {
+  return parseDoc(stdout, SidecarDoc);
+}
+
+function parseDoc<T>(stdout: string, schema: z.ZodType<{ ok: true; result: T } | { ok: false; error: AnalyzerError }>): Result<T, AnalyzerError> {
   const lines = stdout.split("\n").filter((l) => l.trim() !== "");
   const failed = (message: string) => err({ code: "ANALYSIS_FAILED" as const, message });
   if (lines.length !== 1) return failed(lines.length === 0 ? "analyzer printed nothing" : "analyzer printed extra output");
@@ -94,21 +98,51 @@ export function parseAnalyzerOutput(stdout: string, _exitCode: number | null): R
   } catch {
     return failed("analyzer output is not JSON");
   }
-  const doc = SidecarDoc.safeParse(json);
+  const doc = schema.safeParse(json);
   if (!doc.success) return failed(`analyzer output does not match the contract (${doc.error.issues[0]!.path.join(".")})`);
   return doc.data.ok ? ok(doc.data.result) : err(doc.data.error);
 }
 
+/** gb_analyze master (M13.2): what gbanalyze.master measured on the file it wrote. */
+const Level = z.object({ lufs: z.number(), true_peak_db: num });
+export const MasterResultSchema = z.object({
+  path: z.string(), rate: z.number().int(), bits: z.literal(24), seconds: z.number(), source_subtype: z.string().optional(),
+  target: z.object({ lufs: z.number(), true_peak_db: z.number() }), before: Level, after: Level,
+  gain_db: z.number(), limiter_max_reduction_db: z.number(), warnings: z.array(z.string()),
+});
+export type MasterResult = z.infer<typeof MasterResultSchema>;
+export type MasterRequest = { path: string; out: string; lufs: number; peak: number };
+const MasterDoc = z.union([
+  z.object({ ok: z.literal(true), result: MasterResultSchema }),
+  z.object({ ok: z.literal(false), error: z.object({ code: z.enum(SIDECAR_CODES), message: z.string() }) }),
+]);
+export const parseMasterOutput = (stdout: string): Result<MasterResult, AnalyzerError> => parseDoc(stdout, MasterDoc);
+
 export type AnalyzeRequest = { path: string; context?: Record<string, unknown>; spectrogramPath?: string };
 export interface AnalyzerPort {
   analyze(req: AnalyzeRequest): Promise<Result<AnalysisResult, AnalyzerError>>;
+  /** A mastered copy at `out` (never overwritten); optional — a port without it answers DEPENDENCY_MISSING. */
+  master?(req: MasterRequest): Promise<Result<MasterResult, AnalyzerError>>;
 }
 
 export type PythonAnalyzerOptions = { python: string; analysisDir: string; timeoutMs: number };
 
 /** Runs `python3 -m gbanalyze.cli analyze …` with argv only (no shell), a deadline and an output cap. */
 export function createPythonAnalyzer(opts: PythonAnalyzerOptions): AnalyzerPort {
+  const env = () => ({
+    PATH: process.env.PATH ?? "/usr/bin:/bin", HOME: process.env.HOME ?? tmpdir(), MPLCONFIGDIR: join(tmpdir(), "gbmcp-mpl"), PYTHONDONTWRITEBYTECODE: "1",
+  });
   return {
+    master(req) {
+      const args = ["-m", "gbanalyze.cli", "master", "--input", req.path, "--output", req.out, "--lufs", String(req.lufs), "--peak", String(req.peak)];
+      return new Promise((resolve) => {
+        execFile(opts.python, args, { cwd: opts.analysisDir, timeout: opts.timeoutMs, killSignal: "SIGKILL", maxBuffer: 1024 * 1024, env: env() }, (error, stdout) => {
+          if (error && (error as NodeJS.ErrnoException).code === "ENOENT") resolve(err({ code: "DEPENDENCY_MISSING", message: `python not found at ${opts.python}` }));
+          else if (error && error.killed) resolve(err({ code: "DEADLINE_EXCEEDED", message: `mastering exceeded ${Math.round(opts.timeoutMs / 1000)} s` }));
+          else resolve(parseMasterOutput(stdout));
+        });
+      });
+    },
     analyze(req) {
       const args = ["-m", "gbanalyze.cli", "analyze", "--input", req.path];
       if (req.context) args.push("--context", JSON.stringify(req.context));

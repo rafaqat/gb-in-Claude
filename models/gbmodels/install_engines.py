@@ -2,7 +2,7 @@
 # Copyright (c) 2026 rafaqat
 """Install the gb_generate engines at their reviewed versions (M12b); scripts/install-engines.sh runs this. Apple Silicon.
 
-    install-engines.sh ace-step | mulacover | all [--dry-run] [--accept-noncommercial]
+    install-engines.sh ace-step | ace-step-base | mulacover | roformer | sections | all [--dry-run] [--accept-noncommercial]
 
 Per engine, in order: the code (cloned at the reviewed commit — a checkout at another commit or with local changes
 stops the install), its own venv (checked by importing its libraries), its weights (the reviewed Hugging Face
@@ -21,7 +21,7 @@ import sys
 from dataclasses import dataclass, field
 from datetime import date
 
-from . import ace_step, mulacover
+from . import ace_step, mulacover, roformer, sections
 
 MODELS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MLX = "mlx==0.32.3"  # ≥ 0.32.0: the fused-RoPE fix (eval/m12d/MLX-ROPE-BUG.md)
@@ -42,6 +42,12 @@ ENGINES = {
         "venv": [["uv", "sync", "--frozen"]], "imports": ["acestep", "mlx.core"],
         "weights": [("ACE-Step/Ace-Step1.5", ace_step.WEIGHTS_REVISION, "{code}/checkpoints")],
     },
+    "ace-step-base": {  # M13.10: the base model for lego / complete — ACE-Step's code and venv, plus these weights
+        "title": "ACE-Step 1.5 base model (MIT) — lego, complete", "repo": "https://github.com/ace-step/ACE-Step-1.5", "commit": ace_step.PINNED_COMMIT,
+        "dir_env": "GB_MCP_ACESTEP", "dir": "ace-step", "gb": 4.8, "licence": None, "gbmodels_env": "ace-step",
+        "venv": [["uv", "sync", "--frozen"]], "imports": ["acestep", "mlx.core"],
+        "weights": [("ACE-Step/acestep-v15-base", ace_step.BASE_REVISION, "{code}/checkpoints/acestep-v15-base")],
+    },
     "mulacover": {
         "title": "MuLaCover (weights and outputs CC BY-NC 4.0)", "repo": "https://github.com/HeartMuLa/MuLaCover",
         "commit": mulacover.PINNED_COMMIT, "dir_env": "GB_MCP_MULACOVER", "dir": "mulacover", "ckpt_env": "GB_MCP_MULACOVER_CKPT",
@@ -50,6 +56,28 @@ ENGINES = {
                  ["uv", "pip", "install", "--python", ".venv/bin/python", "torch==2.10.0", "torchaudio==2.10.0", "-e", ".[audio]", MLX]],
         "imports": ["mulacover", "mlx.core", "torch", "mido"],
         "weights": [(repo, rev, "{ckpt}/" + name) for name, (repo, rev) in mulacover.WEIGHTS.items()],
+    },
+    "roformer": {  # M13.12: no code to clone — gb_stem separate {model: "roformer"} runs audio-separator in this venv
+        "title": "MelBand RoFormer vocal separation (MIT) — gb_stem separate {model: \"roformer\"}", "repo": None, "commit": None,
+        "dir_env": "GB_MCP_ROFORMER", "dir": "roformer", "gb": 0.9, "licence": None, "gbmodels_env": "roformer", "tool": "gb_stem",
+        "venv": [["uv", "venv", "--python", "3.12", ".venv"],
+                 ["uv", "pip", "install", "--python", ".venv/bin/python", f"audio-separator[cpu]=={roformer.AUDIO_SEPARATOR}",
+                  "audioread==3.1.0", "torch==2.14.1", "huggingface_hub==1.33.0"]],  # audio-separator 0.47.0 imports audioread
+        "imports": ["audio_separator.separator", "soundfile", "huggingface_hub"],  # without declaring it; the hub fetches the weights
+        "weights": [(roformer.WEIGHTS_REPO, roformer.WEIGHTS_REVISION, "{code}/models")],
+    },
+    "sections": {  # M13.13: all-in-one for gb_analyze map's sections; its NATTEN is gb-mcp's natten_mps (no CUDA build)
+        "title": "all-in-one song sections (MIT) — gb_analyze map", "repo": None, "commit": None, "tool": "gb_analyze map",
+        "dir_env": "GB_MCP_SECTIONS", "dir": "sections", "gb": 0.1, "licence": None, "gbmodels_env": "sections",
+        "venv": [["uv", "venv", "--python", "3.12", ".venv"],
+                 ["uv", "pip", "install", "--python", ".venv/bin/python", "torch==2.14.1", "numpy==1.26.4", "demucs==4.1.0",
+                  "librosa==0.11.0", "hydra-core==1.3.7", "omegaconf==2.3.1", "matplotlib==3.11.2", "huggingface_hub==1.33.0",
+                  "soundfile==0.14.0", "cython", "setuptools", "wheel"],
+                 ["uv", "pip", "install", "--python", ".venv/bin/python", "--no-build-isolation",
+                  f"git+https://github.com/CPJKU/madmom@{sections.MADMOM_COMMIT}"],
+                 ["uv", "pip", "install", "--python", ".venv/bin/python", "--no-deps", f"allin1=={sections.ALLIN1}"]],
+        "imports": ["madmom", "hydra", "huggingface_hub", "demucs"],  # allin1 itself imports natten: checked by the ready step
+        "weights": [(sections.WEIGHTS_REPO, sections.WEIGHTS_REVISION, "{code}/models")],
     },
 }
 
@@ -70,7 +98,9 @@ def paths(name: str, env=os.environ) -> dict:
             "weights": [(repo, rev, folder.format(code=code, ckpt=ckpt)) for repo, rev, folder in e["weights"]]}
 
 
-def code_state(path: str, commit: str) -> tuple[str, str]:
+def code_state(path: str, commit: str | None) -> tuple[str, str]:
+    if commit is None:  # an engine without code of its own: only its folder
+        return ("ok", "") if os.path.isdir(path) else ("missing", "")
     if not os.path.isdir(os.path.join(path, ".git")):
         return ("missing", "")
     head = subprocess.run(["git", "-C", path, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
@@ -93,7 +123,7 @@ def weights_state(folder: str) -> str:
     downloads = os.path.join(folder, ".cache", "huggingface", "download")
     if os.path.isdir(downloads) and any(f.endswith(".incomplete") for _, _, fs in os.walk(downloads) for f in fs):
         return "partial"
-    found = any(f.endswith(".safetensors") for root, _, fs in os.walk(folder) if ".cache" not in root for f in fs)
+    found = any(f.endswith((".safetensors", ".ckpt", ".pth")) for root, _, fs in os.walk(folder) if ".cache" not in root for f in fs)
     return "ok" if found else "missing"
 
 
@@ -112,11 +142,15 @@ def plan(name: str, s: dict, p: dict | None = None) -> list[Step]:
                            "move that folder away, then run again")
     if code_status == "dirty":
         raise InstallError(f"{p['code']} has local changes; restore or move it, then run again")
-    if code_status == "missing":
+    if code_status == "missing" and e["repo"] is None:
+        steps.append(Step("folder", f"make {p['code']}", [(["mkdir", "-p", p["code"]], None)]))
+    elif code_status == "missing":
         c = e["commit"]
         steps.append(Step("clone", f"clone {e['repo']} at {c[:7]} into {p['code']}", [
             (["git", "init", "-q", p["code"]], None), (["git", "-C", p["code"], "remote", "add", "origin", e["repo"]], None),
             (["git", "-C", p["code"], "fetch", "-q", "--depth", "1", "origin", c], None), (["git", "-C", p["code"], "checkout", "-q", c], None)]))
+    elif e["repo"] is None:
+        steps.append(Step("check", f"folder {p['code']}"))
     else:
         steps.append(Step("check", f"code at the reviewed commit {e['commit'][:7]}, unchanged"))
     if s["venv"] == "ok":
@@ -190,7 +224,7 @@ def main(argv: list[str], env=os.environ, run=subprocess.run, ask=None) -> int:
                                        capture_output=True, text=True, cwd=MODELS_DIR)
                 if ready.returncode != 0:
                     raise InstallError(f"the engine's environment cannot load gb-mcp's model code: {ready.stderr.strip()[-200:]}")
-                print(f"  ✓ ready for gb_generate (restart Claude Code to load it)")
+                print(f"  ✓ ready for {e.get('tool', 'gb_generate')} (restart Claude Code to load it)")
     except InstallError as err:
         print(f"  ✗ {err}", file=sys.stderr)
         return 1

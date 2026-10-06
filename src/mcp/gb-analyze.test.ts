@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 rafaqat
 import { describe, it, expect, beforeEach } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, realpathSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, realpathSync, readdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createGbAnalyze } from "./gb-analyze.js";
 import type { AnalyzerPort, AnalyzeRequest, AnalysisResult } from "../analysis/analyzer.js";
 import type { Result } from "../result.js";
+import { bareWav } from "../band/testing.js";
+import type { ModelSidecar } from "../models/sidecar.js";
 
 const fakeResult = (flags: string[] = [], lufs = -14): AnalysisResult => ({
   file: { seconds: 8, sample_rate: 44100, channels: 2 },
@@ -175,5 +177,204 @@ describe("gb_analyze: model listening through the sidecar (M8, field ml)", () =>
     const l = listener(() => ({ ok: true, value: heard }));
     await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: l })({ command: "audio", path: "exports/mix.wav", spectrogram: false, fields: ["loudness"] });
     expect(l.calls).toEqual([]);
+  });
+});
+
+describe("gb_analyze master (M13.2): a mastered copy in masters/", () => {
+  const mastered = (req: { out: string; lufs: number; peak: number }) => ({
+    path: req.out, rate: 44100, bits: 24 as const, seconds: 1, target: { lufs: req.lufs, true_peak_db: req.peak },
+    before: { lufs: -20.1, true_peak_db: -3 }, after: { lufs: req.lufs, true_peak_db: req.peak - 0.1 }, gain_db: 6.1,
+    limiter_max_reduction_db: 1.5, warnings: [] as string[],
+  });
+  const masterPort = () => {
+    const calls: { path: string; out: string; lufs: number; peak: number }[] = [];
+    const port: AnalyzerPort = {
+      analyze: async () => ok(fakeResult()),
+      master: async (req) => { calls.push(req); writeFileSync(req.out, bareWav(44100, 2, 44100, 24)); return { ok: true as const, value: mastered(req) }; },
+    };
+    return { port, calls };
+  };
+
+  it("writes masters/<filename> with the targets, checks the WAV and reports before/after", async () => {
+    const { port, calls } = masterPort();
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: port })({ command: "master", path: "exports/mix.wav", filename: "mix-master.wav", lufs: -16 });
+    expect(r).toMatchObject({ status: "verified", data: { path: join(ws, "masters", "mix-master.wav"), bits: 24, after: { lufs: -16 }, limiter_max_reduction_db: 1.5 } });
+    expect(calls).toEqual([{ path: join(ws, "exports", "mix.wav"), out: join(ws, "masters", "mix-master.wav"), lufs: -16, peak: -1 }]);
+  });
+
+  it("never overwrites: a taken name is FILE_EXISTS before anything runs", async () => {
+    const { port, calls } = masterPort();
+    mkdirSync(join(ws, "masters"));
+    writeFileSync(join(ws, "masters", "mix-master.wav"), "x");
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: port })({ command: "master", path: "exports/mix.wav", filename: "mix-master.wav" });
+    expect(r).toMatchObject({ status: "failed", error: "FILE_EXISTS" });
+    expect(calls).toHaveLength(0);
+  });
+});
+
+describe("gb_analyze takes (M13.3): 2–8 takes side by side", () => {
+  it("one row per take, in the order given: length, loudness, true peak, tempo, key, flags", async () => {
+    const analyzer = new FakeAnalyzer((req) => ok(req.path.endsWith("mix-v2.wav") ? fakeResult(["true_peak_over"], -12) : fakeResult([], -14)));
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer })({ command: "takes", paths: ["exports/mix.wav", "exports/mix-v2.wav"] });
+    expect(r).toMatchObject({ status: "verified", data: { takes: [
+      { path: "exports/mix.wav", seconds: 8, lufs: -14, true_peak_db: -1, bpm: 132, key: "F minor", flags: [] },
+      { path: "exports/mix-v2.wav", lufs: -12, flags: ["true_peak_over"] },
+    ] } });
+    expect(analyzer.requests.every((q) => q.spectrogramPath === undefined)).toBe(true);
+  });
+
+  it("refuses one take or more than eight", async () => {
+    const analyzer = new FakeAnalyzer(() => ok(fakeResult()));
+    expect(await createGbAnalyze({ workspaceDir: ws, analyzer })({ command: "takes", paths: ["exports/mix.wav"] })).toMatchObject({ status: "failed", error: "INPUT_INVALID" });
+    expect(analyzer.requests).toHaveLength(0);
+  });
+});
+
+describe("gb_analyze map (M13.6): the bar structure of a recording", () => {
+  const summary = { bpm: 79, steady: true, place: { guide_bpm: 79, bar: 1, beat: 1.36, offset_s: 0.27 }, chords: "D | G", voice: "####....", gaps: [], irregular: [] };
+  const sidecar = () => {
+    const calls: { model: string; inputs: Record<string, unknown> }[] = [];
+    const port: ModelSidecar = {
+      run: async (model, inputs) => {
+        calls.push({ model, inputs });
+        if (model === "stems") for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+        if (model === "map") writeFileSync(inputs.out as string, "{}");
+        return { ok: true as const, value: model === "map" ? { map: inputs.out, ...summary } : {} };
+      },
+      close() {},
+    };
+    return { port, calls };
+  };
+
+  it("separates the stems first when they are missing, then maps; the full map goes to analysis/<name>-map.json", async () => {
+    const { port, calls } = sidecar();
+    mkdirSync(join(ws, "stems"));
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: port })({ command: "map", path: "exports/mix.wav" });
+    expect(calls.map((c) => c.model)).toEqual(["stems", "map"]);
+    expect(calls[1]!.inputs).toMatchObject({ wav: join(ws, "exports", "mix.wav"), stems: { vocals: join(ws, "stems", "mix-vocals.wav"), bass: join(ws, "stems", "mix-bass.wav"), other: join(ws, "stems", "mix-other.wav") }, out: join(ws, "analysis", "mix-map.json") });
+    expect(r).toMatchObject({ status: "verified", data: { map: join(ws, "analysis", "mix-map.json"), bpm: 79, place: { beat: 1.36 } } });
+  });
+
+  it("uses stems that exist, and never overwrites a map (the next is -2)", async () => {
+    const { port, calls } = sidecar();
+    mkdirSync(join(ws, "stems"));
+    for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+    mkdirSync(join(ws, "analysis"));
+    writeFileSync(join(ws, "analysis", "mix-map.json"), "{}");
+    await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: port })({ command: "map", path: "exports/mix.wav" });
+    expect(calls.map((c) => [c.model, c.inputs.out])).toEqual([["map", join(ws, "analysis", "mix-map-2.json")]]);
+  });
+
+  it("names the four stems it mapped (M13.14: gb_song transcribe reads them)", async () => {
+    const { port } = sidecar();
+    mkdirSync(join(ws, "stems"));
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener: port })({ command: "map", path: "exports/mix.wav" });
+    expect(r).toMatchObject({ status: "verified", data: { stems: Object.fromEntries(["vocals", "drums", "bass", "other"].map((s) => [s, join(ws, "stems", `mix-${s}.wav`)])) } });
+  });
+});
+
+describe("gb_analyze map with sections (M13.13): all-in-one when its engine is installed", () => {
+  const found = [{ start_s: 0.12, end_s: 24.78, label: "intro" }, { start_s: 24.78, end_s: 50.6, label: "verse" }];
+  const ports = (sectionsAnswer: () => { ok: true; value: unknown } | { ok: false; error: { code: string; message: string } }) => {
+    const calls: { model: string; inputs: Record<string, unknown> }[] = [];
+    const listener: ModelSidecar = {
+      run: async (model, inputs) => {
+        calls.push({ model, inputs });
+        if (model === "map") writeFileSync(inputs.out as string, "{}");
+        return { ok: true as const, value: model === "map" ? { map: inputs.out, bpm: 79 } : {} };
+      },
+      close() {},
+    };
+    const sections: ModelSidecar = { run: async (model, inputs) => { calls.push({ model, inputs }); return sectionsAnswer() as never; }, close() {} };
+    mkdirSync(join(ws, "stems"));
+    for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+    return { listener, sections, calls };
+  };
+  const analyze = (deps: { listener: ModelSidecar; sections?: ModelSidecar }) =>
+    createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), ...deps })({ command: "map", path: "exports/mix.wav" });
+
+  it("finds the sections on the four stems, then the map places them on GarageBand bars", async () => {
+    const { listener, sections, calls } = ports(() => ({ ok: true, value: { sections: found, model: "all-in-one" } }));
+    const r = await analyze({ listener, sections });
+    expect(calls.map((c) => c.model)).toEqual(["sections", "map"]);
+    expect(calls[0]!.inputs).toMatchObject({ wav: join(ws, "exports", "mix.wav"), stems: { drums: join(ws, "stems", "mix-drums.wav"), vocals: join(ws, "stems", "mix-vocals.wav") } });
+    expect(calls[1]!.inputs).toMatchObject({ sections: found });
+    expect(r).toMatchObject({ status: "verified" });
+  });
+
+  it("a failed section search leaves the map whole, with a warning", async () => {
+    const { listener, sections, calls } = ports(() => ({ ok: false, error: { code: "MODEL_FAILED", message: "RuntimeError: boom" } }));
+    const r = await analyze({ listener, sections });
+    expect(calls.map((c) => c.model)).toEqual(["sections", "map"]);
+    expect(calls[1]!.inputs.sections).toBeUndefined();
+    expect(r).toMatchObject({ status: "verified" });
+    expect(JSON.stringify(r)).toContain("no sections: RuntimeError: boom");
+  });
+
+  it("without the engine the map says how to add sections", async () => {
+    const { listener } = ports(() => ({ ok: true, value: {} }));
+    expect(JSON.stringify(await analyze({ listener }))).toContain("install-engines.sh sections");
+  });
+});
+
+describe("gb_analyze never writes outside the workspace", () => {
+  const linkAnalysisOut = () => {
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), "gbmcp-outside-")));
+    symlinkSync(outside, join(ws, "analysis"));
+    return outside;
+  };
+
+  it("map: a linked analysis/ is refused before the sidecar runs", async () => {
+    const outside = linkAnalysisOut();
+    mkdirSync(join(ws, "stems"));
+    for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+    const calls: string[] = [];
+    const listener: ModelSidecar = { run: async (m) => { calls.push(m); return { ok: true as const, value: {} }; }, close() {} };
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener })({ command: "map", path: "exports/mix.wav" });
+    expect(r).toMatchObject({ status: "failed", error: "PATH_OUTSIDE_WORKSPACE" });
+    expect(calls).toEqual([]);
+    expect(readdirSync(outside)).toEqual([]);
+  });
+
+  it("audio: no spectrogram through a linked analysis/", async () => {
+    linkAnalysisOut();
+    const analyzer = new FakeAnalyzer(() => ok(fakeResult()));
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer })({ command: "audio", path: "exports/mix.wav" });
+    expect(r).toMatchObject({ status: "failed", error: "PATH_OUTSIDE_WORKSPACE" });
+    expect(analyzer.requests).toHaveLength(0);
+  });
+});
+
+describe("gb_analyze lyrics (M13.11): what the voice sings against the written lyrics", () => {
+  const port = () => {
+    const calls: { model: string; inputs: Record<string, unknown> }[] = [];
+    const listener: ModelSidecar = {
+      run: async (model, inputs) => {
+        calls.push({ model, inputs });
+        if (model === "stems") for (const s of ["vocals", "drums", "bass", "other"]) writeFileSync(join(ws, "stems", `mix-${s}.wav`), "RIFF");
+        return { ok: true as const, value: model === "lyrics" ? { lines: [], wer: 0.1, summary: { sung: 3, partial: 1, missing: 0 } } : {} };
+      },
+      close() {},
+    };
+    return { listener, calls };
+  };
+
+  it("transcribes the song's vocal stem (separating first if needed) and passes the lyrics", async () => {
+    const { listener, calls } = port();
+    mkdirSync(join(ws, "stems"));
+    const r = await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener })(
+      { command: "lyrics", path: "exports/mix.wav", lyrics: "[Verse]\nla la", language: "en" });
+    expect(calls.map((c) => c.model)).toEqual(["stems", "lyrics"]);
+    expect(calls[1]!.inputs).toEqual({ wav: join(ws, "stems", "mix-vocals.wav"), lyrics: "[Verse]\nla la", language: "en" });
+    expect(r).toMatchObject({ status: "verified", data: { wer: 0.1, summary: { sung: 3 } } });
+  });
+
+  it("a vocal stem is used as it is", async () => {
+    const { listener, calls } = port();
+    mkdirSync(join(ws, "stems"));
+    writeFileSync(join(ws, "stems", "take-vocals.wav"), "RIFF");
+    await createGbAnalyze({ workspaceDir: ws, analyzer: new FakeAnalyzer(() => ok(fakeResult())), listener })(
+      { command: "lyrics", path: "stems/take-vocals.wav", lyrics: "[Verse]\nla" });
+    expect(calls.map((c) => [c.model, c.inputs.wav])).toEqual([["lyrics", join(ws, "stems", "take-vocals.wav")]]);
   });
 });

@@ -51,6 +51,11 @@ describe("gb-mcp server", () => {
     expect(r.structuredContent).toMatchObject({ status: "failed", op: "gb_song.infill", error: "DEPENDENCY_MISSING" });
   });
 
+  it("gb_song transcribe is reachable through MCP (path, filename and dry_run are in the tool's input schema)", async () => {
+    const r = await client.callTool({ name: "gb_song", arguments: { command: "transcribe", path: "gen/take.wav", filename: "take-draft.json", dry_run: true } });
+    expect(r.structuredContent).toMatchObject({ status: "verified", op: "gb_song.transcribe", data: { dry_run: true } });
+  });
+
   it("returns the envelope as structuredContent and compact JSON text", async () => {
     const r = await client.callTool({ name: "gb_song", arguments: { command: "validate", song } });
     expect(r.isError).toBeFalsy();
@@ -84,6 +89,12 @@ describe("gb-mcp server", () => {
     expect(build.properties.audio.items.required).toEqual(expect.arrayContaining(["wav", "bar", "track"]));
   });
 
+  it("gb_generate takes retime (M13.15): the call reaches the tool (here: no engine installed)", async () => {
+    const r = await client.callTool({ name: "gb_generate", arguments: { command: "start", engine: "mulacover", task: "cover", midi: "song.mid",
+      melody: ["Lead"], chords: ["Pad"], lyrics: "[Verse]\nla", tags: "genre:[pop]", filename: "v.wav", retime: false, dry_run: true } });
+    expect(r.structuredContent).toMatchObject({ status: "failed", error: "DEPENDENCY_MISSING" });
+  });
+
   it("sends short instructions at session start: read the song format first; write vocals from ACE-Step's examples", () => {
     const text = client.getInstructions() ?? "";
     expect(text).toMatch(/gb:\/\/knowledge\/song-format/);
@@ -108,6 +119,8 @@ describe("gb-mcp server", () => {
     expect((band.contents[0] as { text: string }).text).toMatch(/## Make a donor/);
     const generate = await client.readResource({ uri: "gb://knowledge/generate" });
     expect((generate.contents[0] as { text: string }).text).toMatch(/non-commercial/);
+    const format = await client.readResource({ uri: "gb://knowledge/song-format" });
+    expect((format.contents[0] as { text: string }).text).toMatch(/## From a recording \(M13\.14\)[\s\S]*gb_song transcribe/); // M13.14
   });
 });
 
@@ -180,5 +193,20 @@ describe("gb-mcp server with GarageBand operations (M4)", () => {
     expect(r.isError).toBe(true);
     expect(r.structuredContent).toMatchObject({ status: "failed", op: "gb_tracks", error: "INTERNAL_ERROR", write_attempted: true, safe_to_retry: false });
     expect(JSON.stringify(r)).not.toContain(String.fromCodePoint(0x202e));
+  });
+});
+
+describe("gb-mcp prompts: the sample prompts as slash commands in Claude Code", () => {
+  it("lists the four workflows, each with its argument", async () => {
+    const { prompts } = await client.listPrompts();
+    expect(prompts.map((p) => p.name).sort()).toEqual(["new-track", "revise", "song-with-vocals", "stems-into-song"]);
+    expect(prompts.find((p) => p.name === "song-with-vocals")!.arguments?.map((a) => a.name)).toContain("brief");
+  });
+
+  it("song-with-vocals puts the brief into the steps, with gb_generate examples first", async () => {
+    const r = await client.getPrompt({ name: "song-with-vocals", arguments: { brief: "a folk song about a lighthouse" } });
+    const text = r.messages.map((m) => (m.content.type === "text" ? m.content.text : "")).join("\n");
+    expect(text).toContain("a folk song about a lighthouse");
+    expect(text.indexOf("gb_generate examples")).toBeLessThan(text.indexOf("gb_generate start"));
   });
 });
