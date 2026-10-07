@@ -17,7 +17,8 @@ effect of what it did, and refuses rather than guesses.
   and packages without a wheel are built from locked build tools, never from tools fetched unchecked. Model weights
   are downloaded at pinned revisions; checkpoints are checked against a SHA-256 and loaded without pickle code.
 - **Shared projects** — the local folders GarageBand writes into a project (the Alchemy sample folder, audio file
-  folders: `/Users/<name>/…`) are replaced by a neutral path of the same length in every `.band` gb-mcp writes.
+  folders, the audio file list in MetaData.plist: `/Users/<name>/…`) are replaced by a neutral path in every `.band`
+  gb-mcp writes. GarageBand still opens such a project and plays its audio.
 - **Untrusted files** — the MIDI, WAV and binary plist readers are bounded (no endless loop on a truncated file, caps
   on chunks, objects and decoded bytes); Song JSON has size limits; audio above 192 kHz or 20 minutes is refused.
 - **GarageBand only** — the native helper talks to `com.apple.garageband10` only (a constant, never taken from a

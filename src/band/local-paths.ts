@@ -7,6 +7,10 @@
  * a neutral path of the SAME length (every record keeps its size), keeping the project's own "/<name>.band/…" tail;
  * GarageBand opened a project scrubbed this way and verified it.
  */
+import { execFile } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { parseBinaryPlist } from "../sound/bplist.js";
+
 const PREFIXES = ["/Users/", "/Volumes/", "/private/"].map((p) => new TextEncoder().encode(p));
 const NEUTRAL = "/Users/Shared/gb-mcp";
 
@@ -23,17 +27,42 @@ export function scrubLocalPaths(input: Uint8Array): { bytes: Uint8Array; replace
     let end = at;
     while (end < bytes.length && bytes[end]! >= 0x20 && bytes[end] !== 0x7f) end++;
     const value = new TextDecoder("latin1").decode(bytes.subarray(at, end)); // one char per byte: indexes are offsets
-    if (!value.startsWith(NEUTRAL)) {
-      const tail = /\/[^/]+\.band\/.*$/.exec(value)?.[0] ?? "";
-      const room = value.length - tail.length;
-      const head = room >= NEUTRAL.length ? NEUTRAL + "-".repeat(room - NEUTRAL.length) : "/" + "-".repeat(Math.max(0, room - 1));
+    const clean = scrubPath(value);
+    if (clean !== value) {
       if (bytes === input) bytes = new Uint8Array(input); // copy on first change
-      for (let i = 0; i < room; i++) bytes[at + i] = head.charCodeAt(i); // the tail's bytes stay as they are
+      for (let i = 0; i < clean.length; i++) bytes[at + i] = clean.charCodeAt(i); // the tail's bytes are unchanged
       replaced++;
     }
     at = end;
   }
   return { bytes, replaced };
+}
+
+/** One path: a local head becomes NEUTRAL padded with "-" to the same length; the "/<name>.band/…" tail stays. */
+export function scrubPath(value: string): string {
+  if (!/^\/(Users|Volumes|private)\//.test(value) || value.startsWith(NEUTRAL)) return value;
+  const tail = /\/[^/]+\.band\/.*$/.exec(value)?.[0] ?? "";
+  const room = value.length - tail.length;
+  return (room >= NEUTRAL.length ? NEUTRAL + "-".repeat(room - NEUTRAL.length) : "/" + "-".repeat(Math.max(0, room - 1))) + tail;
+}
+
+/**
+ * MetaData.plist (a binary plist) lists the project's audio files in AudioFiles — as absolute paths in a project
+ * GarageBand saved (found 2026-10-07 in a live check). Each is scrubbed with scrubPath and the list is written back
+ * with plutil, as gb_band build already writes it. Returns how many paths changed; a file without local paths is
+ * left untouched.
+ */
+export async function scrubMetaData(file: string): Promise<number> {
+  const plist = parseBinaryPlist(new Uint8Array(readFileSync(file)));
+  const list = plist.ok ? (plist.value as { AudioFiles?: unknown }).AudioFiles : undefined;
+  if (!Array.isArray(list)) return 0;
+  const clean = list.map((v) => (typeof v === "string" ? scrubPath(v) : v));
+  const changed = clean.filter((v, i) => v !== list[i]).length;
+  if (changed > 0) {
+    await new Promise<void>((resolve, reject) =>
+      execFile("plutil", ["-replace", "AudioFiles", "-json", JSON.stringify(clean), file], { timeout: 10_000 }, (e) => (e ? reject(e) : resolve())));
+  }
+  return changed;
 }
 
 function startsWith(hay: Uint8Array, needle: Uint8Array, at: number): boolean {

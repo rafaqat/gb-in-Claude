@@ -35,7 +35,7 @@ export function openFailureCode(reason: string): ErrorCode {
   return "INTERNAL_ERROR";
 }
 import { bandDifferences, inspectBand } from "../band/inspect.js";
-import { scrubLocalPaths } from "../band/local-paths.js";
+import { scrubLocalPaths, scrubMetaData } from "../band/local-paths.js";
 import { parseProjectData } from "../band/projectdata.js";
 import { visibleTracks } from "../band/tracks.js";
 import { mutationGate } from "./gate.js";
@@ -422,6 +422,11 @@ export function createGbProject(deps: GbProjectDeps) {
         const tmp = `${pdPath}.${process.pid}.scrub`;
         writeFileSync(tmp, scrubbed.bytes, { flag: "wx" }); // a new file, then a rename: never written through a link
         renameSync(tmp, pdPath);
+      }
+      try {
+        await scrubMetaData(join(path, "Alternatives", "000", "MetaData.plist")); // the audio files' absolute paths
+      } catch {
+        return failed(op, "WRITE_FAILED", "the copy's MetaData.plist could not be cleaned of local folders", { write_attempted: true, safe_to_retry: false });
       }
       return verified(op, { document, path, tracks: visibleTracks(pd.value).map(({ number, kind, name }) => ({ number, kind, name: cleanText(name) })) });
     });

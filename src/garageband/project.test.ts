@@ -9,6 +9,8 @@ import { createGbProject, openFailureCode, type ProjectScripts } from "./project
 import { FakeHelper } from "../ax/fake-helper.js";
 import type { TreeNode } from "../ax/selector.js";
 import { writeSmf } from "../midi/smf.js";
+import { execFileSync } from "node:child_process";
+import { parseBinaryPlist } from "../sound/bplist.js";
 
 const SONG_TRACKS = [
   { name: "Drums", channel: 10, program: 24, patch: "Boutique 808" },
@@ -566,6 +568,28 @@ describe("gb_project save_copy (M11b): the open project as a donor for gb_band",
     const written = new TextDecoder("latin1").decode(readFileSync(join(ws, "donors", "leaky-donor.band", "Alternatives", "000", "ProjectData")));
     expect(written).not.toContain("someone");
     expect(written).toContain("/Users/Shared/gb-mcp");
+  });
+
+  it("scrubs the local folders GarageBand lists in the copy's MetaData.plist (AudioFiles)", async () => {
+    const files = ["/Users/someone/Documents/projects/x.band/Media/Audio Files/a.wav", "/Users/someone/Music/Sampler Files/Harp/h.wav", "Audio Files/b.wav"];
+    const leaky = scripts({
+      backupDocument: async (name, path) => {
+        backups.push({ name, path });
+        cpSync(fixture, path, { recursive: true });
+        execFileSync("plutil", ["-replace", "AudioFiles", "-json", JSON.stringify(files), join(path, "Alternatives", "000", "MetaData.plist")]);
+        return { ok: true, value: undefined };
+      },
+    });
+    const r = await createGbProject(deps({ scripts: leaky }))({ command: "save_copy", filename: "leaky-meta.band" });
+    expect(r).toMatchObject({ status: "verified" });
+    const meta = parseBinaryPlist(new Uint8Array(readFileSync(join(ws, "donors", "leaky-meta.band", "Alternatives", "000", "MetaData.plist"))));
+    expect(meta.ok).toBe(true);
+    const audio = (meta.ok ? (meta.value as { AudioFiles: string[] }).AudioFiles : []);
+    expect(audio).toHaveLength(3);
+    expect(audio.join("\n")).not.toMatch(/someone|Documents|projects/);
+    expect(audio[0]).toMatch(/^\/Users\/Shared\/gb-mcp-*\/x\.band\/Media\/Audio Files\/a\.wav$/);
+    expect(audio[1]).toMatch(/^\/Users\/Shared\/gb-mcp/);
+    expect(audio[2]).toBe("Audio Files/b.wav");
   });
 
   it("never overwrites: an existing donors/<name> (or a link there) is FILE_EXISTS and nothing is saved", async () => {
